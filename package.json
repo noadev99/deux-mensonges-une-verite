@@ -1,7 +1,7 @@
 {
-  "name": "deux-mensonges-une-verite",
+  "name": "soiree-jeux",
   "version": "1.0.0",
-  "description": "Jeu multijoueur : 2 mensonges, 1 vérité — devine qui a écrit, puis trouve la vraie anecdote",
+  "description": "Plateforme de jeux de soirée multijoueur",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

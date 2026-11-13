@@ -1,31 +1,33 @@
-# 🎭 2 Mensonges, 1 Vérité
+# 🎉 Soirée Jeux
 
-Jeu multijoueur (3 à 16 joueurs) dans le navigateur, sur téléphone ou ordinateur.
+Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 
 **▶️ Jouer en ligne : https://deux-mensonges-une-verite.onrender.com**
 
-## Lancer
+## Fonctionnement
+- Un salon (code à 4 lettres) pour toute la soirée : l'hôte choisit un jeu, on joue, on revient au salon, on enchaîne.
+- **Classement de la soirée** : à chaque partie, le 1er gagne autant de points qu'il y a de joueurs, le dernier 1 point.
+- Reconnexion automatique si on recharge la page ou perd le réseau.
+
+## Jeux
+| Jeu | Joueurs |
+|---|---|
+| 🎭 2 Mensonges, 1 Vérité | 3–16 |
+
+## Lancer en local
 ```bash
 npm install
 npm start
 ```
-Puis ouvrir http://localhost:3000. Les amis sur le même Wi-Fi utilisent l'adresse `http://192.168.x.x:3000` affichée dans le terminal.
+http://localhost:3000 (ou l'adresse Wi-Fi affichée dans le terminal).
 
-## Déroulement
-1. Chacun écrit 3 anecdotes (2 fausses, 1 vraie).
-2. Pour chaque joueur : ses anecdotes s'affichent sans son nom → tout le monde vote « qui a écrit ça ? » (l'auteur vote aussi, pour faire diversion).
-3. Révélation de l'auteur → vote « laquelle est vraie ? ».
-
-## Barème (modifiable dans `server.js`, objet `PTS`)
-| Action | Points |
-|---|---|
-| Reconnaître l'auteur | +100 |
-| Trouver la vraie anecdote | +100 |
-| Les deux sur la même manche (Double détective) | +50 |
-| Auteur : par joueur qui ne t'a pas reconnu (Incognito) | +50 |
-| Auteur : personne ne t'a reconnu (Fantôme) | +100 |
-| Auteur : par joueur berné par un mensonge | +75 |
-| Auteur : personne n'a trouvé la vérité (Mensonge parfait) | +150 |
-| Accusé à tort (par vote) | +25 |
-
-Trophées de fin : Sherlock, Détecteur de mensonges, Grand Mytho, Caméléon, Suspect n°1.
+## Structure
+```
+server.js                 cœur : salons, joueurs, hôte, classement de soirée
+games/index.js            registre des jeux
+games/<jeu>.js            règles et points d'un jeu (serveur)
+public/js/core.js         cœur client : accueil, salon, choix du jeu
+public/games/<jeu>.js     écrans d'un jeu
+public/css/style.css      style commun
+```
+Ajouter un jeu : voir [games/README.md](games/README.md).
