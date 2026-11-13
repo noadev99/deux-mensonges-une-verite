@@ -18,7 +18,7 @@ const UI = (() => {
   // ─── Helpers partagés avec les jeux ──────────────────────────────────────
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const P = (id) => S && S.players.find((p) => p.id === id);
-  const av = (p, cls = '') => (p ? `<span class="av ${cls}" style="background:${p.color}">${p.avatar}</span>` : '');
+  const av = (p, cls = '') => (p ? `<span class="av ${cls}" style="background:${p.color}">${typeof p.avatar === 'number' ? ICONS.avatar(p.avatar) : esc(p.avatar)}</span>` : '');
   const name = (id) => esc(P(id)?.name ?? '?');
   const isHost = () => S && S.hostId === S.you;
   const gameInfo = (id) => S.games.find((g) => g.id === (id || S.gameId));

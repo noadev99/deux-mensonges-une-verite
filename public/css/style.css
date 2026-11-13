@@ -251,3 +251,8 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 .award:nth-child(3n+1) .e { background: #ffe39b; }
 .award:nth-child(3n+2) .e { background: #ffd0df; }
 .award:nth-child(3n+3) .e { background: #c6f3e5; }
+
+/* ─── Bouilles des joueurs ─── */
+.av { position: relative; overflow: visible; }
+.av .face { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.av.sm .face path, .av.sm .face circle, .av.sm .face rect { stroke-width: 2.6; }

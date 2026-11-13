@@ -64,8 +64,57 @@ const ICONS = (() => {
     trophy: ico('<path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="#ffc23d"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 21h8M9 18h6"/>'),
   };
 
+  // ─── Avatars : petites bouilles dessinées (le rond coloré est le visage) ───
+  const W = '#fff', PINK = '#ff8fb5';
+  const EYES = [
+    // points
+    `<circle cx="14" cy="17" r="2.4" fill="${INK}" stroke="none"/><circle cx="26" cy="17" r="2.4" fill="${INK}" stroke="none"/>`,
+    // gros yeux ronds
+    `<circle cx="14" cy="16" r="4.6" fill="${W}"/><circle cx="26" cy="16" r="4.6" fill="${W}"/><circle cx="15" cy="17" r="2" fill="${INK}" stroke="none"/><circle cx="27" cy="17" r="2" fill="${INK}" stroke="none"/>`,
+    // endormi
+    `<path d="M10.5 17q3.5 3 7 0M22.5 17q3.5 3 7 0"/>`,
+    // cyclope
+    `<circle cx="20" cy="15.5" r="6.2" fill="${W}"/><circle cx="21" cy="16.5" r="2.8" fill="${INK}" stroke="none"/>`,
+    // lunettes
+    `<circle cx="13.5" cy="17" r="4.6" fill="${W}"/><circle cx="26.5" cy="17" r="4.6" fill="${W}"/><path d="M18.1 17h3.8"/><circle cx="13.5" cy="17.5" r="1.7" fill="${INK}" stroke="none"/><circle cx="26.5" cy="17.5" r="1.7" fill="${INK}" stroke="none"/>`,
+    // clin d'œil
+    `<circle cx="14" cy="17" r="2.4" fill="${INK}" stroke="none"/><path d="M23 17.5q3-2.5 6 0"/>`,
+    // sourcils froncés (faux méchant)
+    `<path d="M10.5 12.5l6 2M29.5 12.5l-6 2"/><circle cx="14" cy="18" r="2.2" fill="${INK}" stroke="none"/><circle cx="26" cy="18" r="2.2" fill="${INK}" stroke="none"/>`,
+    // yeux étoiles
+    `<path d="M14 13.5l1.1 2.4 2.5.3-1.9 1.7.5 2.5-2.2-1.3-2.2 1.3.5-2.5-1.9-1.7 2.5-.3zM26 13.5l1.1 2.4 2.5.3-1.9 1.7.5 2.5-2.2-1.3-2.2 1.3.5-2.5-1.9-1.7 2.5-.3z" fill="${W}" stroke-width="1.4"/>`,
+  ];
+  const MOUTHS = [
+    `<path d="M14 25q6 6 12 0"/>`,                                                         // sourire
+    `<path d="M15 25q5 7 10 0z" fill="${INK}"/><path d="M17.5 28.5q2.5-1.6 5 0" stroke="${PINK}" stroke-width="2"/>`, // bouche ouverte
+    `<rect x="14" y="24" width="12" height="5" rx="2.5" fill="${W}"/><path d="M18 24v5M22 24v5" stroke-width="1.6"/>`, // grand sourire dents
+    `<circle cx="20" cy="26.5" r="2.4" fill="${INK}" stroke="none"/>`,                    // « oh »
+    `<path d="M14 25q6 5 12 0"/><path d="M18 27.5v2.5a2 2 0 0 0 4 0v-2" fill="${PINK}" stroke-width="1.8"/>`, // langue tirée
+    `<path d="M15 27q5 1.5 10-2.5"/>`,                                                     // en coin
+  ];
+  const EXTRAS = [
+    '',
+    `<circle cx="10" cy="23" r="2.6" fill="${PINK}" stroke="none" opacity=".8"/><circle cx="30" cy="23" r="2.6" fill="${PINK}" stroke="none" opacity=".8"/>`, // joues
+    `<path d="M20 4V-2" /><circle cx="20" cy="-3.5" r="2.6" fill="${W}"/>`,                 // antenne
+    `<path d="M14.5 2.5l5.5 3 5.5-3v6l-5.5-3-5.5 3z" fill="${PINK}" stroke-width="1.8"/>`, // nœud
+    `<path d="M12 31q4-3 8-.5 4-2.5 8 .5-4 2-8 0-4 2-8 0z" fill="${INK}"/>`,               // moustache
+    `<path d="M9 7l2-7 5 4.5M31 7l-2-7-5 4.5" fill="${W}" stroke-width="2"/>`,              // cornes
+    `<circle cx="11" cy="22" r=".9" fill="${INK}" stroke="none"/><circle cx="9" cy="24" r=".9" fill="${INK}" stroke="none"/><circle cx="29" cy="22" r=".9" fill="${INK}" stroke="none"/><circle cx="31" cy="24" r=".9" fill="${INK}" stroke="none"/>`, // taches de rousseur
+    `<path d="M12.5 5V-6h15V5z" fill="${INK}"/><path d="M12.5 1h15" stroke="${PINK}" stroke-width="2.4"/><path d="M6 5.5h28" stroke-width="3"/>`, // chapeau haut-de-forme
+  ];
+  // 16 combinaisons choisies à la main [yeux, bouche, accessoire]
+  const FACES = [
+    [0, 0, 1], [1, 1, 0], [2, 0, 3], [3, 3, 2], [4, 5, 4], [5, 4, 1], [6, 2, 5], [7, 1, 1],
+    [1, 2, 7], [0, 4, 6], [3, 0, 5], [2, 5, 6], [4, 0, 3], [6, 3, 7], [5, 2, 2], [7, 0, 4],
+  ];
+  const avatar = (n) => {
+    const [e, m, x] = FACES[((n % FACES.length) + FACES.length) % FACES.length];
+    return `<svg class="face" viewBox="0 0 40 40" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${EXTRAS[x]}${EYES[e]}${MOUTHS[m]}</svg>`;
+  };
+
   return {
     game: (id) => GAMES[id] || '',
+    avatar,
     ui,
   };
 })();

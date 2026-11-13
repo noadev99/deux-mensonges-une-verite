@@ -17,7 +17,8 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const MAX_PLAYERS = 16;
-const AVATARS = ['🦊', '🐸', '🐙', '🦄', '🐼', '🦁', '🐧', '🐨', '🐯', '🦉', '🐢', '🦖', '🐝', '🦩', '🐳', '🦔'];
+// Numéro de la bouille dessinée côté client (public/js/icons.js → ICONS.avatar)
+const AVATARS = Array.from({ length: 16 }, (_, i) => i);
 const COLORS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#38d9a9', '#4dabf7', '#748ffc', '#da77f2', '#f783ac', '#a9e34b'];
 
 const rooms = new Map();
