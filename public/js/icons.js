@@ -52,6 +52,30 @@ const ICONS = (() => {
       <circle cx="42" cy="27" r="1.2" fill="${INK}" stroke="none"/>
       <path d="M49 29h9"/>
       <path d="M40 41c3 2 7 2 10 0"/>`),
+
+    // ✍️ une bulle avec un trou à compléter, et un crayon
+    chute: art(`
+      <path d="M8 12h40a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H26l-10 9v-9H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z" fill="#fff"/>
+      <path d="M13 22h12M13 30h6"/>
+      <path d="M23 30h14" stroke-dasharray="3 4"/>
+      <g transform="rotate(40 48 38)"><rect x="43" y="22" width="10" height="28" rx="2" fill="#ffc23d"/><path d="M43 50l5 8 5-8z" fill="#fff"/><path d="M43 27h10"/></g>`),
+
+    // 💣 la bombe et sa mèche qui crépite
+    patate: art(`
+      <path d="M40 18c4-6 10-9 16-7" />
+      <rect x="31" y="15" width="13" height="10" rx="2" transform="rotate(30 37 20)" fill="#3c2a5c"/>
+      <circle cx="28" cy="40" r="18" fill="#3c2a5c"/>
+      <path d="M18 33a11 11 0 0 1 8-7" stroke="#fff" opacity=".6"/>
+      <circle cx="57" cy="10" r="4.5" fill="#ffc23d"/>
+      <path d="M57 1v3M63 10h2M61 4l2-2M51 4l-2-2" stroke-width="2.5"/>`),
+
+    // 🏅 un podium avec une étoile sur la première marche
+    classement: art(`
+      <rect x="24" y="26" width="16" height="30" fill="#ffc23d"/>
+      <rect x="8" y="36" width="16" height="20" fill="#fff"/>
+      <rect x="40" y="42" width="16" height="14" fill="#ff8fb5"/>
+      <path d="M32 6l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" fill="#fff"/>
+      <path d="M30 37l3-2v12"/>`),
   };
 
   const ui = {

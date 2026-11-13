@@ -63,6 +63,16 @@ function ctx(room) {
     connected: () => connected(room),
     // Le jeu appelle endGame(scores) une fois terminé → points de soirée
     endGame: (scores) => endGame(room, scores),
+    // Minuteur serveur : exécute fn après ms, puis renvoie l'état à tous.
+    // Ignoré si la partie a changé entre-temps (retour au salon, rejouer…).
+    schedule: (ms, fn) => {
+      const game = room.game;
+      return setTimeout(() => {
+        if (room.game !== game || room.phase !== 'playing') return;
+        fn();
+        broadcast(room);
+      }, ms);
+    },
   };
 }
 

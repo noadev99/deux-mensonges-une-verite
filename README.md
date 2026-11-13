@@ -16,6 +16,9 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🗳️ Qui de nous ? — « qui est le plus susceptible de… », vote + pari | 3–16 |
 | 🕵️ L'Intrus — tout le monde connaît le mot sauf un | 3–12 |
 | 📖 Le Dico des menteurs — fausses définitions de vrais mots rares | 3–12 |
+| ✍️ La Chute — phrases à trou, vote pour la réponse la plus drôle | 3–16 |
+| 💣 Patate chaude — réponds vite avant que la bombe explose | 3–12 |
+| 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
 
 ## Lancer en local
 ```bash
