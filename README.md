@@ -2,6 +2,8 @@
 
 Jeu multijoueur (3 à 16 joueurs) dans le navigateur, sur téléphone ou ordinateur.
 
+**▶️ Jouer en ligne : https://deux-mensonges-une-verite.onrender.com**
+
 ## Lancer
 ```bash
 npm install
