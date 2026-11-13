@@ -10,7 +10,7 @@
       const answered = g.myVote && g.myBet;
       return `
         ${UI.header(g.round, g.totalRounds, `Question ${g.round} / ${g.totalRounds}`, 'Qui de nous…')}
-        <div class="card center reveal"><div class="qdn-q">…est le plus susceptible de<br><b>${esc(g.question)}</b> ?</div></div>
+        <div class="card center reveal"><div class="qdn-q">…est le plus susceptible de <b>${esc(g.question)} ?</b></div></div>
         ${answered ? `
           <div class="card center">
             <h2>C'est voté ✅</h2>
@@ -53,7 +53,7 @@
         </div>
         <div class="card"><h2>Points</h2>${UI.gainsBlock(r.gains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, UI.gainTotals(r.gains))}</div>
-        ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Question suivante →')}`;
+        ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Question suivante')}`;
     },
 
     end: (S, g) => UI.endScreen(g),

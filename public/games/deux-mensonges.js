@@ -94,7 +94,7 @@
           ${votes.map(([v, t]) => `<div class="score">${av(P(v))}<span class="n">${name(v)} → ${av(P(t), 'sm')} ${name(t)}</span>${t === c.authorId ? '✅' : '❌'}</div>`).join('') || '<span class="muted">Aucun vote</span>'}
         </div>
         <div class="card"><h2>Points</h2>${gainsBlock(c.authorGains)}</div>
-        ${UI.hostButton('Trouver la vraie anecdote →')}`;
+        ${UI.hostButton('Trouver la vraie anecdote')}`;
     },
 
     guessTrue(S, g) {
@@ -124,18 +124,10 @@
         <div class="card reveal">${anecList(g, { showTruth: true, dimFalse: true, votes: c.trueVotes })}</div>
         <div class="card"><h2>Points</h2>${gainsBlock(c.trueGains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, sumGains(c.authorGains, c.trueGains))}</div>
-        ${UI.hostButton(last ? 'Voir le podium 🏆' : 'Manche suivante →')}`;
+        ${UI.hostButton(last ? 'Voir le podium 🏆' : 'Manche suivante')}`;
     },
 
-    end(S, g) {
-      return `
-        <h1>🏆 Fin de partie</h1>
-        <div class="card">${UI.podium(g.scores)}</div>
-        ${g.awards.length ? `<div class="card"><h2>Trophées</h2>${g.awards.map((w) => `
-          <div class="award"><span class="e">${w.emoji}</span><div><b>${w.title}</b> — ${w.winners.map(name).join(' & ')}<div class="muted" style="font-size:.9rem">${w.desc} (${w.value})</div></div></div>`).join('')}</div>` : ''}
-        <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores)}</div>
-        ${UI.endFooter()}`;
-    },
+    end: (S, g) => UI.endScreen(g),
   };
 
   UI.registerGame('deux-mensonges', {

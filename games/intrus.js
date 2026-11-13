@@ -182,6 +182,7 @@ function stateFor(ctx, g, pid) {
 
 module.exports = {
   id: 'intrus',
+  color: '#2fd3a7',
   name: "L'Intrus",
   emoji: '🕵️',
   tagline: "Tout le monde connaît le mot… sauf l'intrus.",

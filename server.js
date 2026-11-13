@@ -49,8 +49,9 @@ function newPlayer(room, name) {
 }
 
 const connected = (room) => [...room.players.values()].filter((p) => p.connected);
-const catalog = Object.values(GAMES).map(({ id, name, emoji, tagline, description, minPlayers, maxPlayers, duration }) =>
-  ({ id, name, emoji, tagline, description, minPlayers, maxPlayers, duration }));
+const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }) =>
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }));
+app.get('/api/games', (req, res) => res.json(catalog));
 
 // Contexte passé aux modules de jeu : tout ce dont un jeu a besoin, rien de plus.
 function ctx(room) {

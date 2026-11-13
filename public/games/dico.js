@@ -57,7 +57,7 @@
         </div>
         <div class="card"><h2>Points</h2>${UI.gainsBlock(r.gains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, UI.gainTotals(r.gains))}</div>
-        ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Mot suivant →')}`;
+        ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Mot suivant')}`;
     },
 
     end: (S, g) => UI.endScreen(g),

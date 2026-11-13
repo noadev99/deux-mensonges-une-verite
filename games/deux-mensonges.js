@@ -255,6 +255,7 @@ function stateFor(ctx, g, pid) {
 
 module.exports = {
   id: 'deux-mensonges',
+  color: '#ff6fa3',
   name: '2 Mensonges, 1 Vérité',
   emoji: '🎭',
   tagline: 'Devine qui a écrit… puis démasque le menteur.',

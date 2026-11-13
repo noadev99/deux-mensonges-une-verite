@@ -162,6 +162,7 @@ function stateFor(ctx, g, pid) {
 
 module.exports = {
   id: 'qui-de-nous',
+  color: '#ffc23d',
   name: 'Qui de nous ?',
   emoji: '🗳️',
   tagline: 'Qui est le plus susceptible de… ? Vote et parie.',

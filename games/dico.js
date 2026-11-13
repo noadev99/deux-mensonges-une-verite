@@ -177,6 +177,7 @@ function stateFor(ctx, g, pid) {
 
 module.exports = {
   id: 'dico',
+  color: '#6d8bff',
   name: 'Le Dico des menteurs',
   emoji: '📖',
   tagline: 'Invente une fausse définition, trouve la vraie.',
