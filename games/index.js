@@ -2,6 +2,9 @@
 // + public/games/mon-jeu.js (affichage), puis l'ajouter à la liste ci-dessous.
 const list = [
   require('./deux-mensonges'),
+  require('./qui-de-nous'),
+  require('./intrus'),
+  require('./dico'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));

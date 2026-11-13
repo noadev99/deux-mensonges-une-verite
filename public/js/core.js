@@ -49,6 +49,36 @@ const UI = (() => {
       <div class="bar" style="height:${h[i]}px;background:${col[i]}">${pos[i]}</div></div>` : '<div class="col"></div>').join('')}</div>`;
   }
 
+  // Barre de progression + titre de phase
+  const header = (round, total, step, title) => `
+    <div class="progress"><div style="width:${total ? ((round - 1) / total) * 100 : 0}%"></div></div>
+    <div class="phase"><div class="step">${step}</div><div class="t">${title}</div></div>`;
+
+  // Détail des points gagnés : gains = {pid: {total, reasons:[{pts,label}]}}
+  function gainsBlock(gains) {
+    const ids = Object.keys(gains || {}).filter(P).sort((a, b) => gains[b].total - gains[a].total);
+    if (!ids.length) return '<div class="muted">Personne ne marque de points cette fois.</div>';
+    return `<div class="gains">${ids.map((id) => `
+      <div class="g"><div style="display:flex;align-items:center;gap:10px">${av(P(id))}<b style="flex:1">${name(id)}</b><span class="plus">+${gains[id].total}</span></div>
+      <ul>${gains[id].reasons.map((r) => `<li>+${r.pts} · ${esc(r.label)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  }
+  const gainTotals = (gains) => Object.fromEntries(Object.entries(gains || {}).map(([id, x]) => [id, x.total]));
+
+  // Grille de joueurs cliquables (data-attr = nom de l'attribut pour bind)
+  const playerGrid = (ids, selected, attr) => `<div class="grid">${ids.filter(P).map((id) =>
+    `<button class="pick ${selected === id ? 'sel' : ''}" data-${attr}="${id}">${av(P(id))}<span>${name(id)}${id === S.you ? ' (toi)' : ''}</span></button>`).join('')}</div>`;
+
+  // Écran de fin standard : podium + trophées + classement + boutons
+  function endScreen(g) {
+    return `
+      <h1>🏆 Fin de partie</h1>
+      <div class="card">${podium(g.scores)}</div>
+      ${g.awards && g.awards.length ? `<div class="card"><h2>Trophées</h2>${g.awards.map((w) => `
+        <div class="award"><span class="e">${w.emoji}</span><div><b>${esc(w.title)}</b> — ${w.winners.map(name).join(' & ')}<div class="muted" style="font-size:.9rem">${esc(w.desc)} (${w.value})</div></div></div>`).join('')}</div>` : ''}
+      <div class="card"><h2>Classement</h2>${scoreboard(g.scores)}</div>
+      ${endFooter()}`;
+  }
+
   // Bas d'écran de fin de partie commun à tous les jeux
   function endFooter() {
     const last = S.history[S.history.length - 1];
@@ -167,7 +197,8 @@ const UI = (() => {
       if (S.phase === 'lobby') $app.innerHTML = lobbyScreen();
       else {
         const g = gameInfo();
-        $app.innerHTML = `<div class="topbar"><span>${g.emoji} ${esc(g.name)}</span><span>Salon <b>${S.code}</b></span></div>` + mod.screen(S, S.game);
+        const quit = isHost() && S.game.phase !== 'end' ? '<a class="link" data-quit>⟵ Salon</a> · ' : '';
+        $app.innerHTML = `<div class="topbar"><span>${g.emoji} ${esc(g.name)}</span><span>${quit}Salon <b>${S.code}</b></span></div>` + mod.screen(S, S.game);
       }
       bindCore();
       if (S.phase === 'playing') mod.bind?.(S, S.game, $app);
@@ -182,6 +213,7 @@ const UI = (() => {
   function bindCore() {
     const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
     on('[data-core]', (e) => socket.emit(e.currentTarget.dataset.core));
+    on('[data-quit]', () => { if (confirm('Arrêter la partie et revenir au salon ? Les points de cette partie seront perdus.')) socket.emit('toLobby'); });
     on('[data-host-action]', (e) => send(e.currentTarget.dataset.hostAction));
     on('[data-game]', (e) => isHost() && socket.emit('selectGame', e.currentTarget.dataset.game));
     on('[data-leave]', () => { socket.emit('leave'); localStorage.removeItem('session'); S = null; renderHome(); });
@@ -193,9 +225,11 @@ const UI = (() => {
 
   return {
     boot: () => {},
+    refresh: () => render(),
     registerGame: (id, mod) => { GAMES[id] = mod; },
     // helpers pour les jeux
     esc, P, av, name, isHost, send, toast, hostButton, forceLink, scoreboard, podium, endFooter,
+    header, gainsBlock, gainTotals, playerGrid, endScreen,
     get state() { return S; },
   };
 })();

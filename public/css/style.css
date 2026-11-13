@@ -109,3 +109,23 @@ button.anec:hover { border-color: #d6c8f5; }
 .badge.t { background: var(--good); } .badge.f { background: var(--bad); }
 .truth { display: flex; align-items: center; gap: 8px; margin: 6px 0 14px; font-size: .95rem; cursor: pointer; user-select: none; }
 .truth input { width: 20px; height: 20px; accent-color: var(--good); }
+
+/* ── Spécifique Qui de nous ? ── */
+.qdn-q { font-size: 1.25rem; line-height: 1.4; }
+.qdn-q b { font-size: 1.45rem; color: var(--accent2); }
+.qdn-bar { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.qdn-track { height: 10px; background: var(--soft); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+.qdn-track > div { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); border-radius: 99px; }
+
+/* ── Spécifique L'Intrus ── */
+.intr-role { border: 3px solid var(--accent2); }
+.intr-role.intr-bad { border-color: var(--bad); background: #fff1f1; }
+.intr-role h2 { margin: 6px 0; }
+.intr-word { font-size: 2rem; font-weight: 700; color: var(--accent2); margin: 4px 0 6px; }
+.intr-clue { font-size: 1.1rem; color: var(--accent2); }
+.score.intr-now { background: #fff7e0; border-radius: 10px; }
+
+/* ── Spécifique Le Dico des menteurs ── */
+.dico-word { font-size: 2.2rem; font-weight: 700; color: var(--accent2); font-family: Georgia, 'Times New Roman', serif; font-style: italic; }
+.dico-def { font-family: Georgia, serif; font-size: 1.05rem; }
+.anec.dico-mine { opacity: .6; border-style: dashed; border-color: #d6c8f5; }

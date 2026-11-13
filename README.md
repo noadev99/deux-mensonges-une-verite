@@ -12,7 +12,10 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 ## Jeux
 | Jeu | Joueurs |
 |---|---|
-| 🎭 2 Mensonges, 1 Vérité | 3–16 |
+| 🎭 2 Mensonges, 1 Vérité — devine qui a écrit, puis la vraie anecdote | 3–16 |
+| 🗳️ Qui de nous ? — « qui est le plus susceptible de… », vote + pari | 3–16 |
+| 🕵️ L'Intrus — tout le monde connaît le mot sauf un | 3–12 |
+| 📖 Le Dico des menteurs — fausses définitions de vrais mots rares | 3–12 |
 
 ## Lancer en local
 ```bash
