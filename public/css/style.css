@@ -142,9 +142,9 @@ a.link { color: #fff; cursor: pointer; text-decoration: underline; text-underlin
 .gamecard .info { padding: 10px 12px 12px; }
 .gamecard .t { font-family: var(--display); font-size: 1.2rem; line-height: 1.1; }
 .gamecard .d { font-weight: 400; color: var(--muted); font-size: .88rem; margin-top: 4px; }
-.gamecard .m { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.gamecard .m span { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 600; padding: 3px 10px 3px 7px; border-radius: 99px; background: var(--paper); border: 2px solid var(--ink); }
-.ico { width: 15px; height: 15px; flex: none; }
+.gamecard .m { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.gamecard .m span { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600; padding: 2px 8px 2px 6px; white-space: nowrap; border-radius: 99px; background: var(--paper); border: 2px solid var(--ink); }
+.ico { width: 14px; height: 14px; flex: none; }
 .gamecard.sel { box-shadow: 0 0 0 4px var(--c), 6px 6px 0 4px var(--ink); transform: translate(-2px, -2px) rotate(-1.2deg); }
 .gamecard.sel::after { content: 'Choisi ✓'; position: absolute; top: -12px; right: -8px; transform: rotate(8deg); background: var(--ink); color: #fff; font-size: .8rem; font-weight: 600; padding: 3px 10px; border-radius: 8px; }
 .games.solo { grid-template-columns: 1fr; }
@@ -235,3 +235,19 @@ button.anec { width: 100%; text-align: left; font-weight: 500; font-size: 1rem; 
 .dico-word { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; font-size: 2.4rem; }
 .dico-def { font-family: Georgia, serif; font-size: 1.05rem; line-height: 1.55; }
 .anec.dico-mine { opacity: .6; border-style: dashed; box-shadow: none; }
+
+/* ─── Icônes dessinées ─── */
+.art { display: block; }
+.gamecard .lid .art { width: 60px; height: 60px; transform: rotate(-6deg); }
+.box .art { width: 42px; height: 42px; }
+.mini { width: 26px; height: 26px; display: inline-grid; place-items: center; flex: none; border-radius: 8px; }
+.mini .art { width: 24px; height: 24px; }
+.topbar .chip .mini { margin-left: -4px; }
+.crown { display: inline-flex; vertical-align: -3px; }
+.crown .ico { width: 18px; height: 18px; }
+.score > b:first-child .crown .ico { width: 22px; height: 22px; }
+button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px; }
+.award .e .ico { width: 28px; height: 28px; }
+.award:nth-child(3n+1) .e { background: #ffe39b; }
+.award:nth-child(3n+2) .e { background: #ffd0df; }
+.award:nth-child(3n+3) .e { background: #c6f3e5; }

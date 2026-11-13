@@ -12,12 +12,8 @@ const UI = (() => {
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
-  // Petites icônes au trait, dans le style des contours encre
-  const svg = (body) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-  const ICON = {
-    players: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 13.6c2.6.2 4.5 2.1 4.5 4.9"/>'),
-    clock: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9.5 2.5h5"/>'),
-  };
+  const ICON = ICONS.ui;
+  const crown = `<span class="crown">${ICON.crown}</span>`;
 
   // ─── Helpers partagés avec les jeux ──────────────────────────────────────
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -56,7 +52,7 @@ const UI = (() => {
   // Bouton principal réservé à l'hôte, collé en bas de l'écran
   const hostButton = (label, action = 'next') => `<div class="dock">${isHost()
     ? `<button class="alt" data-host-action="${action}">${label}</button>`
-    : `<p>${name(S.hostId)} 👑 lance la suite…</p>`}</div>`;
+    : `<p>${name(S.hostId)} ${crown} lance la suite…</p>`}</div>`;
   const forceLink = (label, action = 'next') => isHost() ? `<p class="center"><a class="link" data-host-action="${action}">${label}</a></p>` : '';
 
   // Classement trié par score (scores = {pid: points}, deltas optionnels)
@@ -97,10 +93,10 @@ const UI = (() => {
   // Écran de fin standard : podium + trophées + classement + boutons
   function endScreen(g) {
     return `
-      <h1>Fin de partie 🏆</h1>
+      <h1>Fin de partie</h1>
       <div class="card">${podium(g.scores)}</div>
       ${g.awards && g.awards.length ? `<div class="card"><h2>Trophées</h2>${g.awards.map((w) => `
-        <div class="award"><span class="e">${w.emoji}</span><div><b>${esc(w.title)}</b> : ${w.winners.map(name).join(' & ')}<div class="muted" style="font-size:.9rem">${esc(w.desc)} (${w.value})</div></div></div>`).join('')}</div>` : ''}
+        <div class="award"><span class="e">${ICON.trophy}</span><div><b>${esc(w.title)}</b> : ${w.winners.map(name).join(' & ')}<div class="muted" style="font-size:.9rem">${esc(w.desc)} (${w.value})</div></div></div>`).join('')}</div>` : ''}
       <div class="card"><h2>Classement</h2>${scoreboard(g.scores)}</div>
       ${endFooter()}`;
   }
@@ -110,10 +106,10 @@ const UI = (() => {
     const last = S.history[S.history.length - 1];
     const mine = last && last.gains[S.you];
     return `
-      ${mine ? `<p class="center white">+${mine} pts au classement de la soirée 🎉</p>` : ''}
+      ${mine ? `<p class="center white">+${mine} pts au classement de la soirée</p>` : ''}
       <div class="dock">${isHost()
-        ? `<div class="row"><button class="ghost" data-core="restartGame">Rejouer 🔁</button><button class="alt" data-core="toLobby">Autre jeu 🎲</button></div>`
-        : `<p>${name(S.hostId)} 👑 choisit la suite…</p>`}</div>`;
+        ? `<div class="row"><button class="ghost" data-core="restartGame">${ICON.again} Rejouer</button><button class="alt" data-core="toLobby">${ICON.dice} Autre jeu</button></div>`
+        : `<p>${name(S.hostId)} ${crown} choisit la suite…</p>`}</div>`;
   }
 
   // ─── Connexion ────────────────────────────────────────────────────────────
@@ -134,7 +130,7 @@ const UI = (() => {
     $app.className = '';
     document.body.style.removeProperty('--game');
     const code = new URLSearchParams(location.search).get('salon') || '';
-    const boxes = catalog.map((g) => `<span class="box" style="background:${g.color}" title="${esc(g.name)}">${g.emoji}</span>`).join('');
+    const boxes = catalog.map((g) => `<span class="box" style="background:${g.color}" title="${esc(g.name)}">${ICONS.game(g.id)}</span>`).join('');
     $app.innerHTML = `
       <div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
       <div class="boxes">${boxes}</div>
@@ -168,7 +164,7 @@ const UI = (() => {
     return `
       <div class="code-label">Code du salon</div>
       <div class="code">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div>
-      <div class="invite"><button class="ghost" data-invite>📨 Inviter des amis</button></div>
+      <div class="invite"><button class="ghost" data-invite>${ICON.send} Inviter des amis</button></div>
 
       <div class="card">
         <div class="cardhead"><h2>Joueurs</h2><span class="muted">${n} / 16</span></div>
@@ -180,7 +176,7 @@ const UI = (() => {
         <div class="games ${shown.length === 1 ? 'solo' : ''}">${shown.map((x) => {
           const tag = isHost() ? 'button' : 'div';
           return `<${tag} class="gamecard ${x.id === S.gameId ? 'sel' : ''}" data-game="${x.id}" style="--c:${x.color}">
-            <span class="lid"><span>${x.emoji}</span></span>
+            <span class="lid">${ICONS.game(x.id)}</span>
             <span class="info"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.tagline)}</div>
             <div class="m"><span>${ICON.players}${x.minPlayers} à ${x.maxPlayers}</span><span>${ICON.clock}${esc(x.duration)}</span></div></span></${tag}>`;
         }).join('')}</div>
@@ -192,7 +188,7 @@ const UI = (() => {
 
       <div class="dock">${isHost()
         ? `<button class="alt" data-core="startGame" ${missing ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : `Lancer ${esc(g.name)}`}</button>`
-        : `<p>${name(S.hostId)} 👑 va lancer la partie…</p>`}</div>`;
+        : `<p>${name(S.hostId)} ${crown} va lancer la partie…</p>`}</div>`;
   }
 
   function soireeCard() {
@@ -200,9 +196,9 @@ const UI = (() => {
     const ranked = [...S.players].sort((a, b) => b.soiree - a.soiree);
     return `<div class="card">
       <h2>Classement de la soirée</h2>
-      ${ranked.map((p, i) => `<div class="score"><b>${i === 0 ? '👑' : i + 1}</b>${av(p)}<span class="n">${esc(p.name)}${p.id === S.you ? ' (toi)' : ''}</span><span class="p">${p.soiree}</span></div>`).join('')}
+      ${ranked.map((p, i) => `<div class="score"><b>${i === 0 ? crown : i + 1}</b>${av(p)}<span class="n">${esc(p.name)}${p.id === S.you ? ' (toi)' : ''}</span><span class="p">${p.soiree}</span></div>`).join('')}
       <details style="margin-top:10px"><summary>${S.history.length} partie${S.history.length > 1 ? 's' : ''} jouée${S.history.length > 1 ? 's' : ''}</summary>
-        ${S.history.map((h) => `<div class="muted" style="margin-top:6px">${gameInfo(h.gameId)?.emoji} ${esc(gameInfo(h.gameId)?.name)} : gagnée par ${h.winners.map(name).join(' & ')}</div>`).join('')}
+        ${S.history.map((h) => `<div class="muted" style="margin-top:6px;display:flex;align-items:center;gap:8px"><span class="mini" style="background:${gameInfo(h.gameId)?.color}">${ICONS.game(h.gameId)}</span> ${esc(gameInfo(h.gameId)?.name)} : gagnée par ${h.winners.map(name).join(' & ')}</div>`).join('')}
       </details>
       <p class="muted" style="font-size:.85rem;margin-bottom:0">À chaque partie, le premier gagne autant de points qu'il y a de joueurs, le dernier 1 point.</p>
     </div>`;
@@ -213,7 +209,7 @@ const UI = (() => {
       const g = gameInfo();
       const n = S.players.filter((p) => p.connected).length;
       const seats = Math.max(0, g.minPlayers - n);
-      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' 👑' : ''}${p.id === S.you ? ' (toi)' : ''}</span></div>`).join('')
+      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}</span></div>`).join('')
         + Array.from({ length: seats }, () => '<div class="player seat"><span class="av">?</span><span>En attente…</span></div>').join('');
     },
   };
@@ -242,7 +238,7 @@ const UI = (() => {
       else {
         const g = gameInfo();
         const quit = isHost() && S.game.phase !== 'end' ? '<a class="link" data-quit>Arrêter</a>' : '';
-        $app.innerHTML = `<div class="topbar"><span class="chip">${g.emoji} ${esc(g.name)}</span><span class="room">${quit}<span>Salon <b>${S.code}</b></span></span></div>` + mod.screen(S, S.game);
+        $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}</span><span class="room">${quit}<span>Salon <b>${S.code}</b></span></span></div>` + mod.screen(S, S.game);
         if (S.game.phase === 'end' && confettiFor !== S.history.length) { confettiFor = S.history.length; confetti(); }
       }
       bindCore();
