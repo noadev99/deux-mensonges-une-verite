@@ -12,6 +12,13 @@ const UI = (() => {
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
+  // Petites icônes au trait, dans le style des contours encre
+  const svg = (body) => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  const ICON = {
+    players: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 13.6c2.6.2 4.5 2.1 4.5 4.9"/>'),
+    clock: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9.5 2.5h5"/>'),
+  };
+
   // ─── Helpers partagés avec les jeux ──────────────────────────────────────
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const P = (id) => S && S.players.find((p) => p.id === id);
@@ -175,7 +182,7 @@ const UI = (() => {
           return `<${tag} class="gamecard ${x.id === S.gameId ? 'sel' : ''}" data-game="${x.id}" style="--c:${x.color}">
             <span class="lid"><span>${x.emoji}</span></span>
             <span class="info"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.tagline)}</div>
-            <div class="m"><span>👥 ${x.minPlayers} à ${x.maxPlayers}</span><span>⏱️ ${esc(x.duration)}</span></div></span></${tag}>`;
+            <div class="m"><span>${ICON.players}${x.minPlayers} à ${x.maxPlayers}</span><span>${ICON.clock}${esc(x.duration)}</span></div></span></${tag}>`;
         }).join('')}</div>
       </div>
 
