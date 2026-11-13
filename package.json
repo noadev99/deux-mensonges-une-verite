@@ -1,0 +1,16 @@
+{
+  "name": "deux-mensonges-une-verite",
+  "version": "1.0.0",
+  "description": "Jeu multijoueur : 2 mensonges, 1 vérité — devine qui a écrit, puis trouve la vraie anecdote",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
