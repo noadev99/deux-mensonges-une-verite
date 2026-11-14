@@ -166,7 +166,7 @@ function stateFor(ctx, g, pid) {
     needed: act.length,
   };
   if (g.phase === 'vote') {
-    s.options = g.options.map((o) => ({ text: o.text, mine: o.author === pid }));
+    s.options = g.options.map((o) => ({ text: o.text, mine: pid != null && o.author === pid }));
     s.myVote = g.votes[pid] ?? null;
     s.voted = act.filter((p) => p.id in g.votes).map((p) => p.id);
   }
