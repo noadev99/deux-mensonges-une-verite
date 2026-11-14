@@ -379,8 +379,8 @@ const UI = (() => {
 
       ${isHost() ? `<div class="card">
         <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
-        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${n < x.minPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}">
-          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${n < x.minPlayers ? `<small>${x.minPlayers} joueurs min.</small>` : ''}</button>`).join('')}</div>
+        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${n < x.minPlayers || n > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(n < x.minPlayers || n > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
+          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${n < x.minPlayers ? `<small>🔒 ${x.minPlayers} joueurs min.</small>` : n > x.maxPlayers ? `<small>🔒 ${x.maxPlayers} max.</small>` : ''}</button>`).join('')}</div>
       </div>` : ''}
       ${soireeCard()}
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>
@@ -421,7 +421,7 @@ const UI = (() => {
           <div class="card tv-games-card">
             <div class="cardhead"><h2>Les jeux</h2><span class="muted">${S.games.length} jeux · l'hôte choisit sur son téléphone</span></div>
             <div class="tv-games">${S.games.map((x) => `
-              <div class="tv-g ${x.id === S.gameId ? 'sel' : ''}" style="--c:${x.color}">
+              <div class="tv-g ${x.id === S.gameId ? 'sel' : ''} ${n < x.minPlayers ? 'few' : ''}" style="--c:${x.color}">
                 <span class="tv-gi">${ICONS.game(x.id)}</span>
                 <span class="tv-gn">${esc(x.name)}${x.id === S.gameId ? '<small>Choisi ✓</small>' : ''}</span>
               </div>`).join('')}</div>

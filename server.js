@@ -71,7 +71,7 @@ function newPlayer(room, name, look) {
 function newRoom() {
   const r = {
     code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
-    gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {}, used: new Map(),
+    gameId: catalog[0].id, wantedGame: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {}, used: new Map(),
   };
   rooms.set(r.code, r);
   return r;
@@ -189,7 +189,22 @@ function stateFor(room, pid) {
   return s;
 }
 
+// Dans le salon : si le jeu choisi n'est plus jouable avec ce nombre de joueurs,
+// on en sélectionne un qui l'est (ex. à 2 joueurs → Le ring savonneux)
+function fitGame(room) {
+  if (room.phase !== 'lobby') return;
+  const n = connected(room).length;
+  if (!n) return;
+  const ok = (g) => g && n >= g.minPlayers && n <= g.maxPlayers && (!g.requiresTv || room.screens.size > 0);
+  const wanted = GAMES[room.wantedGame || room.gameId];
+  if (ok(wanted)) { room.gameId = wanted.id; return; }      // le jeu choisi par l'hôte redevient jouable
+  if (ok(GAMES[room.gameId])) return;
+  const next = Object.values(GAMES).find(ok) || Object.values(GAMES).find((g) => n >= g.minPlayers && n <= g.maxPlayers);
+  if (next) room.gameId = next.id;
+}
+
 function broadcast(room) {
+  fitGame(room);
   room.v = (room.v || 0) + 1;
   for (const p of room.players.values()) {
     if (p.connected && p.socketId) io.to(p.socketId).emit('state', stateFor(room, p.id));
@@ -354,7 +369,12 @@ io.on('connection', (socket) => {
   // L'hôte choisit le jeu dans le salon
   socket.on('selectGame', (gameId) => {
     if (!isHost() || room.phase !== 'lobby' || !GAMES[gameId]) return;
+    // jeu bloqué tant qu'il n'y a pas assez de joueurs (ou trop)
+    const n = connected(room).length, g = GAMES[gameId];
+    if (n < g.minPlayers) return err(`${g.name} : il faut au moins ${g.minPlayers} joueurs (vous êtes ${n})`);
+    if (n > g.maxPlayers) return err(`${g.name} : ${g.maxPlayers} joueurs maximum`);
     room.gameId = gameId;
+    room.wantedGame = gameId; // choix de l'hôte, gardé même si le nombre de joueurs change
     broadcast(room);
   });
 
