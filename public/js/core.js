@@ -11,11 +11,12 @@ const UI = (() => {
   let lastKey = null;
   let confettiFor = null; // évite de relancer les confettis à chaque mise à jour
   // Mode salon : cette page est l'écran partagé (télé, ordi) d'un salon → ?ecran=CODE
-  const SCREEN = (new URLSearchParams(location.search).get('ecran') || '').toUpperCase();
+  let SCREEN = (new URLSearchParams(location.search).get('ecran') || '').toUpperCase();
   if (SCREEN) document.body.classList.add('tv');
   const joinUrl = (code) => `${location.origin}/?salon=${code}`;
   const qrImg = (code, cls = '') => `<img class="qr ${cls}" src="/api/qr?u=${encodeURIComponent(joinUrl(code))}" alt="QR code pour rejoindre le salon ${code}">`;
   let showQr = false; // QR code affiché dans le salon (téléphone)
+  let homeMode = 'phone'; // accueil : « sur mon téléphone » ou « mode télé »
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
@@ -150,6 +151,11 @@ const UI = (() => {
     else if (lastKey !== 'home') renderHome(); // ne pas effacer un pseudo en cours de saisie
   });
   socket.on('disconnect', () => setOffline(true));
+  socket.on('screenCreated', ({ code }) => {
+    SCREEN = code;
+    history.replaceState(null, '', `/?ecran=${code}`); // un rechargement garde l'écran sur ce salon
+    document.body.classList.add('tv');
+  });
   socket.on('watchFailed', () => {
     lastKey = 'tvmissing';
     $app.innerHTML = `<div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
@@ -229,10 +235,32 @@ const UI = (() => {
     document.body.style.removeProperty('--game');
     const code = new URLSearchParams(location.search).get('salon') || '';
     const boxes = catalog.map((g) => `<span class="box" style="background:${g.color}" title="${esc(g.name)}">${ICONS.game(g.id)}</span>`).join('');
+    const tabs = code ? '' : `<div class="modes" role="tablist">
+        <button class="mode ${homeMode === 'phone' ? 'sel' : ''}" data-mode="phone" role="tab" aria-selected="${homeMode === 'phone'}">📱 Sur mon téléphone</button>
+        <button class="mode ${homeMode === 'tv' ? 'sel' : ''}" data-mode="tv" role="tab" aria-selected="${homeMode === 'tv'}">📺 Mode télé</button>
+      </div>`;
+    if (!code && homeMode === 'tv') {
+      $app.innerHTML = `
+        <div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
+        <div class="boxes">${boxes}</div>
+        ${tabs}
+        <div class="card stack center">
+          <h2 style="margin:0">Le jeu en grand sur la télé</h2>
+          <p class="muted" style="margin:0">Ouvre cette page sur l'ordi branché à la télé. Il affiche un QR code : chacun le scanne avec son téléphone, qui devient sa manette. <b>Le premier à rejoindre devient l'hôte</b> et lance les jeux.</p>
+          <button class="full alt" id="createScreen" style="--game:var(--blue)">📺 Créer le salon sur cet écran</button>
+        </div>
+        <details class="card tvjoin"><summary>Afficher un salon déjà créé</summary>
+          <div class="row"><input id="tvcode" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" /><button class="alt" id="tvgo" style="flex:0 0 auto">Afficher</button></div>
+        </details>`;
+      document.getElementById('createScreen').onclick = () => socket.emit('createScreen');
+      document.getElementById('tvgo').onclick = () => { const c = document.getElementById('tvcode').value.trim().toUpperCase(); if (c.length === 4) location.href = `/?ecran=${c}`; };
+      $app.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { homeMode = b.dataset.mode; renderHome(); }));
+      return;
+    }
     $app.innerHTML = `
       <div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
       <div class="boxes">${boxes}</div>
-      <p class="tag">${catalog.length || 'Des'} jeux à jouer entre amis, chacun sur son téléphone.</p>
+      ${tabs}
       <div class="card stack">
         <label for="name"><h2 style="margin:0">Ton pseudo</h2></label>
         <input id="name" maxlength="20" placeholder="Ex. : Noa" autocomplete="nickname" value="${esc(localStorage.getItem('name') || '')}" />
@@ -244,19 +272,14 @@ const UI = (() => {
         <input id="code" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" value="${esc(code)}" />
         <button class="full alt" id="join" style="--game:var(--blue)">Rejoindre</button>
       </div>
-      ${code ? '<p class="center"><a class="link" href="/">Créer mon propre salon</a></p>' : `
-      <details class="card tvjoin"><summary>📺 Afficher un salon sur une télé ou un ordi</summary>
-        <p class="muted">Sur l'écran partagé, entre le code du salon : le jeu s'affiche en grand et les téléphones servent de manettes.</p>
-        <div class="row"><input id="tvcode" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" /><button class="alt" id="tvgo" style="flex:0 0 auto">Afficher</button></div>
-      </details>`}`;
+      ${code ? '<p class="center"><a class="link" href="/">Créer mon propre salon</a></p>' : ''}`;
+    $app.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { homeMode = b.dataset.mode; renderHome(); }));
     const getName = () => { const n = document.getElementById('name').value.trim(); localStorage.setItem('name', n); return n; };
     const c = document.getElementById('create');
     if (c) c.onclick = () => socket.emit('create', { name: getName() });
     const join = () => socket.emit('join', { name: getName(), code: document.getElementById('code').value });
     document.getElementById('join').onclick = join;
     document.getElementById('code').addEventListener('keydown', (e) => e.key === 'Enter' && join());
-    const tvgo = document.getElementById('tvgo');
-    if (tvgo) tvgo.onclick = () => { const c = document.getElementById('tvcode').value.trim().toUpperCase(); if (c.length === 4) location.href = `/?ecran=${c}`; };
   }
 
   // ─── Salon ────────────────────────────────────────────────────────────────
@@ -271,7 +294,7 @@ const UI = (() => {
       <div class="invite">
         <button class="ghost" data-invite>${ICON.send} Inviter</button>
         <button class="ghost" data-qr>${showQr ? 'Cacher le QR code' : '▦ QR code'}</button>
-        <button class="ghost" data-tv>📺 Mode salon</button>
+        ${S.tv ? '' : '<button class="ghost" data-tv>📺 Mode salon</button>'}
       </div>
       ${showQr ? `<div class="card center qrcard">${qrImg(S.code)}<p class="muted" style="margin:8px 0 0">Scanne avec l'appareil photo pour rejoindre</p></div>` : ''}
       ${S.tv ? '<p class="center white tvon">📺 Un écran est connecté : le jeu s\'affiche dessus, les téléphones servent de manettes.</p>' : ''}
@@ -342,7 +365,7 @@ const UI = (() => {
             ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : ''}
           </div>
           ${soireeCard()}
-          <p class="center white">${name(S.hostId)} ${crown} lance la partie depuis son téléphone</p>
+          <p class="center white">${P(S.hostId) ? `${name(S.hostId)} ${crown} lance la partie depuis son téléphone` : `En attente des joueurs… <b>le premier à rejoindre sera l'hôte</b> ${crown}`}</p>
         </div>
       </div>`;
   }

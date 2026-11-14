@@ -59,6 +59,15 @@ function newPlayer(room, name) {
   return p;
 }
 
+function newRoom() {
+  const r = {
+    code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
+    gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {},
+  };
+  rooms.set(r.code, r);
+  return r;
+}
+
 const connected = (room) => [...room.players.values()].filter((p) => p.connected);
 
 // Retire seulement les joueurs absents depuis plus de 20 min (partis pour de bon)
@@ -205,11 +214,7 @@ io.on('connection', (socket) => {
   socket.on('create', ({ name } = {}) => {
     name = String(name || '').trim();
     if (!name) return err('Choisis un pseudo');
-    const r = {
-      code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
-      gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {},
-    };
-    rooms.set(r.code, r);
+    const r = newRoom();
     const p = newPlayer(r, name);
     r.hostId = p.id;
     attach(r, p);
@@ -227,7 +232,9 @@ io.on('connection', (socket) => {
     if (same) return err('Ce pseudo est déjà pris');
     if (r.phase !== 'lobby') return err('Une partie est en cours : attends la fin, ou reprends ta place avec ton ancien pseudo');
     if (r.players.size >= MAX_PLAYERS) return err('Salon plein');
-    attach(r, newPlayer(r, name));
+    const p = newPlayer(r, name);
+    if (!r.hostId || !r.players.has(r.hostId)) r.hostId = p.id; // salon créé par un écran : le 1er joueur est l'hôte
+    attach(r, p);
   });
 
   socket.on('rejoin', ({ code, playerId } = {}) => {
@@ -250,6 +257,15 @@ io.on('connection', (socket) => {
 
   // Écran partagé (télé / ordi) : il regarde le salon sans être un joueur
   let watching = null;
+  // Mode télé : l'écran crée lui-même le salon (sans joueur), les téléphones le rejoignent avec le QR code
+  socket.on('createScreen', () => {
+    if (watching) watching.screens.delete(socket.id);
+    const r = newRoom();
+    watching = r;
+    r.screens.add(socket.id);
+    socket.emit('screenCreated', { code: r.code });
+    broadcast(r);
+  });
   socket.on('watch', ({ code } = {}) => {
     const r = rooms.get(String(code || '').trim().toUpperCase());
     if (!r) return socket.emit('watchFailed');
@@ -321,7 +337,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    if (watching) { watching.screens.delete(socket.id); broadcast(watching); watching = null; }
+    if (watching) {
+      const w = watching;
+      w.screens.delete(socket.id);
+      broadcast(w);
+      watching = null;
+      // salon sans joueur connecté ni écran : supprimé au bout de 10 min
+      setTimeout(() => { if (rooms.get(w.code) === w && !connected(w).length && !w.screens.size) rooms.delete(w.code); }, 10 * 60 * 1000);
+    }
     if (!room || !player) return;
     const r = room;
     const p = player;
