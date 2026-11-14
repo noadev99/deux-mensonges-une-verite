@@ -72,6 +72,19 @@ const UI = (() => {
       <div class="bar" style="height:${h[i]}px;background:${col[i]}">${pos[i]}</div></div>` : '<div class="col"></div>').join('')}</div>`;
   }
 
+  // Chrono : <span class="timer"> mis à jour toutes les 250 ms à partir du temps restant envoyé par le serveur
+  const timer = (remaining) => remaining > 0 ? `<span class="timer" data-ends="${Date.now() + remaining}">${Math.ceil(remaining / 1000)} s</span>` : '';
+  setInterval(() => {
+    document.querySelectorAll('.timer[data-ends]').forEach((el) => {
+      const left = Math.max(0, Number(el.dataset.ends) - Date.now());
+      const sec = Math.ceil(left / 1000);
+      el.textContent = sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}` : `${sec} s`;
+      el.classList.toggle('hurry', left < 10000);
+    });
+  }, 250);
+  // Temps restant (ms) du chrono affiché, pour envoyer automatiquement juste avant la fin
+  const timeLeft = () => { const el = document.querySelector('.timer[data-ends]'); return el ? Number(el.dataset.ends) - Date.now() : Infinity; };
+
   // Barre de progression + titre de phase
   const header = (round, total, step, title) => `
     <div class="progress"><div style="width:${total ? ((round - 1) / total) * 100 : 0}%"></div></div>
@@ -321,6 +334,7 @@ const UI = (() => {
     // helpers pour les jeux
     esc, P, av, name, isHost, send, toast, hostButton, forceLink, scoreboard, podium, endFooter,
     header, gainsBlock, gainTotals, playerGrid, endScreen,
+    timer, timeLeft,
     get state() { return S; },
   };
 })();

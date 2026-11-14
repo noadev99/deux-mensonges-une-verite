@@ -1,199 +1,192 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // 🎭 2 Mensonges, 1 Vérité
-// Chacun écrit 3 anecdotes (2 fausses, 1 vraie). Pour chaque joueur :
-//   1) on devine QUI a écrit, 2) on devine LAQUELLE est vraie.
+// 1) Chacun écrit 3 anecdotes (2 fausses, 1 vraie)          — chrono 3 min
+// 2) Grand jeu d'association : toutes les séries s'affichent sans nom,
+//    chacun attribue chaque série à un joueur                — chrono selon le nb de séries
+// 3) Révélation de tous les auteurs d'un coup
+// 4) Pour chaque série : « Laquelle est vraie ? »            — chrono 45 s
+//    puis révélation, puis « Raconte ! » : l'auteur raconte l'histoire vraie
 // ─────────────────────────────────────────────────────────────────────────────
+const { shuffle, gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const PTS = {
-  AUTHOR_FOUND: 100, // tu as reconnu l'auteur
+  AUTHOR_FOUND: 100, // tu as reconnu l'auteur d'une série
   INCOGNITO: 50,     // (auteur) par joueur qui ne t'a pas reconnu
   GHOST: 100,        // (auteur) personne ne t'a reconnu
-  SCAPEGOAT: 25,     // tu es innocent mais quelqu'un t'a accusé
   TRUE_FOUND: 100,   // tu as trouvé la vraie anecdote
-  DOUBLE: 50,        // auteur ET vraie anecdote trouvés
+  DOUBLE: 50,        // bon auteur ET bonne anecdote sur la même série
   FOOLED: 75,        // (auteur) par joueur berné par un mensonge
   PERFECT_LIE: 150,  // (auteur) personne n'a trouvé la vraie
 };
-
-const shuffle = (a) => {
-  const arr = [...a];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+const TIME = {
+  writing: 180000,                          // 3 min pour écrire
+  match: (sets) => 45000 + sets * 20000,    // lecture + association
+  vote: 45000,                              // vote « laquelle est vraie »
 };
-
-const blankStats = () => ({ authorFound: 0, trueFound: 0, fooled: 0, incognito: 0, accused: 0 });
+const LABELS = 'ABCDEFGHIJKLMNOP';
 
 // ─── Cycle de vie ────────────────────────────────────────────────────────────
 function create(ctx) {
-  const g = { phase: 'writing', anecdotes: {}, scores: {}, stats: {}, order: [], roundIndex: 0, current: null };
-  for (const p of ctx.players()) {
-    g.scores[p.id] = 0;
-    g.stats[p.id] = blankStats();
-  }
+  const { scores, stats } = initScores(ctx, ['authorFound', 'trueFound', 'fooled', 'incognito']);
+  const g = { scores, stats, anecdotes: {}, sets: [], matches: {}, round: 0, trueVotes: {} };
+  setPhase(ctx, g, 'writing', TIME.writing, () => { if (Object.keys(g.anecdotes).length >= 2) startMatch(ctx, g); });
   return g;
 }
 
-// joueurs de la partie encore connectés
-const active = (ctx, g) => ctx.connected().filter((p) => p.id in g.scores);
-
-function startRound(g) {
-  const authorId = g.order[g.roundIndex];
-  const items = shuffle(g.anecdotes[authorId]);
-  g.current = {
-    authorId,
-    items,
-    trueIndex: items.findIndex((i) => i.isTrue),
-    authorVotes: {},
-    trueVotes: {},
-    foundAuthor: [],
-    authorGains: null,
-    trueGains: null,
-  };
-  g.phase = 'guessAuthor';
+// Change de phase avec un chrono : à la fin du temps, `onTimeout` est appelé
+function setPhase(ctx, g, phase, ms, onTimeout) {
+  g.phase = phase;
+  g.deadline = ms ? Date.now() + ms : null;
+  if (!ms) return;
+  const stamp = (g.stamp = (g.stamp || 0) + 1); // identifie cette phase précise
+  // setImmediate : à la création, la partie n'est pas encore enregistrée dans le salon
+  setImmediate(() => ctx.schedule(ms + 1000, () => { if (g.stamp === stamp) onTimeout(); }));
 }
 
-function beginRounds(g) {
-  g.order = shuffle(Object.keys(g.anecdotes));
-  g.roundIndex = 0;
-  startRound(g);
+function startMatch(ctx, g) {
+  g.sets = shuffle(Object.keys(g.anecdotes)).map((authorId, i) => {
+    const items = shuffle(g.anecdotes[authorId]);
+    return { label: LABELS[i], authorId, items, trueIndex: items.findIndex((x) => x.isTrue) };
+  });
+  g.matches = {};
+  setPhase(ctx, g, 'match', TIME.match(g.sets.length), () => revealMatch(ctx, g));
 }
 
-function gain(gains, pid, pts, label) {
-  if (!gains[pid]) gains[pid] = { total: 0, reasons: [] };
-  gains[pid].total += pts;
-  gains[pid].reasons.push({ pts, label });
-}
+const authors = (g) => g.sets.map((s) => s.authorId);
+// joueurs que `pid` peut désigner : les auteurs, sauf lui-même
+const candidatesFor = (g, pid) => authors(g).filter((a) => a !== pid);
+// séries que `pid` doit attribuer : toutes sauf la sienne
+const setsFor = (g, pid) => g.sets.map((s, i) => i).filter((i) => g.sets[i].authorId !== pid);
 
-function applyGains(g, gains) {
-  for (const [pid, x] of Object.entries(gains)) if (pid in g.scores) g.scores[pid] += x.total;
-}
+function nameOf(ctx, id) { return ctx.player(id)?.name ?? '?'; }
 
-const nameOf = (ctx, id) => ctx.player(id)?.name ?? '?';
-
-function revealAuthor(ctx, g) {
-  const c = g.current;
+function revealMatch(ctx, g) {
   const gains = {};
-  const votes = Object.entries(c.authorVotes).filter(([v]) => v !== c.authorId);
-  for (const [voter, target] of votes) {
-    if (target === c.authorId) {
-      gain(gains, voter, PTS.AUTHOR_FOUND, `A démasqué ${nameOf(ctx, c.authorId)} 🔍`);
-      c.foundAuthor.push(voter);
-      g.stats[voter].authorFound++;
-    } else {
-      gain(gains, c.authorId, PTS.INCOGNITO, `Incognito face à ${nameOf(ctx, voter)} 🥸`);
-      g.stats[c.authorId].incognito++;
-      if (target in g.scores) {
-        gain(gains, target, PTS.SCAPEGOAT, `Accusé à tort par ${nameOf(ctx, voter)} 🫣`);
-        g.stats[target].accused++;
+  g.found = g.sets.map(() => []); // found[i] = joueurs qui ont reconnu l'auteur de la série i
+  const tried = g.sets.map(() => 0);
+  for (const [pid, m] of Object.entries(g.matches)) {
+    for (const [i, guess] of Object.entries(m)) {
+      const s = g.sets[i];
+      if (!s || s.authorId === pid) continue;
+      tried[i]++;
+      if (guess === s.authorId) {
+        g.found[i].push(pid);
+        gain(gains, pid, PTS.AUTHOR_FOUND, `A reconnu ${nameOf(ctx, s.authorId)} (série ${s.label}) 🔍`);
+        g.stats[pid].authorFound++;
+      } else {
+        gain(gains, s.authorId, PTS.INCOGNITO, `Incognito face à ${nameOf(ctx, pid)} 🥸`);
+        g.stats[s.authorId].incognito++;
       }
     }
   }
-  if (votes.length > 0 && c.foundAuthor.length === 0) gain(gains, c.authorId, PTS.GHOST, "Fantôme : personne ne t'a reconnu 👻");
-  applyGains(g, gains);
-  c.authorGains = gains;
-  g.phase = 'revealAuthor';
+  g.sets.forEach((s, i) => { if (tried[i] > 0 && g.found[i].length === 0) gain(gains, s.authorId, PTS.GHOST, 'Fantôme : personne ne t\'a reconnu 👻'); });
+  applyGains(g.scores, gains);
+  g.matchGains = gains;
+  setPhase(ctx, g, 'matchReveal');
+}
+
+function startRound(ctx, g, i) {
+  g.round = i;
+  g.trueVotes = {};
+  g.trueGains = null;
+  setPhase(ctx, g, 'guessTrue', TIME.vote, () => revealTrue(ctx, g));
 }
 
 function revealTrue(ctx, g) {
-  const c = g.current;
+  const s = g.sets[g.round];
   const gains = {};
   let found = 0;
-  const votes = Object.entries(c.trueVotes);
+  const votes = Object.entries(g.trueVotes);
   for (const [voter, idx] of votes) {
-    if (idx === c.trueIndex) {
+    if (idx === s.trueIndex) {
       found++;
       gain(gains, voter, PTS.TRUE_FOUND, 'A trouvé la vérité ✅');
       g.stats[voter].trueFound++;
-      if (c.foundAuthor.includes(voter)) gain(gains, voter, PTS.DOUBLE, 'Double détective 🕵️');
+      if (g.found[g.round].includes(voter)) gain(gains, voter, PTS.DOUBLE, 'Double détective : bon auteur + bonne vérité 🕵️');
     } else {
-      gain(gains, c.authorId, PTS.FOOLED, `A berné ${nameOf(ctx, voter)} 🤥`);
-      g.stats[c.authorId].fooled++;
+      gain(gains, s.authorId, PTS.FOOLED, `A berné ${nameOf(ctx, voter)} 🤥`);
+      g.stats[s.authorId].fooled++;
     }
   }
-  if (votes.length > 0 && found === 0) gain(gains, c.authorId, PTS.PERFECT_LIE, "Mensonge parfait : tout le monde s'est fait avoir 🎭");
-  applyGains(g, gains);
-  c.trueGains = gains;
-  g.phase = 'revealTrue';
+  if (votes.length > 0 && found === 0) gain(gains, s.authorId, PTS.PERFECT_LIE, 'Mensonge parfait : tout le monde s\'est fait avoir 🎭');
+  applyGains(g.scores, gains);
+  g.trueGains = gains;
+  setPhase(ctx, g, 'revealTrue');
 }
 
 function finish(ctx, g) {
-  g.phase = 'end';
-  g.current = null;
-  g.awards = computeAwards(g);
+  setPhase(ctx, g, 'end');
+  g.awards = awards(g.stats, [
+    ['authorFound', 'Sherlock', '🔍', "a reconnu le plus d'auteurs"],
+    ['trueFound', 'Détecteur de mensonges', '🧠', 'a trouvé le plus de vérités'],
+    ['fooled', 'Grand Mytho', '🤥', 'a berné le plus de monde'],
+    ['incognito', 'Caméléon', '🦎', 'est passé le plus inaperçu'],
+  ]);
   ctx.endGame(g.scores);
 }
 
-function computeAwards(g) {
-  const ids = Object.keys(g.stats);
-  const best = (key, title, emoji, desc) => {
-    const max = Math.max(0, ...ids.map((id) => g.stats[id][key]));
-    if (max <= 0) return null;
-    return { title, emoji, desc, value: max, winners: ids.filter((id) => g.stats[id][key] === max) };
-  };
-  return [
-    best('authorFound', 'Sherlock', '🔍', "a démasqué le plus d'auteurs"),
-    best('trueFound', 'Détecteur de mensonges', '🧠', 'a trouvé le plus de vérités'),
-    best('fooled', 'Grand Mytho', '🤥', 'a berné le plus de monde'),
-    best('incognito', 'Caméléon', '🦎', 'est passé le plus inaperçu'),
-    best('accused', 'Suspect n°1', '🚨', 'a été accusé à tort le plus souvent'),
-  ].filter(Boolean);
-}
-
-// Avance automatiquement quand tout le monde a joué
+// Avance dès que tous les joueurs présents ont joué
 function autoAdvance(ctx, g) {
   const act = active(ctx, g);
-  const c = g.current;
+  if (!act.length) return;
   if (g.phase === 'writing') {
-    if (act.length && act.every((p) => p.id in g.anecdotes)) beginRounds(g);
-  } else if (g.phase === 'guessAuthor') {
-    if (act.every((p) => p.id in c.authorVotes)) revealAuthor(ctx, g);
+    if (act.every((p) => p.id in g.anecdotes)) startMatch(ctx, g);
+  } else if (g.phase === 'match') {
+    if (act.every((p) => p.id in g.matches || setsFor(g, p.id).length === 0)) revealMatch(ctx, g);
   } else if (g.phase === 'guessTrue') {
-    if (act.filter((p) => p.id !== c.authorId).every((p) => p.id in c.trueVotes)) revealTrue(ctx, g);
+    const author = g.sets[g.round].authorId;
+    if (act.filter((p) => p.id !== author).every((p) => p.id in g.trueVotes)) revealTrue(ctx, g);
   }
 }
 
 // ─── Actions des joueurs ─────────────────────────────────────────────────────
 function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
-  const c = g.current;
 
   switch (type) {
     case 'submit': {
       if (g.phase !== 'writing') return;
       const { texts, trueIndex } = payload || {};
       if (!Array.isArray(texts) || texts.length !== 3) return { error: 'Il faut 3 anecdotes' };
-      const clean = texts.map((t) => String(t || '').trim().slice(0, 280));
+      const clean = texts.map((t) => String(t || '').trim().replace(/\s+/g, ' ').slice(0, 200));
       if (clean.some((t) => t.length < 3)) return { error: 'Remplis bien les 3 anecdotes' };
-      if (![0, 1, 2].includes(trueIndex)) return { error: 'Indique laquelle est vraie' };
+      if (![0, 1, 2].includes(trueIndex)) return { error: 'Coche celle qui est vraie' };
       g.anecdotes[pid] = clean.map((text, i) => ({ text, isTrue: i === trueIndex }));
       break;
     }
     case 'edit':
       if (g.phase === 'writing') delete g.anecdotes[pid];
+      if (g.phase === 'match') delete g.matches[pid];
+      return;
+    case 'match': {
+      if (g.phase !== 'match') return;
+      const cand = candidatesFor(g, pid);
+      const mine = setsFor(g, pid);
+      const m = {};
+      for (const [k, v] of Object.entries(payload || {})) {
+        const i = Number(k);
+        if (mine.includes(i) && cand.includes(v)) m[i] = v;
+      }
+      if (new Set(Object.values(m)).size !== Object.values(m).length) return { error: 'Chaque joueur ne peut être choisi qu\'une fois' };
+      g.matches[pid] = m;
       break;
-    case 'voteAuthor':
-      if (g.phase !== 'guessAuthor' || payload === pid || !(payload in g.scores)) return;
-      c.authorVotes[pid] = payload;
-      break;
+    }
     case 'voteTrue':
-      if (g.phase !== 'guessTrue' || pid === c.authorId || ![0, 1, 2].includes(payload)) return;
-      c.trueVotes[pid] = payload;
+      if (g.phase !== 'guessTrue' || pid === g.sets[g.round].authorId || ![0, 1, 2].includes(payload)) return;
+      g.trueVotes[pid] = payload;
       break;
-    case 'next': // l'hôte avance ou force
+    case 'next': // l'hôte fait avancer (ou force les retardataires)
       if (!isHost) return;
       if (g.phase === 'writing') {
         if (Object.keys(g.anecdotes).length < 2) return { error: 'Il faut au moins 2 joueurs prêts' };
-        beginRounds(g);
-      } else if (g.phase === 'guessAuthor') revealAuthor(ctx, g);
-      else if (g.phase === 'revealAuthor') g.phase = 'guessTrue';
+        startMatch(ctx, g);
+      } else if (g.phase === 'match') revealMatch(ctx, g);
+      else if (g.phase === 'matchReveal') startRound(ctx, g, 0);
       else if (g.phase === 'guessTrue') revealTrue(ctx, g);
-      else if (g.phase === 'revealTrue') {
-        g.roundIndex++;
-        if (g.roundIndex >= g.order.length) return finish(ctx, g);
-        startRound(g);
+      else if (g.phase === 'revealTrue') setPhase(ctx, g, 'story');
+      else if (g.phase === 'story') {
+        if (g.round + 1 >= g.sets.length) finish(ctx, g);
+        else startRound(ctx, g, g.round + 1);
       }
       return;
     default:
@@ -202,53 +195,61 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   autoAdvance(ctx, g);
 }
 
-function onPlayersChanged(ctx, g) {
-  autoAdvance(ctx, g);
-}
-
-// ─── Vue personnalisée (on cache les secrets) ────────────────────────────────
+// ─── Vue personnalisée (aucun secret envoyé avant l'heure) ───────────────────
 function stateFor(ctx, g, pid) {
+  const act = active(ctx, g);
   const s = {
     phase: g.phase,
     scores: g.scores,
     points: PTS,
-    round: g.roundIndex + 1,
-    totalRounds: g.order.length,
-    submitted: Object.keys(g.anecdotes),
     participants: Object.keys(g.scores),
+    remaining: g.deadline ? Math.max(0, g.deadline - Date.now()) : 0,
+    round: g.round + 1,
+    totalRounds: g.sets.length,
   };
-  if (g.phase === 'writing') s.myAnecdotes = g.anecdotes[pid] || null;
 
-  const c = g.current;
-  if (c) {
-    const isAuthor = c.authorId === pid;
-    const cur = { items: c.items.map((i) => i.text), isAuthor };
-    if (g.phase !== 'guessAuthor') cur.authorId = c.authorId;
-    if (isAuthor || g.phase === 'revealTrue') cur.trueIndex = c.trueIndex;
-
-    const act = active(ctx, g);
-    if (g.phase === 'guessAuthor') {
-      cur.myVote = c.authorVotes[pid] ?? null;
-      cur.voted = Object.keys(c.authorVotes).length;
-      cur.needed = act.length;
-    }
-    if (g.phase === 'guessTrue') {
-      cur.myVote = c.trueVotes[pid] ?? null;
-      const voters = act.filter((p) => p.id !== c.authorId);
-      cur.voted = Object.keys(c.trueVotes).length;
-      cur.needed = voters.length;
-      cur.waitingFor = voters.filter((p) => !(p.id in c.trueVotes)).map((p) => p.id);
-    }
-    if (['revealAuthor', 'guessTrue', 'revealTrue'].includes(g.phase)) {
-      cur.authorVotes = Object.fromEntries(Object.entries(c.authorVotes).filter(([v]) => v !== c.authorId));
-      cur.authorGains = c.authorGains;
-    }
-    if (g.phase === 'revealTrue') {
-      cur.trueVotes = c.trueVotes;
-      cur.trueGains = c.trueGains;
-    }
-    s.current = cur;
+  if (g.phase === 'writing') {
+    s.myAnecdotes = g.anecdotes[pid] || null;
+    s.submitted = Object.keys(g.anecdotes);
   }
+
+  if (g.phase === 'match') {
+    s.sets = g.sets.map((x) => ({ label: x.label, items: x.items.map((i) => i.text), mine: x.authorId === pid }));
+    s.candidates = candidatesFor(g, pid);
+    s.myMatch = g.matches[pid] ?? null;
+    s.matched = act.filter((p) => p.id in g.matches).map((p) => p.id);
+    s.needed = act.filter((p) => setsFor(g, p.id).length > 0).length;
+  }
+
+  if (g.phase === 'matchReveal') {
+    s.sets = g.sets.map((x, i) => ({
+      label: x.label, authorId: x.authorId, items: x.items.map((it) => it.text),
+      found: g.found[i], myGuess: g.matches[pid]?.[i] ?? null, mine: x.authorId === pid,
+    }));
+    s.matchGains = g.matchGains;
+  }
+
+  if (['guessTrue', 'revealTrue', 'story'].includes(g.phase)) {
+    const x = g.sets[g.round];
+    const isAuthor = x.authorId === pid;
+    s.current = {
+      label: x.label, authorId: x.authorId, isAuthor,
+      items: x.items.map((i) => i.text),
+      foundAuthor: g.found[g.round],
+    };
+    if (isAuthor || g.phase !== 'guessTrue') s.current.trueIndex = x.trueIndex;
+    if (g.phase === 'guessTrue') {
+      const voters = act.filter((p) => p.id !== x.authorId);
+      s.current.myVote = g.trueVotes[pid] ?? null;
+      s.current.voted = Object.keys(g.trueVotes).length;
+      s.current.needed = voters.length;
+      s.current.waitingFor = voters.filter((p) => !(p.id in g.trueVotes)).map((p) => p.id);
+    } else {
+      s.current.trueVotes = g.trueVotes;
+      s.current.trueGains = g.trueGains;
+    }
+  }
+
   if (g.phase === 'end') s.awards = g.awards;
   return s;
 }
@@ -259,12 +260,12 @@ module.exports = {
   name: '2 Mensonges, 1 Vérité',
   emoji: '🎭',
   tagline: 'Devine qui a écrit… puis démasque le menteur.',
-  description: "Chacun écrit 3 anecdotes sur lui, dont 1 seule vraie. Devinez d'abord qui les a écrites, puis laquelle est vraie.",
+  description: "Chacun écrit 3 anecdotes sur lui, dont 1 seule vraie. Associez chaque série à son auteur, puis trouvez la vraie.",
   minPlayers: 3,
-  maxPlayers: 16,
+  maxPlayers: 12,
   duration: '20–40 min',
   create,
   onAction,
-  onPlayersChanged,
+  onPlayersChanged: autoAdvance,
   stateFor,
 };
