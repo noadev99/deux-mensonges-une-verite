@@ -447,3 +447,11 @@ body.tv .qr.mini { width: 64px; height: 64px; padding: 3px; border-width: 2px; b
 .dm-nums { display: grid; gap: 10px; }
 .dm-num { font-family: var(--display); font-weight: 400; font-size: 1.3rem; padding: 16px; background: var(--game-soft); }
 .dm-tvsets { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0 18px; }
+
+/* ─── Options d'un jeu (thème…) ─── */
+.optcard h2 { margin-bottom: 10px; }
+.opts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.opt { display: flex; flex-direction: column; gap: 3px; text-align: left; background: var(--paper); padding: 12px 14px; }
+.opt small { font-weight: 400; color: var(--muted); font-size: .85rem; line-height: 1.3; }
+.opt.sel { background: var(--game); box-shadow: var(--pop); transform: translate(-2px, -2px); }
+.opt.sel small { color: var(--ink); }

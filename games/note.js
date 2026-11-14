@@ -12,6 +12,38 @@ const TIME = { write: 150000, guess: 40000, oral: 100000 }; // à l'oral : le te
 // points selon l'écart entre la note devinée et la vraie
 const PTS = { 0: 100, 1: 60, 2: 30 };
 
+// Thème Animé / Manga : « si tu étais un personnage… »
+const ANIME = [
+  ['Si tu étais un pirate dans One Piece, décris ton fruit du démon', 'Nul', 'Surpuissant'],
+  ['Décris ta prime de pirate et comment tu l\'as obtenue', 'Quelques pièces', 'Prime record'],
+  ['Décris ton équipage pirate', 'Bande de bras cassés', 'Équipage d\'Empereur'],
+  ['Décris ta technique secrète de ninja (Naruto)', 'Ridicule', 'Légendaire'],
+  ['Raconte ton examen pour devenir ninja', 'Recalé direct', 'Major de la promo'],
+  ['Décris ta transformation façon Dragon Ball', 'Petit boost', 'Puissance divine'],
+  ['Raconte ton tournoi d\'arts martiaux', 'Éliminé au 1er tour', 'Champion'],
+  ['Raconte ton premier combat contre un démon (Demon Slayer)', 'Défaite humiliante', 'Victoire épique'],
+  ['Décris ton Alter (My Hero Academia)', 'Inutile', 'Héros n°1'],
+  ['Raconte ta première mission dans le Bataillon d\'exploration (L\'Attaque des Titans)', 'Panique totale', 'Héros de l\'humanité'],
+  ['Décris ton équipe Pokémon', 'Équipe de débutant', 'Équipe de champion'],
+  ['Raconte ton examen de Hunter (Hunter x Hunter)', 'Éliminé direct', 'Hunter légendaire'],
+  ['Décris ta technique d\'exorcisme (Jujutsu Kaisen)', '4ᵉ classe', 'Classe spéciale'],
+  ['Si tu trouvais un Death Note, raconte ce que tu ferais', 'Gentil', 'Machiavélique'],
+  ['Raconte ton arrivée dans un autre monde (isekai)', 'Mort au bout de 5 min', 'Roi du nouveau monde'],
+  ['Décris ton rival d\'anime', 'Pas menaçant du tout', 'Ennemi ultime'],
+  ['Raconte ton entraînement avec un vieux maître', 'Abandon le 1er jour', 'Disciple prodige'],
+  ['Décris ton cri d\'attaque spéciale', 'Gênant', 'Iconique'],
+  ['Raconte ton combat final contre le grand méchant', 'Écrasé', 'Victoire légendaire'],
+  ['Décris l\'opening de l\'anime de ta vie', 'Raté', 'Culte'],
+  ['Décris ton robot géant', 'Tas de ferraille', 'Machine ultime'],
+  ['Raconte ta scène de flashback tragique', 'Pas triste du tout', 'Tout le monde pleure'],
+  ['Décris ton pouvoir de héros de shōnen', 'Pouvoir inutile', 'Pouvoir cheaté'],
+  ['Décris ta créature magique de compagnie', 'Ridicule', 'Terrifiante'],
+  ['Raconte ton arc d\'entraînement dans la montagne', 'Vacances', 'Transformation totale'],
+  ['Décris ton uniforme de héros', 'Pyjama', 'Tenue légendaire'],
+  ['Raconte comment tu sauves tes amis au dernier moment', 'Trop tard', 'Entrée mythique'],
+  ['Décris ton école de magie / académie de héros', 'École pourrie', 'Académie d\'élite'],
+];
+
 const PROMPTS = [
   ['Raconte un rendez-vous amoureux', 'Catastrophe', 'Parfait'],
   ['Raconte ton dernier repas au resto', 'Immangeable', 'Délicieux'],
@@ -48,7 +80,7 @@ const PROMPTS = [
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['exact', 'close', 'readable']);
   const ids = Object.keys(scores);
-  const prompts = sample(PROMPTS, ids.length);
+  const prompts = sample(ctx.option('pack') === 'anime' ? ANIME : PROMPTS, ids.length);
   const tasks = {};
   let last = -1;
   ids.forEach((id, i) => {
@@ -198,6 +230,14 @@ module.exports = {
   maxPlayers: 12,
   duration: '15–25 min',
   oral: true, // version « on raconte à voix haute »
+  // thème des histoires, choisi par l'hôte dans le salon
+  options: [{
+    key: 'pack', label: 'Thème des histoires', default: 'classique',
+    choices: [
+      { value: 'classique', label: 'Classique', hint: 'Rendez-vous, vacances, karaoké…' },
+      { value: 'anime', label: 'Animé / Manga ⛩️', hint: 'Si tu étais un perso de One Piece, Naruto, Dragon Ball…' },
+    ],
+  }],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

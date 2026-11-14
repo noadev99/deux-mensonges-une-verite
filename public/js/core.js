@@ -292,6 +292,7 @@ const UI = (() => {
         }).join('')}</div>
       </div>
 
+      ${optionsCard(g)}
       ${g.oral ? `<div class="card oralcard">
         <div class="cardhead"><h2>🎤 Réponses à l'oral</h2>${isHost()
           ? `<button class="switch ${S.oral ? 'on' : ''}" data-oral aria-pressed="${S.oral}"><span></span></button>`
@@ -305,6 +306,21 @@ const UI = (() => {
       <div class="dock">${isHost()
         ? `<button class="alt" data-core="startGame" ${missing ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : `Lancer ${esc(g.name)}`}</button>`
         : `<p>${name(S.hostId)} ${crown} va lancer la partie…</p>`}</div>`;
+  }
+
+  // Options du jeu (ex. thème) : l'hôte choisit, les autres voient le choix
+  function optionsCard(g) {
+    if (!g.options?.length) return '';
+    return g.options.map((o) => {
+      const cur = S.options?.[o.key] ?? o.default;
+      const choice = o.choices.find((c) => c.value === cur) || o.choices[0];
+      return `<div class="card optcard"><h2>${esc(o.label)}</h2>
+        ${isHost()
+          ? `<div class="opts">${o.choices.map((c) => `<button class="opt ${c.value === cur ? 'sel' : ''}" data-opt-key="${esc(o.key)}" data-opt-value="${esc(c.value)}">
+              <b>${esc(c.label)}</b>${c.hint ? `<small>${esc(c.hint)}</small>` : ''}</button>`).join('')}</div>`
+          : `<p style="margin:0"><b>${esc(choice.label)}</b>${choice.hint ? ` <span class="muted">· ${esc(choice.hint)}</span>` : ''}</p>`}
+      </div>`;
+    }).join('');
   }
 
   function tvLobby() {
@@ -322,7 +338,7 @@ const UI = (() => {
           <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players" data-live="lobbyPlayers"></div></div>
           <div class="card tv-game" style="--c:${g.color}">
             <div class="gamecard sel" style="--c:${g.color}"><span class="lid">${ICONS.game(g.id)}</span><span class="info"><div class="t">${esc(g.name)}</div><div class="d">${esc(g.tagline)}</div>
-              ${S.oral && g.oral ? '<div class="m"><span>🎤 à l\'oral</span></div>' : ''}</span></div>
+              <div class="m">${S.oral && g.oral ? '<span>🎤 à l\'oral</span>' : ''}${(g.options || []).map((o) => { const c = o.choices.find((x) => x.value === (S.options?.[o.key] ?? o.default)); return c ? `<span>${esc(c.label)}</span>` : ''; }).join('')}</div></span></div>
             ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : ''}
           </div>
           ${soireeCard()}
@@ -357,7 +373,7 @@ const UI = (() => {
   // ─── Rendu ────────────────────────────────────────────────────────────────
   function screenKey() {
     if (S.phase === 'lobby') {
-      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length, S.tv, S.oral, showQr].join('|');
+      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length, S.tv, S.oral, showQr, JSON.stringify(S.options)].join('|');
     }
     const mod = GAMES[S.gameId];
     return ['game', S.gameId, S.hostId, S.tv, mod.key ? mod.key(S, S.game) : S.game.phase].join('|');
@@ -420,6 +436,7 @@ const UI = (() => {
       toast(`Sur la télé ou l'ordi, ouvre : ${location.host}/?ecran=${S.code}`);
     });
     on('[data-oral]', () => socket.emit('setOral', !S.oral));
+    on('[data-opt-key]', (e) => socket.emit('setOption', { key: e.currentTarget.dataset.optKey, value: e.currentTarget.dataset.optValue }));
     on('[data-quit]', () => { if (confirm('Arrêter la partie et revenir au salon ? Les points de cette partie seront perdus.')) socket.emit('toLobby'); });
     on('[data-host-action]', (e) => {
       const el = e.currentTarget;

@@ -66,8 +66,15 @@ const GONE_AFTER = 20 * 60 * 1000;
 function purgeGone(room) {
   for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
 }
-const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral }) =>
-  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral }));
+const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options }) =>
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [] }));
+
+// Options d'un jeu choisies par l'hôte (ex. thème des questions), avec les valeurs par défaut
+function gameOptions(room, gameId = room.gameId) {
+  const defs = GAMES[gameId]?.options || [];
+  const chosen = room.options[gameId] || {};
+  return Object.fromEntries(defs.map((o) => [o.key, chosen[o.key] ?? o.default]));
+}
 app.get('/api/games', (req, res) => res.json(catalog));
 // QR code (SVG) pour rejoindre un salon : /api/qr?u=<lien>
 const QRCode = require('qrcode');
@@ -92,6 +99,7 @@ function ctx(room) {
     // Le jeu appelle endGame(scores) une fois terminé → points de soirée
     endGame: (scores) => endGame(room, scores),
     oral: () => !!room.oral, // l'hôte a choisi « réponses à l'oral »
+    option: (key) => gameOptions(room)[key], // option du jeu choisie par l'hôte
     // Minuteur serveur : exécute fn après ms, puis renvoie l'état à tous.
     // Ignoré si la partie a changé entre-temps (retour au salon, rejouer…).
     schedule: (ms, fn) => {
@@ -138,6 +146,7 @@ function stateFor(room, pid) {
     gameId: room.gameId,
     games: catalog,
     oral: !!room.oral,
+    options: gameOptions(room),     // options du jeu choisi (ex. { pack: 'anime' })
     tv: room.screens.size > 0,      // un écran partagé (mode salon) est connecté
     spectator: pid === null,         // c'est l'écran partagé qui reçoit cet état
     history: room.history,
@@ -198,7 +207,7 @@ io.on('connection', (socket) => {
     if (!name) return err('Choisis un pseudo');
     const r = {
       code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
-      gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(),
+      gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {},
     };
     rooms.set(r.code, r);
     const p = newPlayer(r, name);
@@ -248,6 +257,15 @@ io.on('connection', (socket) => {
     watching = r;
     r.screens.add(socket.id);
     broadcast(r); // les téléphones passent en mode manette
+  });
+
+  // L'hôte change une option du jeu choisi (ex. thème)
+  socket.on('setOption', ({ key, value } = {}) => {
+    if (!isHost() || room.phase !== 'lobby') return;
+    const def = (GAMES[room.gameId]?.options || []).find((o) => o.key === key);
+    if (!def || !def.choices.some((c) => c.value === value)) return;
+    room.options[room.gameId] = { ...(room.options[room.gameId] || {}), [key]: value };
+    broadcast(room);
   });
 
   // L'hôte active / désactive les réponses à l'oral
