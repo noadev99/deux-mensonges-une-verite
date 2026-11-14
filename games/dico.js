@@ -3,7 +3,9 @@
 // Un vrai mot rare s'affiche. Chacun invente une fausse définition. Toutes sont
 // mélangées avec la vraie : trouve la bonne, et piège les autres avec la tienne.
 // ─────────────────────────────────────────────────────────────────────────────
-const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const ROUNDS = 5;
 const PTS = { FOUND: 100, FOOLED: 50 };
@@ -61,7 +63,7 @@ const ENTRIES = [
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'fooled']);
-  const g = { scores, stats, round: 0, totalRounds: ROUNDS, entries: sample(ENTRIES, ROUNDS) };
+  const g = { scores, stats, round: 0, totalRounds: ROUNDS, entries: sample(byPack(ctx, ENTRIES, ANIME.ENTRIES), ROUNDS) };
   newRound(g);
   return g;
 }
@@ -185,6 +187,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 12,
   duration: '15 min',
+  options: [packOption('Mots rares de la langue française', 'Vrais mots japonais : tsundere, senpai…')],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

@@ -3,7 +3,9 @@
 // Une phrase à trou. Chacun la complète en secret, puis on vote (anonymement)
 // pour la réponse la plus drôle.
 // ─────────────────────────────────────────────────────────────────────────────
-const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const ROUNDS = 6;
 const PTS = { VOTE: 100, UNANIMOUS: 200, GOOD_TASTE: 25 };
@@ -61,7 +63,7 @@ const PROMPTS = [
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['votes', 'unanimous', 'taste']);
-  const g = { scores, stats, round: 0, totalRounds: ROUNDS, prompts: sample(PROMPTS, ROUNDS) };
+  const g = { scores, stats, round: 0, totalRounds: ROUNDS, prompts: sample(byPack(ctx, PROMPTS, ANIME.PROMPTS), ROUNDS) };
   newRound(g);
   return g;
 }
@@ -188,6 +190,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 16,
   duration: '15 min',
+  options: [packOption('Phrases de la vie de tous les jours', 'Le fruit du démon le plus nul…')],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

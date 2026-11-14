@@ -4,7 +4,9 @@
 // d'un mot, à tour de rôle (2 tours). Puis vote. Si l'intrus est démasqué,
 // il peut encore gagner en devinant le mot.
 // ─────────────────────────────────────────────────────────────────────────────
-const { shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const TOURS = 2;
 const MAX_ROUNDS = 6;
@@ -29,7 +31,7 @@ function create(ctx) {
     scores, stats,
     oral: ctx.oral(), // à l'oral : chacun dit son indice à voix haute
     round: 0, totalRounds: rounds,
-    words: sample(WORDS, rounds),
+    words: sample(byPack(ctx, WORDS, ANIME.WORDS), rounds),
     // chaque joueur est intrus au plus une fois (si assez de manches)
     intruders: shuffle(ids).concat(shuffle(ids)).slice(0, rounds),
   };
@@ -199,6 +201,7 @@ module.exports = {
   maxPlayers: 12,
   duration: '15–20 min',
   oral: true,
+  options: [packOption('Plage, pizza, girafe…', 'Ninja, katana, fruit du démon…')],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

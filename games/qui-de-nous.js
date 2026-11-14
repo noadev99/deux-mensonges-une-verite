@@ -3,7 +3,9 @@
 // Une question « Qui est le plus susceptible de… ». Chacun vote en secret pour
 // un joueur ET parie sur celui qui recevra le plus de votes.
 // ─────────────────────────────────────────────────────────────────────────────
-const { sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const ROUNDS = 10;
 const PTS = { GOOD_BET: 100, WITH_CROWD: 50 };
@@ -80,7 +82,7 @@ function newRound(g) {
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['elected', 'goodBets', 'withCrowd']);
-  const g = { scores, stats, round: 1, totalRounds: ROUNDS, questions: sample(QUESTIONS, ROUNDS) };
+  const g = { scores, stats, round: 1, totalRounds: ROUNDS, questions: sample(byPack(ctx, QUESTIONS, ANIME.QUESTIONS), ROUNDS) };
   newRound(g);
   return g;
 }
@@ -170,6 +172,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 16,
   duration: '10–15 min',
+  options: [packOption('Questions de la vie de tous les jours', 'Devenir Hokage, se perdre comme Zoro…')],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

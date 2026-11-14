@@ -3,7 +3,9 @@
 // Une catégorie. Chacun son tour, on tape une réponse pour passer la bombe.
 // Elle explose au bout d'un temps secret : celui qui la tient ne marque rien.
 // ─────────────────────────────────────────────────────────────────────────────
-const { shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const ROUNDS = 5;
 // durée de la mèche (ms), tirée au hasard entre les deux (réglable pour les tests)
@@ -28,7 +30,7 @@ function create(ctx) {
   const { scores, stats } = initScores(ctx, ['answers', 'booms', 'survived']);
   const g = {
     scores, stats, round: 0, totalRounds: ROUNDS,
-    categories: sample(CATEGORIES, ROUNDS),
+    categories: sample(byPack(ctx, CATEGORIES, ANIME.CATEGORIES), ROUNDS),
     starters: shuffle(Object.keys(scores)),
     oral: ctx.oral(), // à l'oral : on crie sa réponse, le bouton sert juste à passer la bombe
   };
@@ -152,6 +154,7 @@ module.exports = {
   maxPlayers: 12,
   duration: '10 min',
   oral: true,
+  options: [packOption('Fruits, pays, marques de voiture…', 'Pokémon, persos de One Piece…')],
   create,
   onAction,
   onPlayersChanged,

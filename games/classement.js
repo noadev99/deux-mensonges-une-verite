@@ -3,7 +3,9 @@
 // Un juge classe en secret tous les joueurs sur un thème (« le plus drôle »…).
 // Les autres devinent son classement. Le rôle de juge tourne.
 // ─────────────────────────────────────────────────────────────────────────────
-const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
+const ANIME = require('./packs-anime');
+
 
 const MAX_ROUNDS = 6;
 const PTS = { EXACT: 50, CLOSE: 20 };
@@ -27,7 +29,7 @@ function create(ctx) {
   const { scores, stats } = initScores(ctx, ['exact', 'judgeScore', 'judged']);
   const ids = Object.keys(scores);
   const rounds = Math.min(MAX_ROUNDS, ids.length);
-  const g = { scores, stats, round: 0, totalRounds: rounds, judges: shuffle(ids).slice(0, rounds), themes: sample(THEMES, rounds) };
+  const g = { scores, stats, round: 0, totalRounds: rounds, judges: shuffle(ids).slice(0, rounds), themes: sample(byPack(ctx, THEMES, ANIME.THEMES), rounds) };
   newRound(g);
   return g;
 }
@@ -132,6 +134,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 8,
   duration: '15 min',
+  options: [packOption('Le plus drôle, le plus organisé…', 'Meilleur Hokage, plus otaku…')],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

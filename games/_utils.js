@@ -49,4 +49,15 @@ const initScores = (ctx, statKeys) => {
   return { scores, stats };
 };
 
-module.exports = { shuffle, sample, normalize, gain, applyGains, awards, active, initScores };
+// Option « Thème » proposée à l'hôte dans le salon (Classique ou Animé / Manga)
+const packOption = (classiqueHint, animeHint) => ({
+  key: 'pack', label: 'Thème', default: 'classique',
+  choices: [
+    { value: 'classique', label: 'Classique', hint: classiqueHint },
+    { value: 'anime', label: 'Animé / Manga ⛩️', hint: animeHint },
+  ],
+});
+// choisit la liste de contenu selon le thème choisi par l'hôte
+const byPack = (ctx, classique, anime) => (ctx.option('pack') === 'anime' ? anime : classique);
+
+module.exports = { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores };
