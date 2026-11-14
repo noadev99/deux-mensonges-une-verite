@@ -4,12 +4,18 @@
 // note secrète de 0 à 10 sur une échelle (Catastrophe → Parfait).
 // Il écrit une histoire qui « vaut » exactement cette note.
 // Puis, histoire par histoire, les autres devinent la note.
+// Mode « Interrogatoire » : à tour de rôle, un joueur reçoit une note secrète
+// (ex. « Ta puissance : 7/10 »). Les autres lui posent chacun 2 questions
+// (« Si tu étais une technique de Naruto ? ») et il répond selon sa note.
+// Dans les deux modes, on choisit une note puis on la valide (modifiable
+// jusqu'à la révélation) : on révèle quand tout le monde a validé.
 // ─────────────────────────────────────────────────────────────────────────────
 const PLUS = require('./contenu-plus');
 const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MAX_ROUNDS = 10;
-const TIME = { write: 240000, guess: 60000, oral: 150000 }; // à l'oral : le temps de raconter + voter
+const TIME = { write: 240000, guess: 75000, oral: 150000, gril: 300000 }; // à l'oral : le temps de raconter + voter
+const MAX_ASK = 2; // questions par joueur en mode Interrogatoire
 // points selon l'écart entre la note devinée et la vraie
 const PTS = { 0: 100, 1: 60, 2: 30 };
 
@@ -78,13 +84,28 @@ const PROMPTS = [
   ['Raconte un premier message envoyé à un crush', 'Gênant', 'Irrésistible'],
 ];
 
-const ALL = [...PROMPTS, ...PLUS.NOTE];
-const ALL_ANIME = [...ANIME, ...PLUS.NOTE_ANIME];
+// Histoires : thèmes classiques et animé mélangés
+const HISTOIRES = [...PROMPTS, ...PLUS.NOTE, ...ANIME, ...PLUS.NOTE_ANIME];
+
+// Interrogatoire : [ce qui est noté, note 0, note 10]
+const GRIL = [
+  ['Ta puissance', 'Ridicule', 'Invincible'], ['Ta méchanceté', 'Gentil comme tout', 'Grand méchant'],
+  ['Ton intelligence', 'Pas très malin', 'Génie'], ['Ton courage', 'Froussard', 'Héros sans peur'],
+  ['Ton charisme', 'Transparent', 'Leader né'], ['Ta richesse', 'Fauché', 'Milliardaire'],
+  ['Ta célébrité', 'Inconnu', 'Légende vivante'], ['Ta vitesse', 'Escargot', 'Éclair'],
+  ['Ta loyauté', 'Traître', 'Fidèle jusqu\'à la mort'], ['Ton humour', 'Sinistre', 'Clown absolu'],
+  ['Ton style', 'Ringard', 'Ultra stylé'], ['Ton sens de l\'orientation', 'Perdu comme Zoro', 'GPS humain'],
+  ['Ta chance', 'Maudit', 'Béni des dieux'], ['Ton appétit', 'Mange comme un oiseau', 'Estomac sans fond'],
+  ['Ton calme', 'Explosif', 'Zen absolu'], ['Ta force physique', 'Brindille', 'Montagne de muscles'],
+  ['Ton côté romantique', 'Cœur de pierre', 'Grand romantique'], ['Ta discrétion', 'Éléphant', 'Ninja de l\'ombre'],
+  ['Ta paresse', 'Hyperactif', 'Roi de la sieste'], ['Ta folie', 'Très raisonnable', 'Complètement fou'],
+];
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['exact', 'close', 'readable']);
   const ids = Object.keys(scores);
-  const prompts = ctx.fresh(ctx.option('pack') === 'anime' ? ALL_ANIME : ALL, ids.length);
+  const mode = ctx.option('mode') === 'gril' ? 'gril' : 'histoire';
+  const prompts = ctx.fresh(mode === 'gril' ? GRIL : HISTOIRES, ids.length);
   const tasks = {};
   let last = -1;
   ids.forEach((id, i) => {
@@ -94,8 +115,12 @@ function create(ctx) {
     const [q, low, high] = prompts[i % prompts.length];
     tasks[id] = { q, low, high, number: n };
   });
-  const g = { scores, stats, tasks, stories: {}, order: [], round: 0, guesses: {}, oral: ctx.oral() };
-  if (g.oral) {
+  const g = { scores, stats, tasks, mode, stories: {}, order: [], round: 0, guesses: {}, locked: {}, qa: [], oral: ctx.oral() };
+  if (mode === 'gril') {
+    // chacun passe à son tour sur le gril
+    g.order = shuffle(ids).slice(0, MAX_ROUNDS);
+    startRound(ctx, g, 0);
+  } else if (g.oral) {
     // à l'oral : pas d'écriture, chacun raconte à son tour à voix haute
     g.order = shuffle(ids).slice(0, MAX_ROUNDS);
     startRound(ctx, g, 0);
@@ -119,8 +144,10 @@ function startRounds(ctx, g) {
 function startRound(ctx, g, i) {
   g.round = i;
   g.guesses = {};
+  g.locked = {}; // notes validées (modifiables jusqu'à la révélation)
+  g.qa = [];     // Interrogatoire : [{ from, q, a }]
   g.result = null;
-  setPhase(ctx, g, 'guess', g.oral ? TIME.oral : TIME.guess, () => reveal(ctx, g));
+  setPhase(ctx, g, 'guess', g.mode === 'gril' ? TIME.gril : g.oral ? TIME.oral : TIME.guess, () => reveal(ctx, g));
 }
 
 const authorOf = (g) => g.order[g.round];
@@ -139,17 +166,24 @@ function reveal(ctx, g) {
   }
   // l'auteur gagne la moyenne des points des autres : plus son histoire est « lisible », plus il marque
   const avg = earned.length ? Math.round(earned.reduce((a, b) => a + b, 0) / earned.length) : 0;
-  if (avg) { gain(gains, author, avg, 'Histoire bien dosée : la moyenne des autres ✍️'); g.stats[author].readable += avg; }
+  if (avg) { gain(gains, author, avg, g.mode === 'gril' ? 'Réponses bien dosées : la moyenne des autres 🔥' : 'Histoire bien dosée : la moyenne des autres ✍️'); g.stats[author].readable += avg; }
   applyGains(g.scores, gains);
   g.result = { gains, truth };
   setPhase(ctx, g, 'reveal');
 }
 
+const pendingQuestions = (g) => (g.mode === 'gril' && !g.oral ? g.qa.filter((x) => x.a == null).length : 0);
+const NOTE_RE = /\b(10|[0-9])\s*(\/|sur)\s*10\b/i;
+
 function autoAdvance(ctx, g) {
   const act = active(ctx, g);
   if (!act.length) return;
   if (g.phase === 'write' && act.every((p) => p.id in g.stories)) startRounds(ctx, g);
-  else if (g.phase === 'guess' && act.filter((p) => p.id !== authorOf(g)).every((p) => p.id in g.guesses)) reveal(ctx, g);
+  else if (g.phase === 'guess') {
+    const voters = act.filter((p) => p.id !== authorOf(g));
+    // on attend que chacun ait VALIDÉ sa note (et, à l'écrit, que toutes les questions aient une réponse)
+    if (voters.length && voters.every((p) => g.locked[p.id] && p.id in g.guesses) && !pendingQuestions(g)) reveal(ctx, g);
+  }
 }
 
 function onAction(ctx, g, pid, type, payload, { isHost }) {
@@ -159,7 +193,7 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
     if (g.phase !== 'write') return;
     const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 320);
     if (text.length < 10) return { error: 'Écris une vraie petite histoire 😉' };
-    if (/\b(10|[0-9])\s*(\/|sur)\s*10\b/i.test(text)) return { error: 'Interdit de donner ta note dans l\'histoire 😏' };
+    if (NOTE_RE.test(text)) return { error: 'Interdit de donner ta note dans l\'histoire 😏' };
     g.stories[pid] = text;
     return autoAdvance(ctx, g);
   }
@@ -168,7 +202,35 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (type === 'guess') {
     const n = Number(payload);
     if (g.phase !== 'guess' || pid === authorOf(g) || !Number.isInteger(n) || n < 0 || n > 10) return;
-    g.guesses[pid] = n;
+    if (g.locked[pid]) return { error: 'Touche « Changer » pour modifier ta note' };
+    g.guesses[pid] = n; // simple hypothèse : il faut encore la valider
+    return;
+  }
+  if (type === 'lock') {
+    if (g.phase !== 'guess' || pid === authorOf(g) || !(pid in g.guesses)) return;
+    g.locked[pid] = true;
+    return autoAdvance(ctx, g);
+  }
+  if (type === 'unlock') { if (g.phase === 'guess') delete g.locked[pid]; return; }
+
+  // Interrogatoire : poser une question (2 par joueur) / y répondre
+  if (type === 'ask') {
+    if (g.mode !== 'gril' || g.phase !== 'guess' || pid === authorOf(g)) return;
+    if (g.qa.filter((x) => x.from === pid).length >= MAX_ASK) return { error: `Tu as déjà posé tes ${MAX_ASK} questions` };
+    const q = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 140);
+    if (!g.oral && q.length < 3) return { error: 'Écris ta question' };
+    g.qa.push({ from: pid, q: q || null, a: null });
+    return;
+  }
+  if (type === 'reply') {
+    if (g.mode !== 'gril' || g.oral || g.phase !== 'guess' || pid !== authorOf(g)) return;
+    const { i, text } = payload || {};
+    const item = g.qa[i];
+    if (!item || item.a != null) return;
+    const a = String(text || '').trim().replace(/\s+/g, ' ').slice(0, 200);
+    if (a.length < 1) return { error: 'Écris ta réponse' };
+    if (NOTE_RE.test(a)) return { error: 'Interdit de donner ta note 😏' };
+    item.a = a;
     return autoAdvance(ctx, g);
   }
 
@@ -208,11 +270,17 @@ function stateFor(ctx, g, pid) {
     const t = g.tasks[author];
     s.current = { authorId: author, isAuthor: author === pid, q: t.q, low: t.low, high: t.high, story: g.stories[author] ?? null };
     s.oral = g.oral;
+    s.mode = g.mode;
+    s.qa = g.qa;
+    s.maxAsk = MAX_ASK;
+    s.myAsked = g.qa.filter((x) => x.from === pid).length;
+    s.pending = pendingQuestions(g);
     if (author === pid || g.phase === 'reveal') s.current.number = t.number;
     if (g.phase === 'guess') {
       const voters = act.filter((p) => p.id !== author);
       s.myGuess = g.guesses[pid] ?? null;
-      s.guessed = voters.filter((p) => p.id in g.guesses).map((p) => p.id);
+      s.myLocked = !!g.locked[pid];
+      s.guessed = voters.filter((p) => g.locked[p.id] && p.id in g.guesses).map((p) => p.id); // notes validées
       s.needed = voters.length;
     } else {
       s.guesses = g.guesses;
@@ -228,18 +296,18 @@ module.exports = {
   color: '#9be15d',
   name: 'Note secrète',
   emoji: '🎚️',
-  tagline: 'Raconte une histoire qui vaut exactement ta note.',
-  description: 'Une note secrète de 0 à 10, une histoire à doser, et les autres doivent deviner la note.',
+  tagline: 'Raconte (ou réponds) pile à la hauteur de ta note.',
+  description: 'Une note secrète de 0 à 10 : une histoire à doser, ou un interrogatoire où tu réponds selon ta note. Les autres devinent.',
   minPlayers: 3,
   maxPlayers: 12,
   duration: '15–25 min',
   oral: true, // version « on raconte à voix haute »
   // thème des histoires, choisi par l'hôte dans le salon
   options: [{
-    key: 'pack', label: 'Thème des histoires', default: 'classique',
+    key: 'mode', label: 'Mode', default: 'histoire',
     choices: [
-      { value: 'classique', label: 'Classique', hint: 'Rendez-vous, vacances, karaoké…' },
-      { value: 'anime', label: 'Animé / Manga ⛩️', hint: 'Si tu étais un perso de One Piece, Naruto, Dragon Ball…' },
+      { value: 'histoire', label: 'Histoires ✍️', hint: 'Une histoire à doser : rendez-vous, vacances… et thèmes animé (One Piece, Naruto…)' },
+      { value: 'gril', label: 'Interrogatoire 🔥', hint: 'Un joueur reçoit une note (ex. sa puissance), les autres lui posent 2 questions chacun : « Si tu étais une technique de Naruto ? »' },
     ],
   }],
   create,

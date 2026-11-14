@@ -482,3 +482,10 @@ body.tv .qr.mini { width: 64px; height: 64px; padding: 3px; border-width: 2px; b
 .tv-game .m span { font-size: .8rem; font-weight: 600; padding: 2px 10px; border-radius: 99px; background: var(--paper-2); border: 2px solid var(--ink); }
 .tv-rules { font-size: .85rem; }
 .tv-rules .rules { margin: 6px 0; }
+
+/* Note secrète — Interrogatoire */
+.nt-qa { padding: 8px 0; border-bottom: 2px dashed color-mix(in srgb, var(--ink) 15%, transparent); }
+.nt-qa:last-child { border-bottom: 0; }
+.nt-qq { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.nt-qa-a { margin: 4px 0 0 34px; font-size: 1.05rem; }
+body.tv .nt-qq, body.tv .nt-qa-a { font-size: 1.4rem; }

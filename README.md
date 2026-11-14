@@ -23,7 +23,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 💣 Patate chaude — réponds vite avant que la bombe explose (l'hôte peut annuler une réponse) | 3–12 |
 | 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
 | 🎨 Dessin en chaîne — dessine, devine, redessine… et regarde le message dériver | 3–10 |
-| 🎚️ Note secrète — raconte une histoire qui vaut ta note, les autres la devinent | 3–12 |
+| 🎚️ Note secrète — une note sur 10 à faire deviner : en racontant une histoire, ou en répondant à un interrogatoire | 3–12 |
 
 ## Lancer en local
 ```bash
