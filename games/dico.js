@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const ROUNDS = 5;
@@ -61,9 +62,12 @@ const ENTRIES = [
   ['Vétille', 'Chose insignifiante, détail sans importance.'],
 ];
 
+const ALL = [...ENTRIES, ...PLUS.DICO];
+const ALL_ANIME = [...ANIME.ENTRIES, ...PLUS.DICO_ANIME];
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'fooled']);
-  const g = { scores, stats, round: 0, totalRounds: ROUNDS, entries: sample(byPack(ctx, ENTRIES, ANIME.ENTRIES), ROUNDS) };
+  const g = { scores, stats, round: 0, totalRounds: ROUNDS, entries: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS) };
   newRound(g);
   return g;
 }

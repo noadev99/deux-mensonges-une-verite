@@ -16,11 +16,19 @@
       </svg>
     </div>`;
 
-  const answersList = (g) => g.oral
-    ? `<div class="center"><span class="tv-big">${g.answers.length}</span><div class="muted">réponse${g.answers.length > 1 ? 's' : ''} criée${g.answers.length > 1 ? 's' : ''} 🎤</div></div>`
-    : g.answers.length
-    ? `<div class="pt-answers">${g.answers.slice().reverse().map((a, i) => `<span class="pt-ans ${i === 0 ? 'reveal' : ''}">${av(P(a.pid), 'sm')} ${esc(a.text)}</span>`).join('')}</div>`
+  const ansText = (a) => (a.text == null ? '🎤 <i>dite à l\'oral</i>' : esc(a.text));
+  const answersList = (g) => g.answers.length
+    ? `<div class="pt-answers">${g.answers.slice().reverse().map((a, i) => `<span class="pt-ans ${i === 0 ? 'reveal' : ''}">${av(P(a.pid), 'sm')} ${ansText(a)}</span>`).join('')}</div>`
     : '<div class="muted center">Aucune réponse pour l\'instant</div>';
+
+  // Dernière réponse, en grand sur tous les téléphones (même en mode salon)
+  const lastAnswer = (g) => {
+    const a = g.answers[g.answers.length - 1];
+    const undo = g.undone ? `<div class="pt-undone">↩️ Réponse de ${name(g.undone.pid)} annulée${g.undone.text ? ` («&nbsp;${esc(g.undone.text)}&nbsp;»)` : ''} : à refaire !</div>` : '';
+    return `${undo}<div class="muted">Dernière réponse</div>
+      <div class="pt-last">${a ? `${av(P(a.pid), 'sm')} ${ansText(a)}` : '<span class="muted">—</span>'}</div>
+      <div class="muted" style="font-size:.85rem">${g.answers.length} réponse${g.answers.length > 1 ? 's' : ''} au total</div>`;
+  };
 
   // La mèche brûle de plus en plus vite (sans révéler quand la bombe explose)
   function startFuse() {
@@ -54,11 +62,15 @@
         ${bomb(mine ? 'pt-mine' : '')}
         <div class="phase"><div class="t">${mine ? 'C\'est toi ! Vite !' : `${name(g.holder)} a la bombe`}</div></div>
         ${mine ? (g.oral
-          ? `<div class="card center pt-input keep"><p style="margin:0 0 10px">Crie ta réponse, puis :</p><button class="full alt pt-pass" data-pass>💣 Passer la bombe !</button></div>`
+          ? `<div class="card stack pt-input keep"><p class="center" style="margin:0">Crie ta réponse ! Tu peux aussi l'écrire :</p>
+            <input id="ans" maxlength="40" placeholder="Ta réponse (facultatif)" autocomplete="off" autocapitalize="off" enterkeyhint="send" />
+            <button class="full alt pt-pass" data-ans>💣 Passer la bombe !</button></div>`
           : `<div class="card stack pt-input">
             <input id="ans" maxlength="40" placeholder="Ta réponse…" autocomplete="off" autocapitalize="off" enterkeyhint="send" />
             <button class="full alt" data-ans>Passer la bombe</button></div>`) : ''}
-        <div class="card"><div data-live="answers"></div></div>`;
+        <div class="card center keep"><div data-live="last"></div></div>
+        <div class="card"><div data-live="answers"></div></div>
+        ${g.answers.length ? UI.forceLink('↩️ Annuler la dernière réponse', 'undo') : ''}`;
     },
 
     boom(S, g) {
@@ -83,12 +95,12 @@
     rules: () => `
       <ol class="rules">
         <li>Une <b>catégorie</b> s'affiche (ex. : des fruits).</li>
-        <li>Celui qui a la bombe tape une réponse (ou la crie, en mode oral) : la bombe passe au joueur suivant. <b>Pas de doublons !</b></li>
+        <li>Celui qui a la bombe tape une réponse (ou la crie, en mode oral : l'écrire est alors facultatif) : la bombe passe au joueur suivant. <b>Pas de doublons !</b></li>
         <li>La bombe explose au bout d'un <b>temps secret</b>. Celui qui la tient à ce moment-là ne marque pas.</li>
       </ol>
-      <div class="muted" style="font-size:.92rem">💬 Chaque réponse : <b>+10</b> · 😮‍💨 Survivre à l'explosion : <b>+100</b><br>Astuce : râlez à voix haute si une réponse est bidon, c'est la table qui juge !</div>`,
+      <div class="muted" style="font-size:.92rem">💬 Chaque réponse : <b>+10</b> · 😮‍💨 Survivre à l'explosion : <b>+100</b><br>Réponse bidon ? L'hôte peut l'<b>annuler</b> : la bombe revient à son auteur.</div>`,
 
-    key: (S, g) => [g.phase, g.round, g.holder === S.you, g.phase === 'playing' ? g.holder : ''].join('|'),
+    key: (S, g) => [g.phase, g.round, g.holder === S.you, g.phase === 'playing' ? g.holder : '', g.answers.length > 0].join('|'),
 
     onState: (S, g) => {
       if (g.phase === 'playing') {
@@ -101,13 +113,12 @@
 
     screen: (S, g) => screens[g.phase](S, g),
 
-    live: { answers: (S, g) => answersList(g) },
+    live: { answers: (S, g) => answersList(g), last: (S, g) => lastAnswer(g) },
 
     bind: (S, g, root) => {
       if (g.phase === 'playing') startFuse();
-      root.querySelector('[data-pass]')?.addEventListener('click', () => UI.send('answer', ''));
       const input = root.querySelector('#ans');
-      const send = () => { if (input.value.trim()) UI.send('answer', input.value); };
+      const send = () => { if (g.oral || input.value.trim()) UI.send('answer', input.value); };
       if (input) {
         input.focus();
         input.addEventListener('keydown', (e) => e.key === 'Enter' && send());

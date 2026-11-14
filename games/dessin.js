@@ -7,7 +7,7 @@
 const { shuffle, applyGains, gain, awards, active, initScores } = require('./_utils');
 
 const MAX_STEPS = 10;                       // au-delà, les chaînes deviennent trop longues
-const TIME = { text: 45000, draw: 90000, guess: 40000 }; // durée de chaque étape (ms)
+const TIME = { text: 60000, draw: 120000, guess: 60000 }; // durée de chaque étape (ms)
 const PTS = { HEART: 100 };
 const MAX_IMG = 450000;                     // taille max d'un dessin (data URL)
 

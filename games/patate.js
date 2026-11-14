@@ -5,12 +5,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const ROUNDS = 5;
 // durée de la mèche (ms), tirée au hasard entre les deux (réglable pour les tests)
-const FUSE_MIN = Number(process.env.PATATE_FUSE_MIN) || 20000;
-const FUSE_MAX = Number(process.env.PATATE_FUSE_MAX) || 40000;
+const FUSE_MIN = Number(process.env.PATATE_FUSE_MIN) || 30000;
+const FUSE_MAX = Number(process.env.PATATE_FUSE_MAX) || 60000;
 const PTS = { ANSWER: 10, SURVIVE: 100 };
 
 const CATEGORIES = [
@@ -26,13 +27,16 @@ const CATEGORIES = [
   'Des parties du corps', 'Des émotions', 'Des choses qu\'on trouve dans un sac à main', 'Des plats italiens',
 ];
 
+const ALL = [...CATEGORIES, ...PLUS.PATATE];
+const ALL_ANIME = [...ANIME.CATEGORIES, ...PLUS.PATATE_ANIME];
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['answers', 'booms', 'survived']);
   const g = {
     scores, stats, round: 0, totalRounds: ROUNDS,
-    categories: sample(byPack(ctx, CATEGORIES, ANIME.CATEGORIES), ROUNDS),
+    categories: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS),
     starters: shuffle(Object.keys(scores)),
-    oral: ctx.oral(), // à l'oral : on crie sa réponse, le bouton sert juste à passer la bombe
+    oral: ctx.oral(), // à l'oral : on crie sa réponse (l'écrire est facultatif) puis on passe la bombe
   };
   newRound(g);
   return g;
@@ -46,6 +50,7 @@ function newRound(g) {
   g.startedAt = null;
   g.passedAt = null;
   g.result = null;
+  g.undone = null;
   g.phase = 'ready';
 }
 
@@ -95,20 +100,24 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
   if (type === 'answer') {
     if (g.phase !== 'playing' || g.holder !== pid) return;
-    if (g.oral) {
-      g.answers.push({ pid, text: null });
-      g.stats[pid].answers++;
-      g.holder = nextPlayer(ctx, g, pid);
-      g.passedAt = Date.now();
-      return;
-    }
-    const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 40);
-    if (normalize(text).length < 2) return { error: 'Trop court !' };
-    if (g.answers.some((a) => normalize(a.text) === normalize(text))) return { error: 'Déjà dit ! Trouve autre chose 🔥' };
+    let text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (g.oral && normalize(text).length < 2) text = null; // à l'oral, écrire la réponse est facultatif
+    else if (normalize(text).length < 2) return { error: 'Trop court !' };
+    if (text && g.answers.some((a) => a.text && normalize(a.text) === normalize(text))) return { error: 'Déjà dit ! Trouve autre chose 🔥' };
     g.answers.push({ pid, text });
     g.stats[pid].answers++;
     g.holder = nextPlayer(ctx, g, pid);
     g.passedAt = Date.now();
+    return;
+  }
+  // l'hôte (maître du jeu) annule la dernière réponse : la bombe revient à son auteur
+  if (type === 'undo' && isHost) {
+    if (g.phase !== 'playing' || !g.answers.length) return;
+    const last = g.answers.pop();
+    g.stats[last.pid].answers = Math.max(0, g.stats[last.pid].answers - 1);
+    g.holder = active(ctx, g).some((p) => p.id === last.pid) ? last.pid : g.holder;
+    g.passedAt = Date.now();
+    g.undone = { pid: last.pid, text: last.text, at: Date.now() };
     return;
   }
   if (type === 'next' && isHost) {
@@ -137,6 +146,7 @@ function stateFor(ctx, g, pid) {
     // temps écoulé depuis l'allumage (la durée totale reste secrète)
     elapsed: g.startedAt ? Date.now() - g.startedAt : 0,
     oral: g.oral,
+    undone: g.undone && Date.now() - g.undone.at < 8000 ? g.undone : null,
   };
   if (g.phase === 'boom') s.result = g.result;
   if (g.phase === 'end') s.awards = g.awards;

@@ -183,7 +183,7 @@
         <li>Elle passe au joueur suivant, qui la <b>dessine</b>. Le suivant voit seulement le dessin et <b>devine</b> ce que c'est. Le suivant dessine cette devinette… et ainsi de suite.</li>
         <li>À la fin, on feuillette chaque chaîne ensemble pour voir comment le message a dérivé.</li>
       </ol>
-      <div class="muted" style="font-size:.92rem">⏱️ 45 s pour écrire, 90 s pour dessiner, 40 s pour deviner. Ce qui est en cours est envoyé à la fin du temps.<br>❤️ Chaque cœur reçu pendant la révélation : <b>+100</b></div>`,
+      <div class="muted" style="font-size:.92rem">⏱️ 1 min pour écrire, 2 min pour dessiner, 1 min pour deviner. Ce qui est en cours est envoyé à la fin du temps.<br>❤️ Chaque cœur reçu pendant la révélation : <b>+100</b></div>`,
 
     tv: (S, g) => g.phase !== 'play' ? null : `${progressBar(g)}
       <div class="phase"><div class="step">${stepLabel(g)} · <span class="dc-timer">…</span></div><div class="t">${g.type === 'text' ? 'Chacun écrit une phrase ✍️' : g.type === 'draw' ? 'Tout le monde dessine 🎨' : 'Tout le monde devine 🔎'}</div></div>

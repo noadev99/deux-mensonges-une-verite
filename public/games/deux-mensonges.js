@@ -12,6 +12,12 @@
     'Petit(e), j\'ai ', 'Je n\'ai jamais ', 'Un jour, au travail, ', 'Ma pire honte : ', 'J\'ai déjà ',
     'En vacances, j\'ai ', 'Je suis allergique ', 'J\'ai rencontré ', 'À l\'école, j\'ai ', 'Mon premier job, c\'était ',
     'J\'ai peur ', 'Je sais ', 'Une fois, je me suis retrouvé(e) ', 'Je collectionne ', 'J\'ai été viré(e) ',
+    'Le truc le plus fou que j\'ai mangé : ', 'J\'ai déjà dormi ', 'Un jour, un inconnu m\'a ', 'Ma famille ne sait pas que ',
+    'Dans mon enfance, je voulais devenir ', 'J\'ai déjà gagné ', 'J\'ai déjà perdu ', 'Mon record personnel : ', 'Je me suis déjà fait arrêter ',
+    'J\'ai un talent caché : ', 'J\'ai déjà croisé une star : ', 'Mon premier concert, c\'était ', 'J\'ai déjà cassé ',
+    'Je suis déjà monté(e) sur scène pour ', 'J\'ai déjà menti à un prof en disant que ', 'Mon surnom à l\'école était ',
+    'J\'ai déjà été coincé(e) ', 'J\'ai déjà parlé à ', 'La pire nuit de ma vie : ', 'J\'ai déjà fait une fugue ',
+    'J\'ai déjà adopté ', 'Un jour, dans le métro, ', 'J\'ai déjà pleuré devant ', 'Je suis capable de ', 'J\'ai déjà été élu(e) ',
   ];
 
   const ordinal = (i) => (i === 0 ? '1ʳᵉ anecdote' : `${i + 1}ᵉ anecdote`);
@@ -206,7 +212,7 @@
   UI.registerGame('deux-mensonges', {
     rules: () => `
       <ol class="rules">
-        <li>Chacun écrit <b>3 anecdotes</b> sur lui : <b>2 fausses, 1 vraie</b> (3 min).</li>
+        <li>Chacun écrit <b>3 anecdotes</b> sur lui : <b>2 fausses, 1 vraie</b> (5 min).</li>
         <li><b>Le grand jeu d'association :</b> toutes les séries s'affichent sans les noms. Associe chaque série à son auteur (style, fautes, émojis… tout est indice).</li>
         <li>On révèle tous les auteurs d'un coup. Puis, série par série : <b>laquelle est vraie ?</b></li>
         <li>🎤 L'auteur <b>raconte</b> l'histoire vraie !</li>

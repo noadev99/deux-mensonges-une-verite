@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const MAX_ROUNDS = 6;
@@ -25,11 +26,14 @@ const THEMES = [
   'est le plus dramatique', 'serait le meilleur coloc', 'est le plus créatif',
 ];
 
+const ALL = [...THEMES, ...PLUS.CLASSEMENT];
+const ALL_ANIME = [...ANIME.THEMES, ...PLUS.CLASSEMENT_ANIME];
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['exact', 'judgeScore', 'judged']);
   const ids = Object.keys(scores);
   const rounds = Math.min(MAX_ROUNDS, ids.length);
-  const g = { scores, stats, round: 0, totalRounds: rounds, judges: shuffle(ids).slice(0, rounds), themes: sample(byPack(ctx, THEMES, ANIME.THEMES), rounds) };
+  const g = { scores, stats, round: 0, totalRounds: rounds, judges: shuffle(ids).slice(0, rounds), themes: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), rounds) };
   newRound(g);
   return g;
 }

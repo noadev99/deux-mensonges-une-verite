@@ -16,11 +16,11 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | Jeu | Joueurs |
 |---|---|
 | 🎭 2 Mensonges, 1 Vérité — devine qui a écrit, puis la vraie anecdote | 3–16 |
-| 🗳️ Qui de nous ? — « qui est le plus susceptible de… », vote + pari | 3–16 |
-| 🕵️ L'Intrus — tout le monde connaît le mot sauf un | 3–12 |
+| 🗳️ Qui de nous ? — « qui est le plus susceptible de… », vote secret | 3–16 |
+| 🕵️ L'Intrus — tout le monde connaît le mot sauf un (ou mode Notes : même note sur 10 sauf un) | 3–12 |
 | 📖 Le Dico des menteurs — fausses définitions de vrais mots rares | 3–12 |
 | ✍️ La Chute — phrases à trou, vote pour la réponse la plus drôle | 3–16 |
-| 💣 Patate chaude — réponds vite avant que la bombe explose | 3–12 |
+| 💣 Patate chaude — réponds vite avant que la bombe explose (l'hôte peut annuler une réponse) | 3–12 |
 | 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
 | 🎨 Dessin en chaîne — dessine, devine, redessine… et regarde le message dériver | 3–10 |
 | 🎚️ Note secrète — raconte une histoire qui vaut ta note, les autres la devinent | 3–12 |

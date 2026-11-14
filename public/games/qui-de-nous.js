@@ -2,32 +2,27 @@
 (() => {
   const { esc, P, av, name } = UI;
   // choix en cours (avant validation)
-  let pick = { vote: null, bet: null, round: 0 };
+  let pick = { vote: null, round: 0 };
 
   const screens = {
     vote(S, g) {
-      if (pick.round !== g.round) pick = { vote: g.myVote, bet: g.myBet, round: g.round };
-      const answered = g.myVote && g.myBet;
+      if (pick.round !== g.round) pick = { vote: g.myVote, round: g.round };
+      const answered = !!g.myVote;
       return `
         ${UI.header(g.round, g.totalRounds, `Question ${g.round} / ${g.totalRounds}`, 'Qui de nous…')}
         <div class="card center reveal"><div class="qdn-q">…est le plus susceptible de <b>${esc(g.question)} ?</b></div></div>
         ${answered ? `
           <div class="card center">
             <h2>C'est voté ✅</h2>
-            <div class="muted">Ton vote : ${av(P(g.myVote), 'sm')} ${name(g.myVote)} · Ton pari : ${av(P(g.myBet), 'sm')} ${name(g.myBet)}</div>
+            <div class="muted">Ton vote : ${av(P(g.myVote), 'sm')} ${name(g.myVote)}</div>
             <div style="height:10px"></div>
             <button class="ghost" data-change>Changer</button>
           </div>` : `
           <div class="card">
-            <h2>1. Ton vote <span class="muted" style="font-size:.9rem;font-weight:400">(secret)</span></h2>
+            <h2>Ton vote <span class="muted" style="font-size:.9rem;font-weight:400">(secret)</span></h2>
             ${UI.playerGrid(g.participants, pick.vote, 'vote')}
           </div>
-          <div class="card">
-            <h2>2. Ton pari 🎲</h2>
-            <p class="muted" style="margin-top:0">Qui sera le plus désigné par le groupe ?</p>
-            ${UI.playerGrid(g.participants, pick.bet, 'bet')}
-          </div>
-          <button class="full" data-send ${pick.vote && pick.bet ? '' : 'disabled'}>Valider</button>
+          <button class="full" data-send ${pick.vote ? '' : 'disabled'}>Valider</button>
           <div style="height:10px"></div>`}
         <div class="card"><div data-live="progress"></div></div>
         ${UI.forceLink('Révéler maintenant')}`;
@@ -64,16 +59,16 @@
       <ol class="rules">
         <li>Une question tombe : <b>« Qui de nous est le plus susceptible de… ? »</b></li>
         <li>Tu votes en secret pour un joueur (toi compris).</li>
-        <li>Tu paries sur celui qui recevra <b>le plus de votes</b>.</li>
+        <li>Le joueur le plus désigné est révélé.</li>
       </ol>
-      <div class="muted" style="font-size:.92rem">🎯 Bon pari : <b>+100</b> · 🐑 Voté comme la majorité : <b>+50</b><br>Les votes restent anonymes, seuls les totaux sont révélés.</div>`,
+      <div class="muted" style="font-size:.92rem">🎯 Voté comme la majorité : <b>+100</b> · 🌟 Être le plus désigné : <b>+50</b><br>Les votes restent anonymes, seuls les totaux sont révélés.</div>`,
 
     tv: (S, g) => g.phase !== 'vote' ? null : `
       ${UI.header(g.round, g.totalRounds, `Question ${g.round} sur ${g.totalRounds}`, 'Qui de nous…')}
       <div class="card center"><div class="qdn-q">…est le plus susceptible de <b class="tv-big">${esc(g.question)} ?</b></div></div>
       <div class="card"><div data-live="progress"></div></div>`,
 
-    key: (S, g) => [g.phase, g.round, g.myVote, g.myBet, pick.vote, pick.bet].join('|'),
+    key: (S, g) => [g.phase, g.round, g.myVote, pick.vote].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),
 
@@ -86,8 +81,7 @@
       const on = (sel, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
       const redraw = () => UI.refresh();
       on('[data-vote]', (e) => { pick.vote = e.currentTarget.dataset.vote; redraw(); });
-      on('[data-bet]', (e) => { pick.bet = e.currentTarget.dataset.bet; redraw(); });
-      on('[data-send]', () => UI.send('answer', { vote: pick.vote, bet: pick.bet }));
+      on('[data-send]', () => UI.send('answer', { vote: pick.vote }));
       on('[data-change]', () => UI.send('change'));
     },
   });

@@ -228,6 +228,11 @@ button.anec { width: 100%; text-align: left; font-weight: 500; font-size: 1rem; 
 .intr-role.intr-bad { background: #ffe1e8; }
 .intr-role h2 { margin: 6px 0; font-size: 1.8rem; }
 .intr-word { font-family: var(--display); font-size: 2.6rem; margin: 6px 0 12px; display: inline-block; padding: 2px 18px; background: #fff; border: var(--line); border-radius: 14px; box-shadow: var(--pop-sm); transform: rotate(-2deg); }
+.intr-theme { font-family: var(--display); font-size: 1.7rem; margin: 2px 0; }
+.intr-note { font-family: var(--display); font-size: 3.4rem; margin: 8px 0; display: inline-block; padding: 0 22px; background: #fff; border: var(--line); border-radius: 16px; box-shadow: var(--pop-sm); transform: rotate(2deg); }
+.intr-note small { font-size: 1.4rem; opacity: .6; }
+.intr-nums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px; }
+.intr-nums button { padding: 12px 0; font-size: 1.2rem; }
 .intr-clue { font-family: var(--display); font-weight: 400; font-size: 1.2rem; }
 .score.intr-now { background: var(--game-soft); border-radius: 12px; padding-left: 8px; padding-right: 8px; }
 
@@ -279,6 +284,8 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 @keyframes spark { 50% { transform: scale(1.35) rotate(20deg); } }
 .pt-answers { display: flex; flex-wrap: wrap; gap: 8px; }
 .pt-ans { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 4px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper-2); font-weight: 500; }
+.pt-last { display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--display); font-size: 1.6rem; margin: 4px 0; word-break: break-word; }
+.pt-undone { background: var(--mustard); border: 2px solid var(--ink); border-radius: 12px; padding: 6px 10px; margin-bottom: 8px; font-weight: 600; }
 .pt-input input { font-size: 1.3rem; text-align: center; }
 .pt-boom { background: #ffe1e8; }
 @media (prefers-reduced-motion: reduce) { .pt-bomb svg, .pt-spark { animation: none !important; } }

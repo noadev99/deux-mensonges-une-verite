@@ -5,10 +5,11 @@
 // Il écrit une histoire qui « vaut » exactement cette note.
 // Puis, histoire par histoire, les autres devinent la note.
 // ─────────────────────────────────────────────────────────────────────────────
+const PLUS = require('./contenu-plus');
 const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MAX_ROUNDS = 10;
-const TIME = { write: 150000, guess: 40000, oral: 100000 }; // à l'oral : le temps de raconter + voter
+const TIME = { write: 240000, guess: 60000, oral: 150000 }; // à l'oral : le temps de raconter + voter
 // points selon l'écart entre la note devinée et la vraie
 const PTS = { 0: 100, 1: 60, 2: 30 };
 
@@ -77,10 +78,13 @@ const PROMPTS = [
   ['Raconte un premier message envoyé à un crush', 'Gênant', 'Irrésistible'],
 ];
 
+const ALL = [...PROMPTS, ...PLUS.NOTE];
+const ALL_ANIME = [...ANIME, ...PLUS.NOTE_ANIME];
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['exact', 'close', 'readable']);
   const ids = Object.keys(scores);
-  const prompts = sample(ctx.option('pack') === 'anime' ? ANIME : PROMPTS, ids.length);
+  const prompts = ctx.fresh(ctx.option('pack') === 'anime' ? ALL_ANIME : ALL, ids.length);
   const tasks = {};
   let last = -1;
   ids.forEach((id, i) => {

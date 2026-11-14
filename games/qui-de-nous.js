@@ -1,14 +1,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // 🗳️ Qui de nous ?
 // Une question « Qui est le plus susceptible de… ». Chacun vote en secret pour
-// un joueur ET parie sur celui qui recevra le plus de votes.
+// un joueur. Voter comme la majorité rapporte des points.
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const ROUNDS = 10;
-const PTS = { GOOD_BET: 100, WITH_CROWD: 50 };
+const PTS = { WITH_CROWD: 100, ELECTED: 50 };
 
 const QUESTIONS = [
   'rater son avion',
@@ -76,13 +77,15 @@ const QUESTIONS = [
 function newRound(g) {
   g.phase = 'vote';
   g.votes = {};
-  g.bets = {};
   g.result = null;
 }
 
+const ALL = [...QUESTIONS, ...PLUS.QDN];
+const ALL_ANIME = [...ANIME.QUESTIONS, ...PLUS.QDN_ANIME];
+
 function create(ctx) {
-  const { scores, stats } = initScores(ctx, ['elected', 'goodBets', 'withCrowd']);
-  const g = { scores, stats, round: 1, totalRounds: ROUNDS, questions: sample(byPack(ctx, QUESTIONS, ANIME.QUESTIONS), ROUNDS) };
+  const { scores, stats } = initScores(ctx, ['elected', 'withCrowd']);
+  const g = { scores, stats, round: 1, totalRounds: ROUNDS, questions: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS) };
   newRound(g);
   return g;
 }
@@ -93,13 +96,10 @@ function reveal(ctx, g) {
   const max = Math.max(0, ...Object.values(counts));
   const top = max > 0 ? Object.keys(counts).filter((id) => counts[id] === max) : [];
   const gains = {};
-  for (const [pid, bet] of Object.entries(g.bets)) {
-    if (top.includes(bet)) { gain(gains, pid, PTS.GOOD_BET, 'Bon pari 🎯'); g.stats[pid].goodBets++; }
-  }
   for (const [pid, vote] of Object.entries(g.votes)) {
-    if (top.includes(vote)) { gain(gains, pid, PTS.WITH_CROWD, 'A voté comme la majorité 🐑'); g.stats[pid].withCrowd++; }
+    if (top.includes(vote)) { gain(gains, pid, PTS.WITH_CROWD, 'A voté comme la majorité 🎯'); g.stats[pid].withCrowd++; }
   }
-  for (const id of top) if (g.stats[id]) g.stats[id].elected++;
+  for (const id of top) if (g.stats[id]) { g.stats[id].elected++; gain(gains, id, PTS.ELECTED, 'Désigné(e) par le groupe 🌟'); }
   applyGains(g.scores, gains);
   g.result = { counts, top, gains };
   g.phase = 'reveal';
@@ -108,21 +108,20 @@ function reveal(ctx, g) {
 function autoAdvance(ctx, g) {
   if (g.phase !== 'vote') return;
   const act = active(ctx, g);
-  if (act.length && act.every((p) => p.id in g.votes && p.id in g.bets)) reveal(ctx, g);
+  if (act.length && act.every((p) => p.id in g.votes)) reveal(ctx, g);
 }
 
 function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
   if (type === 'answer') {
     if (g.phase !== 'vote') return;
-    const { vote, bet } = payload || {};
-    if (!(vote in g.scores) || !(bet in g.scores)) return { error: 'Choisis ton vote et ton pari' };
+    const vote = typeof payload === 'object' ? payload?.vote : payload;
+    if (!(vote in g.scores)) return { error: 'Choisis un joueur' };
     g.votes[pid] = vote;
-    g.bets[pid] = bet;
     return autoAdvance(ctx, g);
   }
   if (type === 'change') {
-    if (g.phase === 'vote') { delete g.votes[pid]; delete g.bets[pid]; }
+    if (g.phase === 'vote') delete g.votes[pid];
     return;
   }
   if (type === 'next' && isHost) {
@@ -134,8 +133,7 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
         g.phase = 'end';
         g.awards = awards(g.stats, [
           ['elected', 'Star de la soirée', '🌟', 'a été désigné(e) le plus souvent'],
-          ['goodBets', 'Devin', '🔮', 'a fait le plus de bons paris'],
-          ['withCrowd', 'Mouton', '🐑', 'a voté le plus souvent comme tout le monde'],
+          ['withCrowd', 'Dans le mille', '🎯', 'a voté le plus souvent comme la majorité'],
         ]);
         ctx.endGame(g.scores);
       } else {
@@ -153,8 +151,7 @@ function stateFor(ctx, g, pid) {
     participants: Object.keys(g.scores),
     question: g.questions[g.round - 1],
     myVote: g.votes[pid] ?? null,
-    myBet: g.bets[pid] ?? null,
-    done: act.filter((p) => p.id in g.votes && p.id in g.bets).map((p) => p.id),
+    done: act.filter((p) => p.id in g.votes).map((p) => p.id),
     needed: act.length,
   };
   if (g.phase === 'reveal') s.result = g.result; // votes anonymes : seulement les totaux
@@ -167,8 +164,8 @@ module.exports = {
   color: '#ffc23d',
   name: 'Qui de nous ?',
   emoji: '🗳️',
-  tagline: 'Qui est le plus susceptible de… ? Vote et parie.',
-  description: 'Une question, un vote secret pour un ami, et un pari sur qui sera désigné par le groupe.',
+  tagline: 'Qui est le plus susceptible de… ? Vote !',
+  description: 'Une question, un vote secret pour un ami : vote comme la majorité pour marquer.',
   minPlayers: 3,
   maxPlayers: 16,
   duration: '10–15 min',

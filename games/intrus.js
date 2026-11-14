@@ -3,9 +3,13 @@
 // Tout le monde connaît le mot secret… sauf l'intrus. Chacun donne un indice
 // d'un mot, à tour de rôle (2 tours). Puis vote. Si l'intrus est démasqué,
 // il peut encore gagner en devinant le mot.
+// Mode « Notes » : tout le monde a la même note sur 10 (ex. 4/10) sauf l'intrus
+// (ex. 7/10), qui ne sait pas qu'il est l'intrus. Chacun cite un exemple qui
+// correspond à sa note (« un perso de One Piece de puissance 4/10 »).
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const TOURS = 2;
@@ -23,6 +27,16 @@ const WORDS = [
   'crêpe', 'magicien', 'tennis', 'arc-en-ciel', 'yoga', 'cactus', 'discothèque', 'pâtes', 'hérisson', 'télécommande',
 ];
 
+const ALL = [...WORDS, ...PLUS.MOTS];
+const ALL_ANIME = [...ANIME.WORDS, ...PLUS.MOTS_ANIME];
+
+// note de la majorité, et note de l'intrus (écart d'au moins 3)
+function drawNotes() {
+  const major = 1 + Math.floor(Math.random() * 9);
+  const far = [...Array(11).keys()].filter((n) => Math.abs(n - major) >= 3);
+  return { major, intr: far[Math.floor(Math.random() * far.length)] };
+}
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'escaped', 'stole', 'intruderTimes']);
   const ids = Object.keys(scores);
@@ -31,7 +45,10 @@ function create(ctx) {
     scores, stats,
     oral: ctx.oral(), // à l'oral : chacun dit son indice à voix haute
     round: 0, totalRounds: rounds,
-    words: sample(byPack(ctx, WORDS, ANIME.WORDS), rounds),
+    mode: ctx.option('mode') === 'note' ? 'note' : 'mot',
+    words: ctx.option('mode') === 'note'
+      ? ctx.fresh(byPack(ctx, PLUS.NOTES, PLUS.NOTES_ANIME), rounds)
+      : ctx.fresh(byPack(ctx, ALL, ALL_ANIME), rounds),
     // chaque joueur est intrus au plus une fois (si assez de manches)
     intruders: shuffle(ids).concat(shuffle(ids)).slice(0, rounds),
   };
@@ -41,8 +58,13 @@ function create(ctx) {
 
 function newRound(ctx, g) {
   g.round++;
-  g.word = g.words[g.round - 1];
   g.intruderId = g.intruders[g.round - 1];
+  if (g.mode === 'note') {
+    const [what, crit, low, high] = g.words[g.round - 1];
+    g.theme = { what, crit, low, high };
+    g.notes = drawNotes();
+    g.word = String(g.notes.major); // ce que l'intrus doit deviner s'il est démasqué
+  } else g.word = g.words[g.round - 1];
   // ordre de parole : l'intrus ne commence jamais
   let order = shuffle(Object.keys(g.scores));
   if (order[0] === g.intruderId) order.push(order.shift());
@@ -89,7 +111,9 @@ function tally(ctx, g) {
 function finishRound(ctx, g) {
   const gains = {};
   const intr = g.intruderId;
-  const stole = g.caught && g.guess != null && normalize(g.guess) === normalize(g.word);
+  const stole = g.caught && g.guess != null && (g.mode === 'note'
+    ? Math.abs(Number(g.guess) - g.notes.major) <= 1 // à 1 point près
+    : normalize(g.guess) === normalize(g.word));
   for (const [voter, target] of Object.entries(g.votes)) {
     if (voter !== intr && target === intr) { gain(gains, voter, PTS.FOUND, 'A flairé l\'intrus 👃'); g.stats[voter].found++; }
   }
@@ -97,7 +121,7 @@ function finishRound(ctx, g) {
     gain(gains, intr, PTS.ESCAPED, 'Intrus jamais démasqué 🥷');
     g.stats[intr].escaped++;
   } else if (stole) {
-    gain(gains, intr, PTS.STOLE, 'Démasqué… mais a deviné le mot 🧠');
+    gain(gains, intr, PTS.STOLE, g.mode === 'note' ? 'Démasqué… mais a deviné la note 🧠' : 'Démasqué… mais a deviné le mot 🧠');
     g.stats[intr].stole++;
   } else {
     for (const id of Object.keys(g.scores)) if (id !== intr) gain(gains, id, PTS.TEAM_WIN, 'Victoire de l\'équipe 🤝');
@@ -123,10 +147,12 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
       nextTurn(g);
       return autoAdvance(ctx, g);
     }
-    const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 30);
-    if (!text) return { error: 'Écris un indice' };
-    if (text.split(' ').length > 2) return { error: 'Un seul mot (deux maximum) !' };
-    if (pid !== g.intruderId && normalize(text).includes(normalize(g.word))) return { error: 'Tu ne peux pas donner le mot lui-même 😅' };
+    const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, g.mode === 'note' ? 50 : 30);
+    if (!text) return { error: g.mode === 'note' ? 'Écris ta réponse' : 'Écris un indice' };
+    if (g.mode === 'mot') {
+      if (text.split(' ').length > 2) return { error: 'Un seul mot (deux maximum) !' };
+      if (pid !== g.intruderId && normalize(text).includes(normalize(g.word))) return { error: 'Tu ne peux pas donner le mot lui-même 😅' };
+    } else if (/\b(10|[0-9])\s*\/\s*10\b/.test(text)) return { error: 'Ne donne pas ta note, cite un exemple 😉' };
     g.clues.push({ pid, text, tour: g.tour });
     nextTurn(g);
     return autoAdvance(ctx, g);
@@ -138,7 +164,11 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   }
   if (type === 'guess') {
     if (g.phase !== 'guess' || pid !== g.intruderId) return;
-    g.guess = String(payload || '').trim().slice(0, 40);
+    if (g.mode === 'note') {
+      const n = Number(payload);
+      if (!Number.isInteger(n) || n < 0 || n > 10) return { error: 'Choisis une note entre 0 et 10' };
+      g.guess = String(n);
+    } else g.guess = String(payload || '').trim().slice(0, 40);
     return finishRound(ctx, g);
   }
   if (type === 'next' && isHost) {
@@ -162,14 +192,17 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
 }
 
 function stateFor(ctx, g, pid) {
-  const isIntruder = pid === g.intruderId;
   const act = active(ctx, g);
+  const known = g.phase === 'guess' || g.phase === 'reveal';
+  // mode Notes : l'intrus ne sait pas qu'il est l'intrus avant d'être démasqué
+  const isIntruder = pid === g.intruderId && (g.mode === 'mot' || known);
   const s = {
     phase: g.phase, round: g.round, totalRounds: g.totalRounds, scores: g.scores,
     participants: Object.keys(g.scores),
+    mode: g.mode,
     isIntruder,
     // le mot n'est montré qu'aux joueurs qui ne sont pas l'intrus (jamais à l'écran partagé avant la fin)
-    word: g.phase === 'reveal' || (pid in g.scores && !isIntruder) ? g.word : null,
+    word: g.mode === 'mot' && (g.phase === 'reveal' || (pid in g.scores && !isIntruder)) ? g.word : null,
     oral: g.oral,
     order: g.order, turn: g.turn, tour: g.tour, tours: TOURS,
     speaker: g.phase === 'clues' ? currentSpeaker(g) : null,
@@ -178,9 +211,15 @@ function stateFor(ctx, g, pid) {
     voted: act.filter((p) => p.id in g.votes).map((p) => p.id),
     needed: act.length,
   };
-  if (g.phase === 'guess' || g.phase === 'reveal') s.intruderId = g.intruderId;
+  if (g.mode === 'note') {
+    s.theme = g.theme;
+    // chacun ne voit que sa propre note (l'écran partagé n'en voit aucune)
+    s.myNote = pid in g.scores ? (pid === g.intruderId ? g.notes.intr : g.notes.major) : null;
+    if (g.phase === 'reveal') s.notes = g.notes;
+  }
+  if (known) s.intruderId = g.intruderId;
   if (g.phase === 'reveal') {
-    s.word = g.word;
+    if (g.mode === 'mot') s.word = g.word;
     s.votes = g.votes;
     s.caught = g.caught;
     s.guess = g.guess;
@@ -201,7 +240,13 @@ module.exports = {
   maxPlayers: 12,
   duration: '15–20 min',
   oral: true,
-  options: [packOption('Plage, pizza, girafe…', 'Ninja, katana, fruit du démon…')],
+  options: [
+    { key: 'mode', label: 'Mode', default: 'mot', choices: [
+      { value: 'mot', label: 'Mot secret 🤫', hint: 'Tout le monde a le même mot, sauf l\'intrus' },
+      { value: 'note', label: 'Notes sur 10 🎚️', hint: 'Tous ont la même note (ex. 4/10), sauf l\'intrus (ex. 7/10)… qui ne le sait pas !' },
+    ] },
+    packOption('Plage, pizza, girafe… / un animal noté sur sa dangerosité', 'Ninja, katana… / un perso de One Piece noté sur sa puissance'),
+  ],
   create,
   onAction,
   onPlayersChanged: autoAdvance,

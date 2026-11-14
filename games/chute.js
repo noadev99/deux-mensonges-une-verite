@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { packOption, byPack, shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 const ANIME = require('./packs-anime');
+const PLUS = require('./contenu-plus');
 
 
 const ROUNDS = 6;
@@ -61,9 +62,12 @@ const PROMPTS = [
   'Le pire tatouage à se faire sur le front : « ___ ».',
 ];
 
+const ALL = [...PROMPTS, ...PLUS.CHUTE];
+const ALL_ANIME = [...ANIME.PROMPTS, ...PLUS.CHUTE_ANIME];
+
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['votes', 'unanimous', 'taste']);
-  const g = { scores, stats, round: 0, totalRounds: ROUNDS, prompts: sample(byPack(ctx, PROMPTS, ANIME.PROMPTS), ROUNDS) };
+  const g = { scores, stats, round: 0, totalRounds: ROUNDS, prompts: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS) };
   newRound(g);
   return g;
 }

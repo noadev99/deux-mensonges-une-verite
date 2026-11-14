@@ -1,10 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // 🎭 2 Mensonges, 1 Vérité
-// 1) Chacun écrit 3 anecdotes (2 fausses, 1 vraie)          — chrono 3 min
+// 1) Chacun écrit 3 anecdotes (2 fausses, 1 vraie)          — chrono 5 min
 // 2) Grand jeu d'association : toutes les séries s'affichent sans nom,
 //    chacun attribue chaque série à un joueur                — chrono selon le nb de séries
 // 3) Révélation de tous les auteurs d'un coup
-// 4) Pour chaque série : « Laquelle est vraie ? »            — chrono 45 s
+// 4) Pour chaque série : « Laquelle est vraie ? »            — chrono 75 s
 //    puis révélation, puis « Raconte ! » : l'auteur raconte l'histoire vraie
 // ─────────────────────────────────────────────────────────────────────────────
 const { shuffle, gain, applyGains, awards, active, initScores } = require('./_utils');
@@ -19,9 +19,9 @@ const PTS = {
   PERFECT_LIE: 150,  // (auteur) personne n'a trouvé la vraie
 };
 const TIME = {
-  writing: 180000,                          // 3 min pour écrire
-  match: (sets) => 45000 + sets * 20000,    // lecture + association
-  vote: 45000,                              // vote « laquelle est vraie »
+  writing: 300000,                          // 5 min pour écrire
+  match: (sets) => 60000 + sets * 30000,    // lecture + association
+  vote: 75000,                              // vote « laquelle est vraie »
 };
 const LABELS = 'ABCDEFGHIJKLMNOP';
 
@@ -30,7 +30,7 @@ function create(ctx) {
   const { scores, stats } = initScores(ctx, ['authorFound', 'trueFound', 'fooled', 'incognito']);
   const g = { scores, stats, anecdotes: {}, sets: [], matches: {}, round: 0, trueVotes: {}, oral: ctx.oral() };
   // à l'oral : on prépare ses anecdotes dans sa tête, on indique juste laquelle est vraie (1 min)
-  setPhase(ctx, g, 'writing', g.oral ? 60000 : TIME.writing, () => { if (Object.keys(g.anecdotes).length >= 2) startMatch(ctx, g); });
+  setPhase(ctx, g, 'writing', g.oral ? 90000 : TIME.writing, () => { if (Object.keys(g.anecdotes).length >= 2) startMatch(ctx, g); });
   return g;
 }
 

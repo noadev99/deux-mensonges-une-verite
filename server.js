@@ -10,6 +10,7 @@ const os = require('os');
 const crypto = require('crypto');
 const { Server } = require('socket.io');
 const GAMES = require('./games');
+const { shuffle } = require('./games/_utils');
 
 const app = express();
 const server = http.createServer(app);
@@ -62,7 +63,7 @@ function newPlayer(room, name) {
 function newRoom() {
   const r = {
     code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
-    gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {},
+    gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(), options: {}, used: new Map(),
   };
   rooms.set(r.code, r);
   return r;
@@ -109,6 +110,17 @@ function ctx(room) {
     endGame: (scores) => endGame(room, scores),
     oral: () => !!room.oral, // l'hôte a choisi « réponses à l'oral »
     option: (key) => gameOptions(room)[key], // option du jeu choisie par l'hôte
+    // Tire n éléments de list en évitant ceux déjà sortis dans ce salon
+    // (on ne retombe pas sur les mêmes questions d'une partie à l'autre)
+    fresh: (list, n) => {
+      if (!room.used.has(list)) room.used.set(list, new Set());
+      const used = room.used.get(list);
+      let pool = list.map((_, i) => i).filter((i) => !used.has(i));
+      if (pool.length < n) { used.clear(); pool = list.map((_, i) => i); }
+      const picked = shuffle(pool).slice(0, n);
+      picked.forEach((i) => used.add(i));
+      return picked.map((i) => list[i]);
+    },
     // Minuteur serveur : exécute fn après ms, puis renvoie l'état à tous.
     // Ignoré si la partie a changé entre-temps (retour au salon, rejouer…).
     schedule: (ms, fn) => {
@@ -329,7 +341,7 @@ io.on('connection', (socket) => {
   socket.on('action', ({ type, payload, v } = {}) => {
     if (!room || !player || room.phase !== 'playing' || !room.game) return;
     // « Suivant » cliqué sur un écran déjà dépassé (double-clic) : ignoré
-    if (type === 'next' && v != null && v !== room.v) return;
+    if ((type === 'next' || type === 'undo') && v != null && v !== room.v) return;
     const mod = GAMES[room.gameId];
     const res = mod.onAction(ctx(room), room.game, player.id, String(type || ''), payload, { isHost: isHost() });
     if (res && res.error) return err(res.error);
