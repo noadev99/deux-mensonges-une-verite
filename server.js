@@ -43,8 +43,8 @@ function newCode() {
   return c;
 }
 
-// Perso complet (dessiné côté client, public/js/perso.js) : des numéros par partie du corps
-const LOOK_KEYS = ['skin', 'hairColor', 'hair', 'eyes', 'mouth', 'acc', 'top', 'bottom', 'shoes', 'col'];
+// Bouille choisie par le joueur (dessinée côté client, public/js/perso.js)
+const LOOK_KEYS = ['col', 'eyes', 'mouth', 'acc'];
 const cleanLook = (l) => Object.fromEntries(LOOK_KEYS.map((k) => {
   const v = l && l[k];
   return [k, Number.isInteger(v) && v >= 0 && v < 64 ? v : Math.floor(Math.random() * 64)];
