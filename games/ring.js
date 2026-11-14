@@ -129,6 +129,7 @@ module.exports = {
   duration: '10 min',
   realtime: true,      // les manettes envoient leurs commandes en direct à la télé
   requiresTv: true,    // se joue avec l'écran partagé (mode télé)
+  keyboard: true,      // un joueur peut jouer au clavier sur l'ordi de la télé
   create,
   onAction,
   onScreenEvent,

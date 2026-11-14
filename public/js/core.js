@@ -340,9 +340,11 @@ const UI = (() => {
   function lobbyScreen() {
     const g = gameInfo();
     const n = S.players.filter((p) => p.connected).length;
-    const missing = Math.max(0, g.minPlayers - n);
+    // le joueur au clavier (télé) ne compte que pour les jeux qui l'acceptent
+    const nFor = (x) => S.players.filter((p) => p.connected && (!p.kb || x.keyboard)).length;
+    const missing = Math.max(0, g.minPlayers - nFor(g));
     const shown = isHost() ? S.games : S.games.filter((x) => x.id === S.gameId);
-    const fits = S.games.filter((x) => n >= x.minPlayers && n <= x.maxPlayers && x.id !== S.gameId);
+    const fits = S.games.filter((x) => nFor(x) >= x.minPlayers && nFor(x) <= x.maxPlayers && x.id !== S.gameId);
     return `
       <div class="lob-head">
         <div class="lob-code"><span class="code-label">Code du salon</span><div class="code sm">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div></div>
@@ -379,8 +381,8 @@ const UI = (() => {
 
       ${isHost() ? `<div class="card">
         <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
-        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${n < x.minPlayers || n > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(n < x.minPlayers || n > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
-          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${n < x.minPlayers ? `<small>🔒 ${x.minPlayers} joueurs min.</small>` : n > x.maxPlayers ? `<small>🔒 ${x.maxPlayers} max.</small>` : ''}</button>`).join('')}</div>
+        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
+          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${nFor(x) < x.minPlayers ? `<small>🔒 ${x.minPlayers} joueurs min.</small>` : nFor(x) > x.maxPlayers ? `<small>🔒 ${x.maxPlayers} max.</small>` : ''}</button>`).join('')}</div>
       </div>` : ''}
       ${soireeCard()}
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>
@@ -405,6 +407,10 @@ const UI = (() => {
     }).join('');
   }
 
+  // Jeu qui accepte un joueur au clavier sur la télé : le jeu choisi, ou le ring s'il n'y a pas assez de téléphones
+  const kbGame = () => (GAMES[S.gameId]?.keyboard ? GAMES[S.gameId]
+    : S.players.filter((p) => p.connected && !p.kb).length < 2 || S.players.some((p) => p.connected && p.kb) ? GAMES.ring : null);
+
   function tvLobby() {
     const g = gameInfo();
     const n = S.players.filter((p) => p.connected).length;
@@ -418,6 +424,7 @@ const UI = (() => {
         </div>
         <div class="tv-side">
           <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players figs" data-live="lobbyPlayers"></div></div>
+          ${kbGame() ? kbGame().keyboard.card() : ''}
           <div class="card tv-games-card">
             <div class="cardhead"><h2>Les jeux</h2><span class="muted">${S.games.length} jeux · l'hôte choisit sur son téléphone</span></div>
             <div class="tv-games">${S.games.map((x) => `
@@ -456,7 +463,7 @@ const UI = (() => {
       const seats = Math.max(0, g.minPlayers - n);
       // les bouilles en grand
       return S.players.map((p) => `<div class="pfig ${p.connected ? '' : 'off'} ${p.id === S.you ? 'me' : ''}" style="--c:${p.look ? PERSO.color(p.look) : p.color}">${av(p, 'xl')}
-          <span class="pn">${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span>${
+          <span class="pn">${p.kb ? '⌨️ ' : ''}${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span>${
         isHost() && p.id !== S.you && p.connected ? `<button class="mkhost" data-make-host="${esc(p.id)}" title="Passer le rôle d'hôte à ${esc(p.name)}">${crown}</button>` : ''}</div>`).join('')
         + Array.from({ length: seats }, () => '<div class="pfig seat"><span class="av xl">?</span><span class="pn">En attente…</span></div>').join('');
     },
@@ -499,6 +506,7 @@ const UI = (() => {
       }
       bindCore();
       if (S.phase === 'playing') mod.bind?.(S, S.game, $app);
+      if (S.phase === 'lobby' && S.spectator) kbGame()?.keyboard.bind($app); // joueur au clavier sur la télé
     }
     // zones mises à jour en continu sans tout redessiner (garde le focus des champs)
     document.querySelectorAll('[data-live]').forEach((el) => {
@@ -550,8 +558,8 @@ const UI = (() => {
     });
     on('[data-game]', (e) => isHost() && socket.emit('selectGame', e.currentTarget.dataset.game));
     on('[data-random-game]', () => {
-      const n = S.players.filter((p) => p.connected).length;
-      const list = S.games.filter((x) => n >= x.minPlayers && n <= x.maxPlayers && x.id !== S.gameId);
+      const nFor = (x) => S.players.filter((p) => p.connected && (!p.kb || x.keyboard)).length;
+      const list = S.games.filter((x) => nFor(x) >= x.minPlayers && nFor(x) <= x.maxPlayers && x.id !== S.gameId);
       if (list.length) socket.emit('selectGame', list[Math.floor(Math.random() * list.length)].id);
     });
     on('[data-leave]', () => { socket.emit('leave'); localStorage.removeItem('session'); S = null; renderHome(); });

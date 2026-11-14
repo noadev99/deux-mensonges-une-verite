@@ -478,6 +478,98 @@
 
   let wonFor = 0;
 
+  // ═══ Joueur au clavier sur l'ordi de la télé ═══
+  // L'ordi ouvre une 2ᵉ connexion qui rejoint le salon comme un vrai joueur : le clavier sert de manette.
+  // Déplacement : flèches ou ZQSD/WASD · A (charger/foncer, fiente) : Espace · B (ancre) : Maj ou E
+  const KB_KEY = 'kb-session';
+  let kb = null;
+  let kbDraft = '';
+  const kbSaved = () => { try { return JSON.parse(localStorage.getItem(KB_KEY) || 'null'); } catch (e) { return null; } };
+  function kbStart(nameTxt) {
+    if (kb || !window.io) return;
+    const S = UI.state;
+    const pseudo = String(nameTxt || '').trim().slice(0, 20);
+    if (!S || !pseudo) return UI.toast('Choisis un pseudo pour le joueur clavier');
+    const saved = kbSaved();
+    const sock = io({ forceNew: true });
+    kb = { sock, name: pseudo, keys: new Set(), you: null, sent: '', last: 0, timer: null };
+    sock.on('connect', () => {
+      const code = UI.state?.code;
+      if (saved && saved.code === code) sock.emit('rejoin', saved);
+      else sock.emit('join', { name: pseudo, code, look: PERSO.random(), kb: true });
+    });
+    sock.on('joined', (d) => { kb && (kb.you = d.playerId); try { localStorage.setItem(KB_KEY, JSON.stringify({ ...d, name: pseudo })); } catch (e) { /* stockage bloqué */ } });
+    sock.on('rejoinFailed', () => { localStorage.removeItem(KB_KEY); sock.emit('join', { name: pseudo, code: UI.state?.code, look: PERSO.random(), kb: true }); });
+    sock.on('errorMsg', (m) => { UI.toast(`Clavier : ${m}`); if (!kb?.you) kbStop(); });
+    sock.on('state', (st) => {
+      if (!kb) return;
+      kb.st = st;
+      // le joueur clavier ne garde pas la couronne : l'hôte lance depuis son téléphone
+      const other = st.players.find((p) => p.connected && p.id !== st.you);
+      if (st.hostId === st.you && other) sock.emit('setHost', other.id);
+      // il ne joue qu'au ring : il s'en va si l'hôte choisit un autre jeu, jouable sans lui
+      const real = st.players.filter((p) => p.connected && !p.kb).length;
+      const chosen = st.games.find((x) => x.id === st.gameId);
+      if (st.phase === 'lobby' && chosen && !chosen.keyboard && real >= chosen.minPlayers) kbStop();
+    });
+  }
+  function kbStop() {
+    if (!kb) return;
+    const k = kb; kb = null;
+    k.sock.emit('leave'); setTimeout(() => k.sock.disconnect(), 200);
+    localStorage.removeItem(KB_KEY);
+    UI.refresh();
+  }
+  const KEYS = { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'], left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], a: ['Space', 'Enter'], b: ['ShiftLeft', 'ShiftRight', 'KeyE'] };
+  const kbHas = (k) => KEYS[k].some((c) => kb.keys.has(c));
+  function kbFlush() {
+    if (!kb) return;
+    let x = (kbHas('right') ? 1 : 0) - (kbHas('left') ? 1 : 0), y = (kbHas('down') ? 1 : 0) - (kbHas('up') ? 1 : 0);
+    if (x && y) { x *= 0.707; y *= 0.707; }
+    const msg = { x, y, a: kbHas('a'), b: kbHas('b') };
+    const key = JSON.stringify(msg), now = Date.now();
+    if (key === kb.sent && now - kb.last < 300) return;
+    if (now - kb.last < 40) { clearTimeout(kb.timer); kb.timer = setTimeout(kbFlush, 40 - (now - kb.last)); return; }
+    kb.sent = key; kb.last = now;
+    kb.sock.emit('ctl', msg);
+  }
+  const ALL_KEYS = new Set(Object.values(KEYS).flat());
+  window.addEventListener('keydown', (e) => {
+    if (!kb || !ALL_KEYS.has(e.code) || e.target.matches?.('input, textarea')) return;
+    e.preventDefault(); kb.keys.add(e.code); kbFlush();
+  });
+  window.addEventListener('keyup', (e) => { if (!kb || !ALL_KEYS.has(e.code)) return; kb.keys.delete(e.code); kbFlush(); });
+  window.addEventListener('blur', () => { if (kb) { kb.keys.clear(); kbFlush(); } });
+  setInterval(() => { if (kb) kbFlush(); }, 300);
+  // télé rechargée : le joueur clavier reprend sa place
+  function kbResume() {
+    const saved = kbSaved();
+    if (!kb && saved && UI.state?.spectator && saved.code === UI.state.code) kbStart(saved.name);
+  }
+  const KB_HELP = '<b>Flèches</b> ou <b>ZQSD</b> : glisser · <b>Espace</b> : A (charger) · <b>Maj</b> : B (ancre)';
+
+  const keyboard = {
+    card() {
+      kbResume();
+      if (kb) {
+        return `<div class="card rg-kb on"><div class="cardhead"><h2>⌨️ Joueur clavier : ${esc(kb.name)}</h2><button class="chipbtn" data-kb-off>Retirer</button></div>
+          <p class="muted" style="margin:0">${KB_HELP}</p></div>`;
+      }
+      return `<div class="card rg-kb"><h2>⌨️ Jouer aussi au clavier ?</h2>
+        <p class="muted" style="margin-top:0">Pas assez de téléphones ? Quelqu'un peut jouer sur cet ordi avec le clavier.</p>
+        <div class="row"><input id="kbname" maxlength="20" placeholder="Pseudo du joueur clavier" value="${esc(kbDraft)}" autocomplete="off" /><button class="alt" data-kb-on style="flex:0 0 auto">Rejoindre</button></div></div>`;
+    },
+    bind(root) {
+      const input = root.querySelector('#kbname');
+      if (input) {
+        input.addEventListener('input', () => { kbDraft = input.value; });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') kbStart(input.value); });
+      }
+      root.querySelector('[data-kb-on]')?.addEventListener('click', () => kbStart(root.querySelector('#kbname')?.value));
+      root.querySelector('[data-kb-off]')?.addEventListener('click', kbStop);
+    },
+  };
+
   // ═══ Écrans ═══
   const RULES = `
     <div class="rg-rules">
@@ -507,6 +599,7 @@
         return `<div class="rg-stage">
             <div class="rg-hud"><span class="rg-round">Manche ${g.round}/${g.totalRounds} · ${esc(g.arena.name)}</span><span data-live="alive"></span></div>
             <canvas class="rg-canvas"></canvas>
+            ${kb ? `<div class="rg-kbhelp">⌨️ ${esc(kb.name)} : ${KB_HELP}</div>` : ''}
             <button class="rg-sound" data-sound>🔊</button>
           </div>`;
       }
@@ -537,6 +630,7 @@
   };
 
   UI.registerGame('ring', {
+    keyboard,
     rules: () => `
       <ol class="rules">
         <li>Le jeu s'affiche sur la <b>télé</b>. Ton <b>téléphone est ta manette</b> (tourne-le en paysage).</li>
@@ -563,6 +657,7 @@
     },
 
     bind: (S, g, root) => {
+      if (S.spectator) kbResume();
       if (g.phase === 'play' && S.spectator) {
         const cv = root.querySelector('.rg-canvas');
         if (cv && (!sim || sim.key !== `${g.round}|${g.startedAt}` || sim.canvas !== cv)) startSim(S, g, cv);

@@ -849,3 +849,10 @@ body.padmode { overflow: hidden; overscroll-behavior: none; touch-action: none; 
 .gtile:disabled { background: #eee8f5; box-shadow: none; cursor: not-allowed; opacity: .5; transform: none; }
 .gtile:disabled .gt-art { filter: grayscale(.8); }
 .tv-g.few { opacity: .4; }
+.rg-kb.on { background-color: #e7f7ff; }
+.rg-kb .cardhead h2 { font-size: 1.15rem; }
+.rg-kbhelp { margin-top: 10px; text-align: center; color: #fff; font-size: 1rem; }
+.rg-kbhelp b { background: #fff; color: var(--ink); border: 2px solid var(--ink); border-radius: 6px; padding: 0 6px; box-shadow: 1px 2px 0 var(--ink); }
+/* exceptions sur la télé : le joueur clavier et le bouton du son se cliquent */
+body.tv .rg-kb, body.tv .rg-kb *, body.tv .rg-sound { pointer-events: auto; }
+body.tv .rg-kb input { display: block !important; }

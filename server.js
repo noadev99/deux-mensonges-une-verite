@@ -84,8 +84,8 @@ const GONE_AFTER = 20 * 60 * 1000;
 function purgeGone(room) {
   for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
 }
-const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv }) =>
-  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [], requiresTv: !!requiresTv }));
+const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv, keyboard }) =>
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [], requiresTv: !!requiresTv, keyboard: !!keyboard }));
 
 // Options d'un jeu choisies par l'hôte (ex. thème des questions), avec les valeurs par défaut
 function gameOptions(room, gameId = room.gameId) {
@@ -182,12 +182,16 @@ function stateFor(room, pid) {
     spectator: pid === null,         // c'est l'écran partagé qui reçoit cet état
     history: room.history,
     players: [...room.players.values()].map((p) => ({
-      id: p.id, name: p.name, avatar: p.avatar, color: p.color, look: p.look, connected: p.connected, soiree: p.soiree,
+      id: p.id, name: p.name, avatar: p.avatar, color: p.color, look: p.look, kb: !!p.kb, connected: p.connected, soiree: p.soiree,
     })),
   };
   if (room.phase === 'playing' && room.game) s.game = GAMES[room.gameId].stateFor(ctx(room), room.game, pid);
   return s;
 }
+
+// Nombre de joueurs qui comptent pour un jeu : le joueur au clavier de la télé ne joue qu'aux jeux qui l'acceptent
+const playersFor = (room, g) => connected(room).filter((p) => !p.kb || g.keyboard).length;
+const playable = (room, g) => { const n = playersFor(room, g); return g && n >= g.minPlayers && n <= g.maxPlayers && (!g.requiresTv || room.screens.size > 0); };
 
 // Dans le salon : si le jeu choisi n'est plus jouable avec ce nombre de joueurs,
 // on en sélectionne un qui l'est (ex. à 2 joueurs → Le ring savonneux)
@@ -195,11 +199,11 @@ function fitGame(room) {
   if (room.phase !== 'lobby') return;
   const n = connected(room).length;
   if (!n) return;
-  const ok = (g) => g && n >= g.minPlayers && n <= g.maxPlayers && (!g.requiresTv || room.screens.size > 0);
+  const ok = (g) => playable(room, g);
   const wanted = GAMES[room.wantedGame || room.gameId];
   if (ok(wanted)) { room.gameId = wanted.id; return; }      // le jeu choisi par l'hôte redevient jouable
   if (ok(GAMES[room.gameId])) return;
-  const next = Object.values(GAMES).find(ok) || Object.values(GAMES).find((g) => n >= g.minPlayers && n <= g.maxPlayers);
+  const next = Object.values(GAMES).find(ok) || Object.values(GAMES).find((g) => { const k = playersFor(room, g); return k >= g.minPlayers && k <= g.maxPlayers; });
   if (next) room.gameId = next.id;
 }
 
@@ -257,7 +261,7 @@ io.on('connection', (socket) => {
     attach(r, p);
   });
 
-  socket.on('join', ({ name, code, look } = {}) => {
+  socket.on('join', ({ name, code, look, kb } = {}) => {
     name = String(name || '').trim();
     code = String(code || '').trim().toUpperCase();
     const r = rooms.get(code);
@@ -270,6 +274,7 @@ io.on('connection', (socket) => {
     if (r.phase !== 'lobby') return err('Une partie est en cours : attends la fin, ou reprends ta place avec ton ancien pseudo');
     if (r.players.size >= MAX_PLAYERS) return err('Salon plein');
     const p = newPlayer(r, name, look);
+    if (kb) p.kb = true; // joueur au clavier sur l'ordi de la télé
     if (!r.hostId || !r.players.has(r.hostId)) r.hostId = p.id; // salon créé par un écran : le 1er joueur est l'hôte
     attach(r, p);
   });
@@ -370,7 +375,7 @@ io.on('connection', (socket) => {
   socket.on('selectGame', (gameId) => {
     if (!isHost() || room.phase !== 'lobby' || !GAMES[gameId]) return;
     // jeu bloqué tant qu'il n'y a pas assez de joueurs (ou trop)
-    const n = connected(room).length, g = GAMES[gameId];
+    const g = GAMES[gameId], n = playersFor(room, g);
     if (n < g.minPlayers) return err(`${g.name} : il faut au moins ${g.minPlayers} joueurs (vous êtes ${n})`);
     if (n > g.maxPlayers) return err(`${g.name} : ${g.maxPlayers} joueurs maximum`);
     room.gameId = gameId;
@@ -381,7 +386,7 @@ io.on('connection', (socket) => {
   socket.on('startGame', () => {
     if (!isHost() || room.phase !== 'lobby') return;
     const mod = GAMES[room.gameId];
-    const n = connected(room).length;
+    const n = playersFor(room, mod);
     if (n < mod.minPlayers) return err(`${mod.name} : il faut au moins ${mod.minPlayers} joueurs`);
     if (n > mod.maxPlayers) return err(`${mod.name} : ${mod.maxPlayers} joueurs maximum`);
     if (mod.requiresTv && !room.screens.size) return err(`${mod.name} se joue sur une télé : branche le mode télé (bouton 📺)`);
