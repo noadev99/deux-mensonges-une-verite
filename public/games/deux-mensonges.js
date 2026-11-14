@@ -108,7 +108,7 @@
             <ul class="dm-items">${x.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
             <div class="muted" style="font-size:.9rem">${x.found.length ? `Reconnu par ${x.found.map((id) => `${av(P(id), 'sm')} ${name(id)}`).join(', ')}` : 'Personne ne l\'a reconnu 👻'}</div>
           </div>`).join('')}
-        <div class="card"><h2>Points</h2>${UI.gainsBlock(g.matchGains)}</div>
+        <div class="card gains-card">${UI.gainsBlock(g.matchGains)}</div>
         ${UI.hostButton('Trouver les vérités')}`;
     },
 
@@ -139,7 +139,7 @@
         ${progress(g)}
         <div class="phase"><div class="step">${roundStep(g)}</div><div class="t">La vérité sur ${name(c.authorId)}</div></div>
         <div class="card reveal">${anecList(g, { showTruth: true, dimFalse: true, votes: c.trueVotes })}</div>
-        <div class="card"><h2>Points</h2>${UI.gainsBlock(c.trueGains)}</div>
+        <div class="card gains-card">${UI.gainsBlock(c.trueGains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, sumGains(c.trueGains))}</div>
         ${UI.hostButton(`🎤 ${name(c.authorId)}, raconte !`)}`;
     },

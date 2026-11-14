@@ -54,7 +54,7 @@
           }).join('')}</ol>
           ${mine && !g.isJudge ? '<p class="muted" style="margin:10px 0 0;font-size:.9rem">🎯 bonne place · ≈ à une place près</p>' : ''}
         </div>
-        <div class="card"><h2>Points</h2>${UI.gainsBlock(r.gains)}</div>
+        <div class="card gains-card">${UI.gainsBlock(r.gains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, UI.gainTotals(r.gains))}</div>
         ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Manche suivante')}`;
     },

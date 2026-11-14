@@ -346,3 +346,19 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 
 /* bouton de l'hôte déjà cliqué, en attente du nouvel écran */
 [data-host-action].busy { opacity: .6; pointer-events: none; }
+
+/* ─── Détail des points : replié, compact ─── */
+.card.gains-card { padding: 10px 16px; }
+.gains-d summary { list-style: none; display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; font-size: .95rem; padding: 2px 0; }
+.gains-d summary::-webkit-details-marker { display: none; }
+.gains-d summary::before { content: '▸'; display: inline-block; transition: transform .15s; font-size: .9rem; }
+.gains-d[open] summary::before { transform: rotate(90deg); }
+.gains-title { flex: 1; }
+.gains-me { color: var(--good); font-weight: 700; font-size: .9rem; }
+.gains-d .gains { margin-top: 8px; }
+.gains-d .g { padding: 5px 0; border-bottom: 1px dashed var(--paper-2); }
+.gains-d .gl { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+.gains-d .gn { flex: 1; font-weight: 600; }
+.gains-d .plus { font-size: .85rem; margin: 0; }
+.gains-d ul { margin: 2px 0 0 32px; padding: 0; list-style: none; font-size: .8rem; line-height: 1.35; color: var(--muted); }
+.gains-none { font-size: .9rem; }

@@ -67,7 +67,7 @@
           <div class="muted">au bout de ${Math.round(r.duration / 1000)} secondes et ${g.answers.length} réponses</div>
         </div>
         <div class="card"><h2>${esc(g.category)}</h2>${answersList(g)}</div>
-        <div class="card"><h2>Points</h2>${UI.gainsBlock(r.gains)}</div>
+        <div class="card gains-card">${UI.gainsBlock(r.gains)}</div>
         <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, UI.gainTotals(r.gains))}</div>
         ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Manche suivante')}`;
     },

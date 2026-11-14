@@ -93,12 +93,19 @@ const UI = (() => {
     <div class="phase"><div class="step">${step}</div><div class="t">${title}</div></div>`;
 
   // Détail des points gagnés : gains = {pid: {total, reasons:[{pts,label}]}}
+  // Détail des points gagnés : replié par défaut derrière une petite flèche, en version compacte.
+  // gains = {pid: {total, reasons:[{pts,label}]}}
+  let gainsOpen = false; // reste ouvert/fermé d'un écran à l'autre si le joueur l'a ouvert
   function gainsBlock(gains) {
     const ids = Object.keys(gains || {}).filter(P).sort((a, b) => gains[b].total - gains[a].total);
-    if (!ids.length) return '<div class="muted">Personne ne marque de points cette fois.</div>';
-    return `<div class="gains">${ids.map((id) => `
-      <div class="g"><div style="display:flex;align-items:center;gap:10px">${av(P(id))}<b style="flex:1">${name(id)}</b><span class="plus">+${gains[id].total}</span></div>
-      <ul>${gains[id].reasons.map((r) => `<li><b>+${r.pts}</b> ${esc(r.label)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+    if (!ids.length) return '<div class="muted gains-none">Personne ne marque de points cette fois.</div>';
+    const mine = gains[S.you]?.total;
+    return `<details class="gains-d" ${gainsOpen ? 'open' : ''}>
+      <summary><span class="gains-title">Détail des points</span>${mine ? `<span class="gains-me">toi : +${mine}</span>` : ''}</summary>
+      <div class="gains">${ids.map((id) => `
+        <div class="g"><div class="gl">${av(P(id), 'sm')}<span class="gn">${name(id)}</span><span class="plus">+${gains[id].total}</span></div>
+        <ul>${gains[id].reasons.map((r) => `<li>+${r.pts} ${esc(r.label)}</li>`).join('')}</ul></div>`).join('')}</div>
+    </details>`;
   }
   const gainTotals = (gains) => Object.fromEntries(Object.entries(gains || {}).map(([id, x]) => [id, x.total]));
 
@@ -332,6 +339,7 @@ const UI = (() => {
   function bindCore() {
     const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
     on('[data-core]', (e) => socket.emit(e.currentTarget.dataset.core));
+    document.querySelectorAll('.gains-d').forEach((d) => d.addEventListener('toggle', () => { gainsOpen = d.open; }));
     on('[data-quit]', () => { if (confirm('Arrêter la partie et revenir au salon ? Les points de cette partie seront perdus.')) socket.emit('toLobby'); });
     on('[data-host-action]', (e) => {
       const el = e.currentTarget;
