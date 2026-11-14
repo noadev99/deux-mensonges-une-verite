@@ -25,6 +25,9 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
 | 🎨 Dessin en chaîne — dessine, devine, redessine… et regarde le message dériver | 3–10 |
 | 🎚️ Note secrète — une note sur 10 à faire deviner : en racontant une histoire, ou en répondant à un interrogatoire | 3–12 |
+| 💰 Le Butin — en duo devant un butin : partager ou trahir pour tout prendre | 3–16 |
+| 🗡️ Le Complot — des traîtres cachés sabotent vos missions, démasquez-les | 5–10 |
+| 🤝 Les Alliances — alliances secrètes, coffres communs… puis fidèle ou poignard | 3–10 |
 
 ## Lancer en local
 ```bash

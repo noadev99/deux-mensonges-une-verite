@@ -96,6 +96,60 @@ const ICONS = (() => {
       <rect x="40" y="42" width="16" height="14" fill="#ff8fb5"/>
       <path d="M32 6l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z" fill="#fff"/>
       <path d="M30 37l3-2v12"/>`),
+
+    // 💰 un coffre au trésor qui déborde de pièces
+    butin: art(`
+      <circle cx="22" cy="20" r="6" fill="#ffc23d"/><circle cx="34" cy="15" r="6" fill="#ffd96b"/><circle cx="45" cy="21" r="6" fill="#ffc23d"/>
+      <path d="M8 32q0-12 24-12t24 12z" fill="#c98d4a"/>
+      <rect x="8" y="32" width="48" height="24" rx="3" fill="#a0703c"/>
+      <path d="M8 40h48" /><path d="M18 32v24M46 32v24" stroke="#ffc23d" stroke-width="4"/><path d="M18 32v24M46 32v24" stroke-width="1.5"/>
+      <rect x="27" y="36" width="10" height="11" rx="2" fill="#ffc23d"/><circle cx="32" cy="41" r="1.4" fill="${INK}" stroke="none"/>`),
+
+    // 🗡️ un loup (masque) et une dague
+    complot: art(`
+      <path d="M38 6l4 4-22 30-6 2 2-6z" fill="#e9e4ef"/>
+      <path d="M12 38l8 8" stroke-width="5"/><path d="M12 38l8 8" stroke="#8f5bd6" stroke-width="2.5"/>
+      <circle cx="9" cy="49" r="3" fill="#ffc23d"/>
+      <path d="M18 40q14-8 28-6 12 2 14 8-2 10-14 10-6 0-9-5-3 5-9 5-8 0-10-12z" fill="#8f5bd6"/>
+      <ellipse cx="29" cy="45" rx="4.5" ry="3" fill="#fff"/><ellipse cx="47" cy="44" rx="4.5" ry="3" fill="#fff"/>
+      <circle cx="29" cy="45" r="1.6" fill="${INK}" stroke="none"/><circle cx="47" cy="44" r="1.6" fill="${INK}" stroke="none"/>`),
+
+    // 🤝 deux alliances (anneaux) entrelacées… et une petite dague cachée
+    alliances: art(`
+      <path d="M50 8l4 4-10 12-4 1 1-4z" fill="#e9e4ef" stroke-width="2.5"/>
+      <circle cx="24" cy="36" r="13" stroke-width="9"/><circle cx="24" cy="36" r="13" stroke="#ffc23d" stroke-width="5"/>
+      <circle cx="40" cy="36" r="13" stroke-width="9"/><circle cx="40" cy="36" r="13" stroke="#3fbf8f" stroke-width="5"/>
+      <path d="M33 25.5a13 13 0 0 1 0 21" stroke-width="9"/><path d="M33 25.5a13 13 0 0 1 0 21" stroke="#ffc23d" stroke-width="5"/>
+      <path d="M14 14l2 4M10 20l4 1M20 12l0 4" stroke-width="2.5"/>`),
+  };
+
+  // ─── Pièces de plateau (cartes, jetons…) pour les jeux de trahison ───
+  const big = (body, vb = '0 0 64 64') => `<svg class="bart" viewBox="${vb}" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  const board = {
+    coin: (label = '') => big(`<circle cx="32" cy="32" r="26" fill="#ffc23d"/><circle cx="32" cy="32" r="19" stroke="#c98d1a" stroke-width="2.5"/>
+      <text x="32" y="40" font-size="22" text-anchor="middle" fill="${INK}" stroke="none" font-family="system-ui" font-weight="900">${label}</text>`),
+    share: big(`<circle cx="20" cy="40" r="11" fill="#ffc23d"/><circle cx="20" cy="40" r="6" stroke="#c98d1a" stroke-width="2"/>
+      <circle cx="44" cy="40" r="11" fill="#ffc23d"/><circle cx="44" cy="40" r="6" stroke="#c98d1a" stroke-width="2"/>
+      <path d="M14 18q18-12 36 0" stroke-width="3"/><path d="M44 12l6 6-8 2" stroke-width="3"/>`),
+    betray: big(`<path d="M44 6l6 6-26 30-8 3 3-8z" fill="#e9e4ef"/><path d="M28 34l4 4" stroke-width="2"/>
+      <path d="M12 38l12 12" stroke-width="7"/><path d="M12 38l12 12" stroke="#f0506e" stroke-width="3.5"/>
+      <circle cx="9" cy="53" r="4" fill="#ffc23d"/>`),
+    chest: (open = false) => big(open
+      ? `<path d="M8 26l6-14h36l6 14z" fill="#c98d4a"/><circle cx="24" cy="27" r="6" fill="#ffc23d"/><circle cx="36" cy="25" r="6" fill="#ffd96b"/><circle cx="44" cy="29" r="5" fill="#ffc23d"/>
+         <rect x="8" y="30" width="48" height="24" rx="3" fill="#a0703c"/><path d="M18 30v24M46 30v24" stroke="#ffc23d" stroke-width="4"/>`
+      : `<path d="M8 30q0-14 24-14t24 14z" fill="#c98d4a"/><rect x="8" y="30" width="48" height="24" rx="3" fill="#a0703c"/>
+         <path d="M8 38h48"/><path d="M18 30v24M46 30v24" stroke="#ffc23d" stroke-width="4"/>
+         <rect x="27" y="34" width="10" height="11" rx="2" fill="#ffc23d"/><circle cx="32" cy="39" r="1.4" fill="${INK}" stroke="none"/>`),
+    shield: big(`<path d="M32 6l22 8v16c0 14-10 24-22 28C20 54 10 44 10 30V14z" fill="#4dabf7"/><path d="M22 31l7 7 13-14" stroke="#fff" stroke-width="5"/><path d="M22 31l7 7 13-14" stroke-width="1.5"/>`),
+    sabotage: big(`<path d="M32 6l22 8v16c0 14-10 24-22 28C20 54 10 44 10 30V14z" fill="#f0506e"/><path d="M33 8l-6 16 9 6-8 12 4 14" stroke-width="3" stroke="#1a0f2e"/>`),
+    hood: big(`<path d="M10 58q0-30 22-46 22 16 22 46z" fill="#3c2a5c"/><path d="M20 58q0-22 12-30 12 8 12 30z" fill="${INK}"/>
+      <ellipse cx="27" cy="40" rx="3" ry="2" fill="#f0506e" stroke="none"/><ellipse cx="37" cy="40" rx="3" ry="2" fill="#f0506e" stroke="none"/>`),
+    knight: big(`<path d="M10 58q0-24 22-30 22 6 22 30z" fill="#4dabf7"/><circle cx="32" cy="22" r="13" fill="#ffd9b0"/>
+      <path d="M19 20q0-14 13-14t13 14z" fill="#cfd3d8"/><path d="M32 6v-2M26 36q6 4 12 0"/><circle cx="27" cy="23" r="1.6" fill="${INK}" stroke="none"/><circle cx="37" cy="23" r="1.6" fill="${INK}" stroke="none"/>`),
+    crown: big(`<path d="M8 50l4-30 12 12 8-18 8 18 12-12 4 30z" fill="#ffc23d"/><circle cx="32" cy="40" r="4" fill="#f0506e"/>`),
+    rings: big(`<circle cx="24" cy="34" r="13" stroke-width="9"/><circle cx="24" cy="34" r="13" stroke="#ffc23d" stroke-width="5"/>
+      <circle cx="40" cy="34" r="13" stroke-width="9"/><circle cx="40" cy="34" r="13" stroke="#3fbf8f" stroke-width="5"/>`),
+    heartbreak: big(`<path d="M32 54L10 32a12 12 0 0 1 22-14 12 12 0 0 1 22 14z" fill="#ff8fb5"/><path d="M32 18l-4 10 7 6-5 8 2 10" stroke-width="3"/>`),
   };
 
   const ui = {
@@ -160,6 +214,7 @@ const ICONS = (() => {
     game: (id) => GAMES[id] || '',
     avatar,
     ui,
-    parts: { EYES, MOUTHS, EXTRAS }, // bouilles personnalisables (perso.js)
+    parts: { EYES, MOUTHS, EXTRAS },
+    board, // bouilles personnalisables (perso.js)
   };
 })();

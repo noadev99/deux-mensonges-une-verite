@@ -10,6 +10,9 @@ const list = [
   require('./classement'),
   require('./dessin'),
   require('./note'),
+  require('./butin'),
+  require('./complot'),
+  require('./alliances'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));
