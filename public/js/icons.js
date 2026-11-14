@@ -78,6 +78,17 @@ const ICONS = (() => {
       <path d="M36 48h20a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H44l-6 4v-4h-2a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z" fill="#ffc23d"/>
       <path d="M41 54h1M46 54h1M51 54h1" stroke-width="3.5"/>`),
 
+    // 🎚️ une jauge de 0 à 10 avec son curseur et un point d'interrogation
+    note: art(`
+      <rect x="6" y="34" width="52" height="14" rx="7" fill="#fff"/>
+      <path d="M13 34v14" stroke="#f0506e" stroke-width="6"/>
+      <rect x="6" y="34" width="30" height="14" rx="7" fill="#9be15d"/>
+      <path d="M36 28v26" stroke-width="4"/>
+      <circle cx="36" cy="22" r="7" fill="#ffc23d"/>
+      <path d="M33.5 20.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7" stroke-width="2.2"/>
+      <circle cx="36" cy="27" r=".6" fill="${INK}"/>
+      <path d="M10 56h4M50 56h4" stroke-width="2.5"/>`),
+
     // 🏅 un podium avec une étoile sur la première marche
     classement: art(`
       <rect x="24" y="26" width="16" height="30" fill="#ffc23d"/>

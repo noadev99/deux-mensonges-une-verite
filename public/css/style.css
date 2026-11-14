@@ -362,3 +362,41 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 .gains-d .plus { font-size: .85rem; margin: 0; }
 .gains-d ul { margin: 2px 0 0 32px; padding: 0; list-style: none; font-size: .8rem; line-height: 1.35; color: var(--muted); }
 .gains-none { font-size: .9rem; }
+
+/* ─── Note secrète ─── */
+.nt-prompt { padding: 14px 16px; }
+.nt-q { font-family: var(--display); font-size: 1.45rem; line-height: 1.15; }
+.nt-ends { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: .82rem; font-weight: 600; color: var(--muted); }
+.nt-scale { position: relative; display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; margin-top: 12px; }
+.nt-cell { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 9px; background: color-mix(in srgb, var(--c) 35%, #fff); font-family: var(--display); font-size: 1.05rem; color: var(--ink); box-shadow: none; }
+.nt-cell > span { line-height: 1; padding-bottom: 8px; }
+.nt-scale.show .nt-cell { height: 38px; justify-content: center; }
+.nt-scale.show .nt-cell > span { padding: 0; }
+.nt-cell.mine { background: var(--c); transform: translateY(-4px) scale(1.12); box-shadow: 2px 2px 0 var(--ink); z-index: 1; }
+.nt-cell.mine::after { content: '▲'; position: absolute; bottom: -20px; font-size: .8rem; }
+button.nt-cell { height: 52px; cursor: pointer; }
+button.nt-cell > span, button.nt-cell { justify-content: center; }
+button.nt-cell:active { transform: translateY(2px); }
+button.nt-cell.sel { background: var(--c); box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--ink); transform: translateY(-3px); z-index: 1; }
+.nt-pickhead { text-align: center; font-weight: 600; }
+.nt-pickhead b { font-family: var(--display); font-weight: 400; font-size: 1.3rem; }
+.nt-by { display: flex; align-items: center; gap: 8px; }
+.nt-story { font-size: 1.1rem; line-height: 1.5; margin: 10px 0 4px; }
+
+/* révélation : la jauge */
+.nt-revealcard { padding: 16px 12px 14px; }
+.nt-counter { text-align: center; font-family: var(--display); line-height: 1; margin-bottom: 6px; }
+.nt-num { font-size: 4.2rem; display: inline-block; transition: transform .15s; }
+.nt-counter small { font-size: 1.4rem; color: var(--muted); margin-left: 4px; }
+.nt-revealcard.done .nt-num { animation: pop .5s cubic-bezier(.2,1.6,.4,1); color: var(--ink); text-shadow: 3px 3px 0 var(--game); }
+.nt-scale.reveal { padding-top: 64px; }
+.nt-scale.reveal .nt-cell { height: 48px; background: #fff; transition: background .2s, transform .2s; }
+.nt-scale.reveal .nt-cell.lit { background: var(--c); }
+.nt-scale.reveal .nt-cell.hit { transform: translateY(-6px) scale(1.18); box-shadow: 3px 3px 0 var(--ink); z-index: 2; }
+.nt-fill { position: absolute; left: 0; bottom: -8px; height: 6px; width: 0; border-radius: 99px; background: var(--good); transition: width .25s ease-out, background .25s; }
+.nt-who { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; }
+.nt-who .av.sm { width: 22px; height: 22px; animation: pop .4s cubic-bezier(.2,1.6,.4,1) both; }
+.nt-revealcard.done .nt-cell.hit .nt-who .av { animation: bob .6s ease-in-out 3; }
+.nt-after { opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; pointer-events: none; }
+.nt-after.shown { opacity: 1; transform: none; pointer-events: auto; }
+@media (max-width: 380px) { .nt-cell { font-size: .9rem; border-radius: 7px; } .nt-scale { gap: 3px; } }
