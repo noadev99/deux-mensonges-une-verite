@@ -188,7 +188,11 @@ const UI = (() => {
   socket.on('connect', () => {
     setOffline(false);
     if (SCREEN) return socket.emit('watch', { code: SCREEN }); // écran partagé : on regarde, on ne joue pas
-    const saved = JSON.parse(localStorage.getItem('session') || 'null');
+    let saved = JSON.parse(localStorage.getItem('session') || 'null');
+    // Lien d'invitation (QR code de la télé, lien partagé) vers un AUTRE salon :
+    // il passe avant l'ancien salon gardé en mémoire.
+    const invited = (new URLSearchParams(location.search).get('salon') || '').toUpperCase();
+    if (saved && invited && saved.code !== invited && !S) { localStorage.removeItem('session'); saved = null; }
     if (saved) socket.emit('rejoin', saved);
     else if (lastKey !== 'home') renderHome(); // ne pas effacer un pseudo en cours de saisie
   });
@@ -251,7 +255,11 @@ const UI = (() => {
     if (wakeLock && !wakeLock.released) return;
     try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { /* refusé (batterie faible…) : pas grave */ }
   }
-  socket.on('joined', (d) => localStorage.setItem('session', JSON.stringify(d)));
+  socket.on('joined', (d) => {
+    localStorage.setItem('session', JSON.stringify(d));
+    // l'adresse suit le salon rejoint (un vieux lien d'invitation ne nous en fera pas sortir)
+    if (new URLSearchParams(location.search).get('salon')) history.replaceState(null, '', `/?salon=${d.code}`);
+  });
   socket.on('errorMsg', toast);
   // Le serveur a été mis à jour pendant que la page était ouverte : on recharge la nouvelle version
   const outdated = (build) => {
