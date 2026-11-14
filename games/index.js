@@ -13,6 +13,7 @@ const list = [
   require('./butin'),
   require('./complot'),
   require('./alliances'),
+  require('./ring'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));

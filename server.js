@@ -84,8 +84,8 @@ const GONE_AFTER = 20 * 60 * 1000;
 function purgeGone(room) {
   for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
 }
-const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options }) =>
-  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [] }));
+const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv }) =>
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [], requiresTv: !!requiresTv }));
 
 // Options d'un jeu choisies par l'hôte (ex. thème des questions), avec les valeurs par défaut
 function gameOptions(room, gameId = room.gameId) {
@@ -118,6 +118,8 @@ function ctx(room) {
     endGame: (scores) => endGame(room, scores),
     oral: () => !!room.oral, // l'hôte a choisi « réponses à l'oral »
     option: (key) => gameOptions(room)[key], // option du jeu choisie par l'hôte
+    // fait vibrer le téléphone d'un joueur (jeux en temps réel)
+    buzz: (pid, pattern) => { const p = room.players.get(pid); if (p?.connected && p.socketId) io.to(p.socketId).emit('buzz', pattern); },
     // Tire n éléments de list en évitant ceux déjà sortis dans ce salon
     // (on ne retombe pas sur les mêmes questions d'une partie à l'autre)
     fresh: (list, n) => {
@@ -278,6 +280,28 @@ io.on('connection', (socket) => {
   // Écran partagé (télé / ordi) : il regarde le salon sans être un joueur
   let watching = null;
   // Mode télé : l'écran crée lui-même le salon (sans joueur), les téléphones le rejoignent avec le QR code
+  // ─── Jeux en temps réel : la télé fait tourner le jeu, les téléphones sont des manettes ───
+  // Manette → télé : uniquement les commandes (joystick + boutons), 30 fois par seconde au maximum.
+  let lastCtl = 0;
+  socket.on('ctl', (c) => {
+    if (!room || !player || room.phase !== 'playing' || !GAMES[room.gameId]?.realtime || !room.screens.size) return;
+    const now = Date.now();
+    if (now - lastCtl < 30) return;
+    lastCtl = now;
+    const clamp = (v) => Math.max(-1, Math.min(1, Number(v) || 0));
+    const msg = { p: player.id, x: clamp(c?.x), y: clamp(c?.y), a: !!c?.a, b: !!c?.b };
+    for (const sid of room.screens) io.to(sid).emit('ctl', msg);
+  });
+  // Télé → serveur : ce qui se passe dans le jeu (chute, choc, fin de manche). Seul le premier écran fait foi.
+  socket.on('screenEvent', ({ type, payload } = {}) => {
+    const r = watching;
+    if (!r || r.phase !== 'playing' || !r.game || [...r.screens][0] !== socket.id) return;
+    const mod = GAMES[r.gameId];
+    if (!mod.onScreenEvent) return;
+    const changed = mod.onScreenEvent(ctx(r), r.game, String(type || ''), payload);
+    if (changed) broadcast(r);
+  });
+
   socket.on('createScreen', () => {
     if (watching) watching.screens.delete(socket.id);
     const r = newRoom();
@@ -340,6 +364,7 @@ io.on('connection', (socket) => {
     const n = connected(room).length;
     if (n < mod.minPlayers) return err(`${mod.name} : il faut au moins ${mod.minPlayers} joueurs`);
     if (n > mod.maxPlayers) return err(`${mod.name} : ${mod.maxPlayers} joueurs maximum`);
+    if (mod.requiresTv && !room.screens.size) return err(`${mod.name} se joue sur une télé : branche le mode télé (bouton 📺)`);
     startGame(room);
     broadcast(room);
   });

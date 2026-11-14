@@ -121,6 +121,14 @@ const ICONS = (() => {
       <circle cx="40" cy="36" r="13" stroke-width="9"/><circle cx="40" cy="36" r="13" stroke="#3fbf8f" stroke-width="5"/>
       <path d="M33 25.5a13 13 0 0 1 0 21" stroke-width="9"/><path d="M33 25.5a13 13 0 0 1 0 21" stroke="#ffc23d" stroke-width="5"/>
       <path d="M14 14l2 4M10 20l4 1M20 12l0 4" stroke-width="2.5"/>`),
+
+    // 🧼 une savonnette qui glisse sur la glace, avec des bulles
+    ring: art(`
+      <ellipse cx="32" cy="50" rx="26" ry="8" fill="#d4f1ff"/>
+      <path d="M14 34c0-8 8-14 18-14s18 6 18 14-8 12-18 12-18-4-18-12z" fill="#ff8fb5"/>
+      <path d="M22 28q6-4 14-2" stroke="#fff" stroke-width="3"/>
+      <circle cx="48" cy="14" r="5" fill="#fff"/><circle cx="56" cy="24" r="3" fill="#fff"/><circle cx="12" cy="18" r="4" fill="#fff"/>
+      <path d="M2 42h8M4 48h6" stroke-width="2.5"/>`),
   };
 
   // ─── Pièces de plateau (cartes, jetons…) pour les jeux de trahison ───

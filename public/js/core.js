@@ -367,12 +367,13 @@ const UI = (() => {
           <span class="gp-art">${ICONS.game(g.id)}</span>
           <div class="gp-info"><div class="gp-kicker">${isHost() ? 'Le jeu choisi' : `${name(S.hostId)} a choisi`}</div>
             <div class="gp-name">${esc(g.name)}</div><div class="gp-tag">${esc(g.tagline)}</div>
-            <div class="m"><span>${ICON.players}${g.minPlayers} à ${g.maxPlayers}</span><span>${ICON.clock}${esc(g.duration)}</span></div></div>
+            <div class="m"><span>${ICON.players}${g.minPlayers} à ${g.maxPlayers}</span><span>${ICON.clock}${esc(g.duration)}</span>${g.requiresTv ? '<span>📺 sur la télé</span>' : ''}</div></div>
         </div>
         ${optionsCard(g)}
         ${g.oral ? `<div class="opt-row"><span class="opt-label">🎤 À l'oral</span>${isHost()
           ? `<button class="switch ${S.oral ? 'on' : ''}" data-oral aria-pressed="${S.oral}"><span></span></button>`
           : `<b>${S.oral ? 'oui' : 'non'}</b>`}<small class="muted">${S.oral ? 'on parle à voix haute, le téléphone sert à voter' : 'tout s\'écrit sur le téléphone'}</small></div>` : ''}
+        ${g.requiresTv && !S.tv ? `<p class="gp-warn">📺 Ce jeu se joue sur une télé ou un ordi : touche <b>Télé</b> en haut, ouvre l'adresse sur le grand écran, et vos téléphones deviennent des manettes.</p>` : ''}
         ${GAMES[S.gameId]?.rules ? `<details class="gp-rules"><summary>Comment on joue ?</summary>${GAMES[S.gameId].rules()}</details>` : ''}
       </div>
 
@@ -385,7 +386,7 @@ const UI = (() => {
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>
 
       <div class="dock">${isHost()
-        ? `<button class="alt" data-core="startGame" ${missing ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : `Lancer ${esc(g.name)}`}</button>`
+        ? `<button class="alt" data-core="startGame" ${missing || (g.requiresTv && !S.tv) ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : g.requiresTv && !S.tv ? 'Branche la télé pour jouer 📺' : `Lancer ${esc(g.name)}`}</button>`
         : `<p>${name(S.hostId)} ${crown} va lancer la partie…</p>`}</div>`;
   }
 
@@ -566,6 +567,9 @@ const UI = (() => {
     boot: () => {},
     refresh: () => render(),
     registerGame: (id, mod) => { GAMES[id] = mod; },
+    // jeux en temps réel : messages directs (manette → télé, télé → serveur, vibrations)
+    emit: (ev, data) => socket.emit(ev, data),
+    on: (ev, fn) => socket.on(ev, fn),
     // helpers pour les jeux
     esc, P, av, name, isHost, send, toast, hostButton, forceLink, scoreboard, podium, endFooter,
     header, gainsBlock, gainTotals, playerGrid, endScreen,

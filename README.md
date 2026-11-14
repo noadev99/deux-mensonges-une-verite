@@ -28,6 +28,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 💰 Le Butin — en duo devant un butin : partager ou trahir pour tout prendre | 3–16 |
 | 🗡️ Le Complot — des traîtres cachés sabotent vos missions, démasquez-les | 5–10 |
 | 🤝 Les Alliances — alliances secrètes, coffres communs… puis fidèle ou poignard | 3–10 |
+| 🧼 Le ring savonneux — action en temps réel sur la télé : les téléphones sont des manettes (joystick + A/B) | 2–6 |
 
 ## Lancer en local
 ```bash
