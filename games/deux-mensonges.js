@@ -29,7 +29,7 @@ const blankStats = () => ({ authorFound: 0, trueFound: 0, fooled: 0, incognito: 
 // ─── Cycle de vie ────────────────────────────────────────────────────────────
 function create(ctx) {
   const g = { phase: 'writing', anecdotes: {}, scores: {}, stats: {}, order: [], roundIndex: 0, current: null };
-  for (const p of ctx.connected()) {
+  for (const p of ctx.players()) {
     g.scores[p.id] = 0;
     g.stats[p.id] = blankStats();
   }

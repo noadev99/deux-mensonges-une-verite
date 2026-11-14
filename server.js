@@ -13,7 +13,8 @@ const GAMES = require('./games');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+// Un téléphone en veille ou sur une autre appli n'est déclaré absent qu'après ~1 min
+const io = new Server(server, { pingInterval: 20000, pingTimeout: 40000 });
 app.use(express.static(path.join(__dirname, 'public')));
 
 const MAX_PLAYERS = 16;
@@ -50,9 +51,17 @@ function newPlayer(room, name) {
 }
 
 const connected = (room) => [...room.players.values()].filter((p) => p.connected);
+
+// Retire seulement les joueurs absents depuis plus de 20 min (partis pour de bon)
+const GONE_AFTER = 20 * 60 * 1000;
+function purgeGone(room) {
+  for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
+}
 const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }) =>
   ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }));
 app.get('/api/games', (req, res) => res.json(catalog));
+// Ping des clients pendant une soirée : empêche l'hébergeur de mettre le serveur en veille
+app.get('/api/ping', (req, res) => res.json({ ok: true, rooms: rooms.size }));
 
 // Contexte passé aux modules de jeu : tout ce dont un jeu a besoin, rien de plus.
 function ctx(room) {
@@ -143,8 +152,11 @@ io.on('connection', (socket) => {
   const attach = (r, p) => {
     room = r;
     player = p;
+    const old = p.socketId && p.socketId !== socket.id && io.sockets.sockets.get(p.socketId);
     p.connected = true;
     p.socketId = socket.id;
+    p.leftAt = null;
+    if (old) old.disconnect(true); // ancien onglet / ancienne connexion du même joueur
     socket.emit('joined', { code: r.code, playerId: p.id });
     notifyGame(r);
     broadcast(r);
@@ -169,8 +181,11 @@ io.on('connection', (socket) => {
     const r = rooms.get(code);
     if (!r) return err('Salon introuvable');
     if (!name) return err('Choisis un pseudo');
-    if (r.phase !== 'lobby') return err('Une partie est en cours, attends la fin pour rejoindre');
-    if ([...r.players.values()].some((p) => p.name.toLowerCase() === name.toLowerCase())) return err('Ce pseudo est déjà pris');
+    // Même pseudo qu'un joueur absent → on lui rend sa place (téléphone changé, session perdue…)
+    const same = [...r.players.values()].find((p) => p.name.toLowerCase() === name.toLowerCase());
+    if (same && !same.connected) return attach(r, same);
+    if (same) return err('Ce pseudo est déjà pris');
+    if (r.phase !== 'lobby') return err('Une partie est en cours : attends la fin, ou reprends ta place avec ton ancien pseudo');
     if (r.players.size >= MAX_PLAYERS) return err('Salon plein');
     attach(r, newPlayer(r, name));
   });
@@ -178,7 +193,7 @@ io.on('connection', (socket) => {
   socket.on('rejoin', ({ code, playerId } = {}) => {
     const r = rooms.get(String(code || '').toUpperCase());
     const p = r && r.players.get(playerId);
-    if (!p) return socket.emit('rejoinFailed');
+    if (!p) return socket.emit('rejoinFailed', { code: String(code || '').toUpperCase() });
     attach(r, p);
   });
 
@@ -213,8 +228,7 @@ io.on('connection', (socket) => {
   // Rejouer au même jeu
   socket.on('restartGame', () => {
     if (!isHost() || room.phase !== 'playing') return;
-    // on retire les absents avant de relancer
-    for (const [id, p] of room.players) if (!p.connected) room.players.delete(id);
+    purgeGone(room);
     startGame(room);
     broadcast(room);
   });
@@ -224,7 +238,7 @@ io.on('connection', (socket) => {
     if (!isHost()) return;
     room.phase = 'lobby';
     room.game = null;
-    for (const [id, p] of room.players) if (!p.connected) room.players.delete(id);
+    purgeGone(room);
     broadcast(room);
   });
 
@@ -241,15 +255,18 @@ io.on('connection', (socket) => {
     if (!room || !player) return;
     const r = room;
     const p = player;
+    // Le téléphone s'est déjà reconnecté avec une nouvelle connexion : rien à faire
+    if (p.socketId !== socket.id) return;
     p.connected = false;
     p.socketId = null;
+    p.leftAt = Date.now();
     if (r.hostId === p.id) {
-      // 15 s de grâce pour que l'hôte revienne (rechargement, réseau…)
+      // 45 s de grâce pour que l'hôte revienne (veille, rechargement, réseau…)
       setTimeout(() => {
         if (p.connected || r.hostId !== p.id) return;
         const next = connected(r)[0];
         if (next) { r.hostId = next.id; broadcast(r); }
-      }, 15000);
+      }, 45000);
     }
     if (connected(r).length === 0) {
       setTimeout(() => { if (rooms.get(r.code) === r && connected(r).length === 0) rooms.delete(r.code); }, 10 * 60 * 1000);

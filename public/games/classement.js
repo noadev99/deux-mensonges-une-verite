@@ -34,12 +34,15 @@
           ${left.length ? `<p class="muted" style="margin:12px 0 8px">Touche les joueurs dans l'ordre :</p>${UI.playerGrid(left, null, 'add')}`
             : `<button class="full alt" data-send>Valider</button>`}
         </div>
-        <div class="card"><div data-live="progress"></div></div>`;
+        <div class="card"><div data-live="progress"></div></div>
+        ${UI.forceLink('Révéler maintenant')}`;
     },
 
     reveal(S, g) {
       const r = g.result;
-      if (!r.truth) return `${UI.header(g.round, g.totalRounds, '', 'Le juge n\'a pas classé')}${UI.hostButton('Manche suivante')}`;
+      if (!r.truth) return `${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds}`, 'Manche passée')}
+        <div class="card center"><p>${name(g.judge)} n'a pas fait son classement à temps. Personne ne marque de points.</p></div>
+        ${UI.hostButton(g.round >= g.totalRounds ? 'Voir le podium 🏆' : 'Manche suivante')}`;
       const mine = g.rankings[S.you];
       return `
         ${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds}`, `Le classement de ${name(g.judge)}`)}

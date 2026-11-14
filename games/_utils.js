@@ -42,7 +42,7 @@ const active = (ctx, g) => ctx.connected().filter((p) => p.id in g.scores);
 
 const initScores = (ctx, statKeys) => {
   const scores = {}, stats = {};
-  for (const p of ctx.connected()) {
+  for (const p of ctx.players()) { // tous, même un téléphone en veille : il pourra revenir
     scores[p.id] = 0;
     stats[p.id] = Object.fromEntries(statKeys.map((k) => [k, 0]));
   }

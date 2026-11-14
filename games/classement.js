@@ -89,7 +89,8 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (type === 'edit') { if (g.phase === 'rank') delete g.rankings[pid]; return; }
   if (type === 'next' && isHost) {
     if (g.phase === 'rank') {
-      if (!g.rankings[g.judge]) return { error: 'Le juge n\'a pas encore classé' };
+      // juge absent (téléphone en veille…) : l'hôte peut passer la manche
+      if (!g.rankings[g.judge] && ctx.player(g.judge)?.connected) return { error: 'Le juge n\'a pas encore classé' };
       reveal(ctx, g);
     } else if (g.phase === 'reveal') {
       if (g.round >= g.totalRounds) {

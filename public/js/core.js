@@ -3,7 +3,8 @@
 // Chaque jeu s'enregistre avec UI.registerGame(id, { key, screen, live, bind, rules }).
 // ─────────────────────────────────────────────────────────────────────────────
 const UI = (() => {
-  const socket = io();
+  // reconnexion rapide et sans fin (un téléphone peut rester en veille longtemps)
+  const socket = io({ reconnectionDelay: 500, reconnectionDelayMax: 2000, timeout: 8000 });
   const $app = document.getElementById('app');
   const GAMES = {}; // modules d'affichage des jeux
   let S = null;
@@ -114,15 +115,62 @@ const UI = (() => {
 
   // ─── Connexion ────────────────────────────────────────────────────────────
   socket.on('connect', () => {
+    setOffline(false);
     const saved = JSON.parse(localStorage.getItem('session') || 'null');
     if (saved) socket.emit('rejoin', saved);
-    else renderHome();
+    else if (lastKey !== 'home') renderHome(); // ne pas effacer un pseudo en cours de saisie
   });
-  // ancienne session expirée — sauf si on vient entre-temps de créer/rejoindre un salon
-  socket.on('rejoinFailed', () => { if (S) return; localStorage.removeItem('session'); renderHome(); });
+  socket.on('disconnect', () => setOffline(true));
+  // Le salon n'existe plus (serveur redémarré, salon vide trop longtemps…)
+  socket.on('rejoinFailed', ({ code } = {}) => {
+    if (S && S.code !== code) return; // on vient de créer/rejoindre un autre salon entre-temps
+    const had = !!S;
+    localStorage.removeItem('session');
+    S = null;
+    renderHome();
+    if (had) toast('Ce salon n\'existe plus. Recrée un salon ou rejoins-en un autre.');
+  });
+
+  // Téléphone qui se réveille, onglet qui revient au premier plan, réseau qui revient :
+  // on se reconnecte tout de suite au lieu d'attendre.
+  const wake = () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!socket.connected) socket.connect();
+    keepAwake();
+  };
+  // Tant qu'on est dans un salon : petit ping régulier pour que le serveur ne s'endorme pas
+  setInterval(() => { if (S && document.visibilityState === 'visible') fetch('/api/ping', { cache: 'no-store' }).catch(() => {}); }, 4 * 60 * 1000);
+  document.addEventListener('visibilitychange', wake);
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('online', wake);
+  window.addEventListener('focus', wake);
+
+  // Bandeau « Reconnexion… » (affiché seulement si la coupure dure plus d'une seconde)
+  let offlineTimer = null;
+  function setOffline(off) {
+    clearTimeout(offlineTimer);
+    let bar = document.getElementById('offline');
+    if (!off) { bar?.remove(); return; }
+    offlineTimer = setTimeout(() => {
+      if (socket.connected || document.getElementById('offline')) return;
+      bar = document.createElement('div');
+      bar.id = 'offline';
+      bar.className = 'offline';
+      bar.innerHTML = '<span class="wait">📡</span> Reconnexion…';
+      document.body.appendChild(bar);
+    }, 1000);
+  }
+
+  // Empêche l'écran de se mettre en veille pendant qu'on est dans un salon
+  let wakeLock = null;
+  async function keepAwake() {
+    if (!S || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    if (wakeLock && !wakeLock.released) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { /* refusé (batterie faible…) : pas grave */ }
+  }
   socket.on('joined', (d) => localStorage.setItem('session', JSON.stringify(d)));
   socket.on('errorMsg', toast);
-  socket.on('state', (s) => { S = s; render(); });
+  socket.on('state', (s) => { const first = !S; S = s; render(); if (first) keepAwake(); });
 
   // ─── Accueil ──────────────────────────────────────────────────────────────
   function renderHome() {
@@ -209,7 +257,7 @@ const UI = (() => {
       const g = gameInfo();
       const n = S.players.filter((p) => p.connected).length;
       const seats = Math.max(0, g.minPlayers - n);
-      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}</span></div>`).join('')
+      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span></div>`).join('')
         + Array.from({ length: seats }, () => '<div class="player seat"><span class="av">?</span><span>En attente…</span></div>').join('');
     },
   };
