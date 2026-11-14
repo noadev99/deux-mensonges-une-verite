@@ -8,7 +8,7 @@
 const { shuffle, sample, gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MAX_ROUNDS = 10;
-const TIME = { write: 150000, guess: 40000 };
+const TIME = { write: 150000, guess: 40000, oral: 100000 }; // à l'oral : le temps de raconter + voter
 // points selon l'écart entre la note devinée et la vraie
 const PTS = { 0: 100, 1: 60, 2: 30 };
 
@@ -58,8 +58,12 @@ function create(ctx) {
     const [q, low, high] = prompts[i % prompts.length];
     tasks[id] = { q, low, high, number: n };
   });
-  const g = { scores, stats, tasks, stories: {}, order: [], round: 0, guesses: {} };
-  setPhase(ctx, g, 'write', TIME.write, () => { if (Object.keys(g.stories).length) startRounds(ctx, g); });
+  const g = { scores, stats, tasks, stories: {}, order: [], round: 0, guesses: {}, oral: ctx.oral() };
+  if (g.oral) {
+    // à l'oral : pas d'écriture, chacun raconte à son tour à voix haute
+    g.order = shuffle(ids).slice(0, MAX_ROUNDS);
+    startRound(ctx, g, 0);
+  } else setPhase(ctx, g, 'write', TIME.write, () => { if (Object.keys(g.stories).length) startRounds(ctx, g); });
   return g;
 }
 
@@ -80,7 +84,7 @@ function startRound(ctx, g, i) {
   g.round = i;
   g.guesses = {};
   g.result = null;
-  setPhase(ctx, g, 'guess', TIME.guess, () => reveal(ctx, g));
+  setPhase(ctx, g, 'guess', g.oral ? TIME.oral : TIME.guess, () => reveal(ctx, g));
 }
 
 const authorOf = (g) => g.order[g.round];
@@ -166,7 +170,8 @@ function stateFor(ctx, g, pid) {
   if (g.phase === 'guess' || g.phase === 'reveal') {
     const author = authorOf(g);
     const t = g.tasks[author];
-    s.current = { authorId: author, isAuthor: author === pid, q: t.q, low: t.low, high: t.high, story: g.stories[author] };
+    s.current = { authorId: author, isAuthor: author === pid, q: t.q, low: t.low, high: t.high, story: g.stories[author] ?? null };
+    s.oral = g.oral;
     if (author === pid || g.phase === 'reveal') s.current.number = t.number;
     if (g.phase === 'guess') {
       const voters = act.filter((p) => p.id !== author);
@@ -192,6 +197,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 12,
   duration: '15–25 min',
+  oral: true, // version « on raconte à voix haute »
   create,
   onAction,
   onPlayersChanged: autoAdvance,

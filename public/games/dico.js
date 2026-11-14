@@ -72,6 +72,11 @@
       </ol>
       <div class="muted" style="font-size:.92rem">📚 Trouver la vraie : <b>+100</b> · 🪤 Chaque joueur piégé par ta définition : <b>+50</b></div>`,
 
+    tv: (S, g) => g.phase !== 'write' ? null : `
+      ${UI.header(g.round, g.totalRounds, `Mot ${g.round} sur ${g.totalRounds}`, 'Inventez une définition ✍️')}
+      ${wordCard(g)}
+      <div class="card"><div data-live="writing"></div></div>`,
+
     key: (S, g) => [g.phase, g.round, !!g.myDef, g.myVote].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),

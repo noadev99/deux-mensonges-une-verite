@@ -68,6 +68,11 @@
       </ol>
       <div class="muted" style="font-size:.92rem">🎯 Bon pari : <b>+100</b> · 🐑 Voté comme la majorité : <b>+50</b><br>Les votes restent anonymes, seuls les totaux sont révélés.</div>`,
 
+    tv: (S, g) => g.phase !== 'vote' ? null : `
+      ${UI.header(g.round, g.totalRounds, `Question ${g.round} sur ${g.totalRounds}`, 'Qui de nous…')}
+      <div class="card center"><div class="qdn-q">…est le plus susceptible de <b class="tv-big">${esc(g.question)} ?</b></div></div>
+      <div class="card"><div data-live="progress"></div></div>`,
+
     key: (S, g) => [g.phase, g.round, g.myVote, g.myBet, pick.vote, pick.bet].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),

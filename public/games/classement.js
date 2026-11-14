@@ -71,6 +71,11 @@
       </ol>
       <div class="muted" style="font-size:.92rem">🎯 Bonne place : <b>+50</b> · ≈ À une place près : <b>+20</b><br>📖 Le juge gagne la moyenne des points des autres : sois honnête !</div>`,
 
+    tv: (S, g) => g.phase !== 'rank' ? null : `
+      ${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds}`, `${name(g.judge)} est le juge ⚖️`)}
+      <div class="card center"><div class="muted">Du plus au moins…</div><div class="cl-theme tv-big">Qui ${esc(g.theme)} ?</div></div>
+      <div class="card"><div data-live="progress"></div></div>`,
+
     key: (S, g) => [g.phase, g.round, !!g.myRanking, order.list.join(',')].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),

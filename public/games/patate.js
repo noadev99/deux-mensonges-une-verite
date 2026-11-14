@@ -16,7 +16,9 @@
       </svg>
     </div>`;
 
-  const answersList = (g) => g.answers.length
+  const answersList = (g) => g.oral
+    ? `<div class="center"><span class="tv-big">${g.answers.length}</span><div class="muted">réponse${g.answers.length > 1 ? 's' : ''} criée${g.answers.length > 1 ? 's' : ''} 🎤</div></div>`
+    : g.answers.length
     ? `<div class="pt-answers">${g.answers.slice().reverse().map((a, i) => `<span class="pt-ans ${i === 0 ? 'reveal' : ''}">${av(P(a.pid), 'sm')} ${esc(a.text)}</span>`).join('')}</div>`
     : '<div class="muted center">Aucune réponse pour l\'instant</div>';
 
@@ -51,9 +53,11 @@
         <div class="card center pt-catbar"><div class="pt-cat sm">${esc(g.category)}</div></div>
         ${bomb(mine ? 'pt-mine' : '')}
         <div class="phase"><div class="t">${mine ? 'C\'est toi ! Vite !' : `${name(g.holder)} a la bombe`}</div></div>
-        ${mine ? `<div class="card stack pt-input">
+        ${mine ? (g.oral
+          ? `<div class="card center pt-input keep"><p style="margin:0 0 10px">Crie ta réponse, puis :</p><button class="full alt pt-pass" data-pass>💣 Passer la bombe !</button></div>`
+          : `<div class="card stack pt-input">
             <input id="ans" maxlength="40" placeholder="Ta réponse…" autocomplete="off" autocapitalize="off" enterkeyhint="send" />
-            <button class="full alt" data-ans>Passer la bombe</button></div>` : ''}
+            <button class="full alt" data-ans>Passer la bombe</button></div>`) : ''}
         <div class="card"><div data-live="answers"></div></div>`;
     },
 
@@ -79,7 +83,7 @@
     rules: () => `
       <ol class="rules">
         <li>Une <b>catégorie</b> s'affiche (ex. : des fruits).</li>
-        <li>Celui qui a la bombe tape une réponse : la bombe passe au joueur suivant. <b>Pas de doublons !</b></li>
+        <li>Celui qui a la bombe tape une réponse (ou la crie, en mode oral) : la bombe passe au joueur suivant. <b>Pas de doublons !</b></li>
         <li>La bombe explose au bout d'un <b>temps secret</b>. Celui qui la tient à ce moment-là ne marque pas.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">💬 Chaque réponse : <b>+10</b> · 😮‍💨 Survivre à l'explosion : <b>+100</b><br>Astuce : râlez à voix haute si une réponse est bidon, c'est la table qui juge !</div>`,
@@ -101,6 +105,7 @@
 
     bind: (S, g, root) => {
       if (g.phase === 'playing') startFuse();
+      root.querySelector('[data-pass]')?.addEventListener('click', () => UI.send('answer', ''));
       const input = root.querySelector('#ans');
       const send = () => { if (input.value.trim()) UI.send('answer', input.value); };
       if (input) {

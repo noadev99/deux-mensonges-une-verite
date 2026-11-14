@@ -66,9 +66,19 @@ const GONE_AFTER = 20 * 60 * 1000;
 function purgeGone(room) {
   for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
 }
-const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }) =>
-  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration }));
+const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral }) =>
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral }));
 app.get('/api/games', (req, res) => res.json(catalog));
+// QR code (SVG) pour rejoindre un salon : /api/qr?u=<lien>
+const QRCode = require('qrcode');
+app.get('/api/qr', async (req, res) => {
+  const u = String(req.query.u || '').slice(0, 300);
+  if (!u) return res.status(400).end();
+  try {
+    const svg = await QRCode.toString(u, { type: 'svg', margin: 1, color: { dark: '#1a0f2eff', light: '#ffffffff' } });
+    res.set('Cache-Control', 'public, max-age=86400').type('image/svg+xml').send(svg);
+  } catch (e) { res.status(500).end(); }
+});
 // Ping des clients pendant une soirée : empêche l'hébergeur de mettre le serveur en veille
 app.get('/api/ping', (req, res) => res.json({ ok: true, rooms: rooms.size }));
 
@@ -81,6 +91,7 @@ function ctx(room) {
     connected: () => connected(room),
     // Le jeu appelle endGame(scores) une fois terminé → points de soirée
     endGame: (scores) => endGame(room, scores),
+    oral: () => !!room.oral, // l'hôte a choisi « réponses à l'oral »
     // Minuteur serveur : exécute fn après ms, puis renvoie l'état à tous.
     // Ignoré si la partie a changé entre-temps (retour au salon, rejouer…).
     schedule: (ms, fn) => {
@@ -126,6 +137,9 @@ function stateFor(room, pid) {
     v: room.v || 0, // numéro de l'état (anti double-clic de l'hôte)
     gameId: room.gameId,
     games: catalog,
+    oral: !!room.oral,
+    tv: room.screens.size > 0,      // un écran partagé (mode salon) est connecté
+    spectator: pid === null,         // c'est l'écran partagé qui reçoit cet état
     history: room.history,
     players: [...room.players.values()].map((p) => ({
       id: p.id, name: p.name, avatar: p.avatar, color: p.color, connected: p.connected, soiree: p.soiree,
@@ -139,6 +153,10 @@ function broadcast(room) {
   room.v = (room.v || 0) + 1;
   for (const p of room.players.values()) {
     if (p.connected && p.socketId) io.to(p.socketId).emit('state', stateFor(room, p.id));
+  }
+  if (room.screens.size) {
+    const spec = stateFor(room, null); // l'écran ne voit que ce qui est public
+    for (const sid of room.screens) io.to(sid).emit('state', spec);
   }
 }
 
@@ -180,7 +198,7 @@ io.on('connection', (socket) => {
     if (!name) return err('Choisis un pseudo');
     const r = {
       code: newCode(), players: new Map(), hostId: null, phase: 'lobby',
-      gameId: catalog[0].id, game: null, gameEnded: false, history: [],
+      gameId: catalog[0].id, game: null, gameEnded: false, history: [], oral: false, screens: new Set(),
     };
     rooms.set(r.code, r);
     const p = newPlayer(r, name);
@@ -219,6 +237,24 @@ io.on('connection', (socket) => {
     if (r.players.size === 0) return rooms.delete(r.code);
     notifyGame(r);
     broadcast(r);
+  });
+
+  // Écran partagé (télé / ordi) : il regarde le salon sans être un joueur
+  let watching = null;
+  socket.on('watch', ({ code } = {}) => {
+    const r = rooms.get(String(code || '').trim().toUpperCase());
+    if (!r) return socket.emit('watchFailed');
+    if (watching) watching.screens.delete(socket.id);
+    watching = r;
+    r.screens.add(socket.id);
+    broadcast(r); // les téléphones passent en mode manette
+  });
+
+  // L'hôte active / désactive les réponses à l'oral
+  socket.on('setOral', (on) => {
+    if (!isHost() || room.phase !== 'lobby') return;
+    room.oral = !!on;
+    broadcast(room);
   });
 
   // L'hôte choisit le jeu dans le salon
@@ -267,6 +303,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    if (watching) { watching.screens.delete(socket.id); broadcast(watching); watching = null; }
     if (!room || !player) return;
     const r = room;
     const p = player;

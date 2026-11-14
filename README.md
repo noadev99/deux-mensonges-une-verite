@@ -5,6 +5,9 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 **▶️ Jouer en ligne : https://deux-mensonges-une-verite.onrender.com**
 
 ## Fonctionnement
+- **QR code** : scanne-le pour rejoindre un salon.
+- **Mode salon** : ouvre `/?ecran=CODE` sur une télé ou un ordi : le jeu s'affiche en grand, les téléphones servent de manettes. Rien de secret ne s'affiche sur l'écran.
+- **Réponses à l'oral** (réglage de l'hôte) : Note secrète, 2 Mensonges, L'Intrus et Patate chaude se jouent à voix haute.
 - Un salon (code à 4 lettres) pour toute la soirée : l'hôte choisit un jeu, on joue, on revient au salon, on enchaîne.
 - **Classement de la soirée** : à chaque partie, le 1er gagne autant de points qu'il y a de joueurs, le dernier 1 point.
 - Reconnexion automatique si on recharge la page ou perd le réseau.

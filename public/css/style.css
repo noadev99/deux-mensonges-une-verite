@@ -400,3 +400,50 @@ button.nt-cell.sel { background: var(--c); box-shadow: 0 0 0 3px var(--paper), 0
 .nt-after { opacity: 0; transform: translateY(10px); transition: opacity .4s, transform .4s; pointer-events: none; }
 .nt-after.shown { opacity: 1; transform: none; pointer-events: auto; }
 @media (max-width: 380px) { .nt-cell { font-size: .9rem; border-radius: 7px; } .nt-scale { gap: 3px; } }
+
+/* ─── QR code, mode salon, oral ─── */
+.invite { flex-wrap: wrap; gap: 8px; }
+.invite button { padding: 10px 14px; font-size: .95rem; }
+.qr { display: block; background: #fff; border: var(--line); border-radius: 14px; padding: 6px; }
+.qrcard .qr { width: min(240px, 70vw); margin: 0 auto; }
+.tvon { margin: -12px 0 18px; font-weight: 500; }
+.tvjoin { color: var(--ink); }
+.tvjoin summary { font-weight: 600; }
+.tvjoin .row { margin-top: 10px; }
+.switch { width: 58px; height: 32px; padding: 3px; border-radius: 99px; background: var(--paper-2); box-shadow: none; border-width: 2px; flex: none; }
+.switch span { display: block; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); transition: transform .15s; }
+.switch.on { background: var(--good); }
+.switch.on span { transform: translateX(24px); }
+.oralcard .cardhead { align-items: center; }
+.oralcard h2 { margin-bottom: 6px; }
+
+/* téléphone en mode manette */
+body.tvmode .tv-hidden { display: none; }
+.tv-look { text-align: center; color: #fff; font-family: var(--display); font-size: 1.3rem; margin: 2px 0 14px; padding: 10px; border: 2px dashed rgba(255,255,255,.35); border-radius: 16px; }
+
+/* ─── Écran partagé (télé / ordi) ─── */
+body.tv { font-size: 22px; padding: 28px 40px 40px; }
+body.tv #app, body.tv #app.wide { max-width: 1280px; }
+body.tv #app { pointer-events: none; }          /* l'écran ne se touche pas : tout se joue sur les téléphones */
+body.tv input, body.tv textarea, body.tv .dock, body.tv [data-host-action], body.tv [data-edit],
+body.tv .dc-heart:not(.mine), body.tv .dm-inspi, body.tv .tv-hide { display: none !important; }
+body.tv .phase .t { font-size: 2.6rem; }
+body.tv .card { padding: 22px 26px; }
+body.tv .topbar .room { font-size: 1rem; }
+body.tv .qr.mini { width: 64px; height: 64px; padding: 3px; border-width: 2px; border-radius: 10px; }
+.tv-lobby { display: grid; grid-template-columns: minmax(320px, 1fr) 1.3fr; gap: 40px; align-items: start; }
+.tv-join { text-align: center; color: #fff; position: sticky; top: 20px; }
+.logo.small { margin: 0 0 18px; }
+.logo.small span { font-size: 3rem; }
+.qr.big { width: min(380px, 100%); margin: 0 auto; border-width: 4px; border-radius: 22px; padding: 12px; box-shadow: 8px 8px 0 var(--ink); }
+.tv-scan { font-size: 1.3rem; margin: 18px 0 8px; }
+.tv-scan small { font-size: .85rem; color: #d9ccf5; }
+.tv-game .gamecard { flex-direction: row; margin-bottom: 14px; }
+.tv-game .gamecard .lid { width: 110px; height: auto; min-height: 110px; border-bottom: 0; border-right: var(--line); border-radius: 15px 0 0 15px; }
+.tv-rules { font-size: .9rem; }
+.tv-big { font-family: var(--display); font-size: 2.4rem; line-height: 1.15; }
+@media (max-width: 800px) { .tv-lobby { grid-template-columns: 1fr; } body.tv { font-size: 18px; padding: 16px; } }
+.pt-pass { font-family: var(--display); font-weight: 400; font-size: 1.6rem; padding: 22px; }
+.dm-nums { display: grid; gap: 10px; }
+.dm-num { font-family: var(--display); font-weight: 400; font-size: 1.3rem; padding: 16px; background: var(--game-soft); }
+.dm-tvsets { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0 18px; }

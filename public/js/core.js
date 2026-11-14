@@ -10,6 +10,12 @@ const UI = (() => {
   let S = null;
   let lastKey = null;
   let confettiFor = null; // évite de relancer les confettis à chaque mise à jour
+  // Mode salon : cette page est l'écran partagé (télé, ordi) d'un salon → ?ecran=CODE
+  const SCREEN = (new URLSearchParams(location.search).get('ecran') || '').toUpperCase();
+  if (SCREEN) document.body.classList.add('tv');
+  const joinUrl = (code) => `${location.origin}/?salon=${code}`;
+  const qrImg = (code, cls = '') => `<img class="qr ${cls}" src="/api/qr?u=${encodeURIComponent(joinUrl(code))}" alt="QR code pour rejoindre le salon ${code}">`;
+  let showQr = false; // QR code affiché dans le salon (téléphone)
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
@@ -100,7 +106,7 @@ const UI = (() => {
     const ids = Object.keys(gains || {}).filter(P).sort((a, b) => gains[b].total - gains[a].total);
     if (!ids.length) return '<div class="muted gains-none">Personne ne marque de points cette fois.</div>';
     const mine = gains[S.you]?.total;
-    return `<details class="gains-d" ${gainsOpen ? 'open' : ''}>
+    return `<details class="gains-d" ${gainsOpen || S.spectator ? 'open' : ''}>
       <summary><span class="gains-title">Détail des points</span>${mine ? `<span class="gains-me">toi : +${mine}</span>` : ''}</summary>
       <div class="gains">${ids.map((id) => `
         <div class="g"><div class="gl">${av(P(id), 'sm')}<span class="gn">${name(id)}</span><span class="plus">+${gains[id].total}</span></div>
@@ -138,11 +144,18 @@ const UI = (() => {
   // ─── Connexion ────────────────────────────────────────────────────────────
   socket.on('connect', () => {
     setOffline(false);
+    if (SCREEN) return socket.emit('watch', { code: SCREEN }); // écran partagé : on regarde, on ne joue pas
     const saved = JSON.parse(localStorage.getItem('session') || 'null');
     if (saved) socket.emit('rejoin', saved);
     else if (lastKey !== 'home') renderHome(); // ne pas effacer un pseudo en cours de saisie
   });
   socket.on('disconnect', () => setOffline(true));
+  socket.on('watchFailed', () => {
+    lastKey = 'tvmissing';
+    $app.innerHTML = `<div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
+      <div class="card center"><h2>Salon ${esc(SCREEN)} introuvable</h2><p class="muted">Crée un salon sur ton téléphone, puis ouvre l'adresse affichée dans « Mode salon ».</p>
+      <a class="link" href="/">Retour à l'accueil</a></div>`;
+  });
   // Le salon n'existe plus (serveur redémarré, salon vide trop longtemps…)
   socket.on('rejoinFailed', ({ code } = {}) => {
     if (S && S.code !== code) return; // on vient de créer/rejoindre un autre salon entre-temps
@@ -231,13 +244,19 @@ const UI = (() => {
         <input id="code" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" value="${esc(code)}" />
         <button class="full alt" id="join" style="--game:var(--blue)">Rejoindre</button>
       </div>
-      ${code ? '<p class="center"><a class="link" href="/">Créer mon propre salon</a></p>' : ''}`;
+      ${code ? '<p class="center"><a class="link" href="/">Créer mon propre salon</a></p>' : `
+      <details class="card tvjoin"><summary>📺 Afficher un salon sur une télé ou un ordi</summary>
+        <p class="muted">Sur l'écran partagé, entre le code du salon : le jeu s'affiche en grand et les téléphones servent de manettes.</p>
+        <div class="row"><input id="tvcode" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" /><button class="alt" id="tvgo" style="flex:0 0 auto">Afficher</button></div>
+      </details>`}`;
     const getName = () => { const n = document.getElementById('name').value.trim(); localStorage.setItem('name', n); return n; };
     const c = document.getElementById('create');
     if (c) c.onclick = () => socket.emit('create', { name: getName() });
     const join = () => socket.emit('join', { name: getName(), code: document.getElementById('code').value });
     document.getElementById('join').onclick = join;
     document.getElementById('code').addEventListener('keydown', (e) => e.key === 'Enter' && join());
+    const tvgo = document.getElementById('tvgo');
+    if (tvgo) tvgo.onclick = () => { const c = document.getElementById('tvcode').value.trim().toUpperCase(); if (c.length === 4) location.href = `/?ecran=${c}`; };
   }
 
   // ─── Salon ────────────────────────────────────────────────────────────────
@@ -249,7 +268,13 @@ const UI = (() => {
     return `
       <div class="code-label">Code du salon</div>
       <div class="code">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div>
-      <div class="invite"><button class="ghost" data-invite>${ICON.send} Inviter des amis</button></div>
+      <div class="invite">
+        <button class="ghost" data-invite>${ICON.send} Inviter</button>
+        <button class="ghost" data-qr>${showQr ? 'Cacher le QR code' : '▦ QR code'}</button>
+        <button class="ghost" data-tv>📺 Mode salon</button>
+      </div>
+      ${showQr ? `<div class="card center qrcard">${qrImg(S.code)}<p class="muted" style="margin:8px 0 0">Scanne avec l'appareil photo pour rejoindre</p></div>` : ''}
+      ${S.tv ? '<p class="center white tvon">📺 Un écran est connecté : le jeu s\'affiche dessus, les téléphones servent de manettes.</p>' : ''}
 
       <div class="card">
         <div class="cardhead"><h2>Joueurs</h2><span class="muted">${n} / 16</span></div>
@@ -263,10 +288,16 @@ const UI = (() => {
           return `<${tag} class="gamecard ${x.id === S.gameId ? 'sel' : ''}" data-game="${x.id}" style="--c:${x.color}">
             <span class="lid">${ICONS.game(x.id)}</span>
             <span class="info"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.tagline)}</div>
-            <div class="m"><span>${ICON.players}${x.minPlayers} à ${x.maxPlayers}</span><span>${ICON.clock}${esc(x.duration)}</span></div></span></${tag}>`;
+            <div class="m"><span>${ICON.players}${x.minPlayers} à ${x.maxPlayers}</span><span>${ICON.clock}${esc(x.duration)}</span>${x.oral ? '<span>🎤 oral</span>' : ''}</div></span></${tag}>`;
         }).join('')}</div>
       </div>
 
+      ${g.oral ? `<div class="card oralcard">
+        <div class="cardhead"><h2>🎤 Réponses à l'oral</h2>${isHost()
+          ? `<button class="switch ${S.oral ? 'on' : ''}" data-oral aria-pressed="${S.oral}"><span></span></button>`
+          : `<b>${S.oral ? 'activé' : 'désactivé'}</b>`}</div>
+        <p class="muted" style="margin:0">${S.oral ? 'On raconte et on répond à voix haute, comme dans la même pièce. Le téléphone sert juste à voter.' : 'Les réponses s\'écrivent sur le téléphone. Active l\'oral si vous êtes tous dans la même pièce.'}</p>
+      </div>` : ''}
       ${GAMES[S.gameId]?.rules ? `<div class="card"><details><summary>Comment on joue à ${esc(g.name)} ?</summary>${GAMES[S.gameId].rules()}</details></div>` : ''}
       ${soireeCard()}
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>
@@ -274,6 +305,30 @@ const UI = (() => {
       <div class="dock">${isHost()
         ? `<button class="alt" data-core="startGame" ${missing ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : `Lancer ${esc(g.name)}`}</button>`
         : `<p>${name(S.hostId)} ${crown} va lancer la partie…</p>`}</div>`;
+  }
+
+  function tvLobby() {
+    const g = gameInfo();
+    const n = S.players.filter((p) => p.connected).length;
+    return `
+      <div class="tv-lobby">
+        <div class="tv-join">
+          <div class="logo small"><span>Soirée</span> <span>Jeux</span></div>
+          ${qrImg(S.code, 'big')}
+          <div class="tv-scan">Scanne pour rejoindre<br><small>ou va sur <b>${esc(location.host)}</b> avec le code</small></div>
+          <div class="code">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div>
+        </div>
+        <div class="tv-side">
+          <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players" data-live="lobbyPlayers"></div></div>
+          <div class="card tv-game" style="--c:${g.color}">
+            <div class="gamecard sel" style="--c:${g.color}"><span class="lid">${ICONS.game(g.id)}</span><span class="info"><div class="t">${esc(g.name)}</div><div class="d">${esc(g.tagline)}</div>
+              ${S.oral && g.oral ? '<div class="m"><span>🎤 à l\'oral</span></div>' : ''}</span></div>
+            ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : ''}
+          </div>
+          ${soireeCard()}
+          <p class="center white">${name(S.hostId)} ${crown} lance la partie depuis son téléphone</p>
+        </div>
+      </div>`;
   }
 
   function soireeCard() {
@@ -302,10 +357,10 @@ const UI = (() => {
   // ─── Rendu ────────────────────────────────────────────────────────────────
   function screenKey() {
     if (S.phase === 'lobby') {
-      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length].join('|');
+      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length, S.tv, S.oral, showQr].join('|');
     }
     const mod = GAMES[S.gameId];
-    return ['game', S.gameId, S.hostId, mod.key ? mod.key(S, S.game) : S.game.phase].join('|');
+    return ['game', S.gameId, S.hostId, S.tv, mod.key ? mod.key(S, S.game) : S.game.phase].join('|');
   }
 
   function render() {
@@ -319,11 +374,17 @@ const UI = (() => {
     if (key !== lastKey) {
       lastKey = key;
       $app.className = S.phase === 'lobby' ? 'wide' : '';
-      if (S.phase === 'lobby') $app.innerHTML = lobbyScreen();
+      // téléphone pendant qu'un écran partagé est branché : mode manette
+      document.body.classList.toggle('tvmode', !!(S.tv && !S.spectator && S.phase === 'playing'));
+      if (S.phase === 'lobby') $app.innerHTML = S.spectator ? tvLobby() : lobbyScreen();
       else {
         const g = gameInfo();
         const quit = isHost() && S.game.phase !== 'end' ? '<a class="link" data-quit>Arrêter</a>' : '';
-        $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}</span><span class="room">${quit}<span>Salon <b>${S.code}</b></span></span></div>` + mod.screen(S, S.game);
+        const room = S.spectator ? `${qrImg(S.code, 'mini')}<span>Rejoindre : <b>${S.code}</b></span>` : `${quit}<span>Salon <b>${S.code}</b></span>`;
+        // sur l'écran partagé, un jeu peut fournir une vue dédiée (sans secrets ni formulaires)
+        const body = (S.spectator && mod.tv && mod.tv(S, S.game)) || mod.screen(S, S.game);
+        $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}${S.oral && g.oral ? ' · 🎤' : ''}</span><span class="room">${room}</span></div>` + body;
+        if (document.body.classList.contains('tvmode')) controllerMode();
         if (S.game.phase === 'end' && confettiFor !== S.history.length) { confettiFor = S.history.length; confetti(); }
       }
       bindCore();
@@ -336,10 +397,29 @@ const UI = (() => {
     });
   }
 
+  // Téléphone en mode manette : les cartes sans action (textes, résultats, classements) sont sur la télé.
+  // On garde celles avec un bouton / un champ, le détail des points et celles marquées « keep » (infos secrètes).
+  function controllerMode() {
+    let hidden = 0;
+    $app.querySelectorAll('.card').forEach((c) => {
+      if (c.matches('.keep, .gains-card') || c.querySelector('button, input, textarea, canvas, select, .keep')) return;
+      c.classList.add('tv-hidden');
+      hidden++;
+    });
+    if (hidden) $app.querySelector('.topbar')?.insertAdjacentHTML('afterend', '<div class="tv-look">📺 Regarde l\'écran !</div>');
+  }
+
   function bindCore() {
     const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
     on('[data-core]', (e) => socket.emit(e.currentTarget.dataset.core));
     document.querySelectorAll('.gains-d').forEach((d) => d.addEventListener('toggle', () => { gainsOpen = d.open; }));
+    on('[data-qr]', () => { showQr = !showQr; render(); });
+    on('[data-tv]', () => {
+      const url = `${location.origin}/?ecran=${S.code}`;
+      window.open(url, '_blank');
+      toast(`Sur la télé ou l'ordi, ouvre : ${location.host}/?ecran=${S.code}`);
+    });
+    on('[data-oral]', () => socket.emit('setOral', !S.oral));
     on('[data-quit]', () => { if (confirm('Arrêter la partie et revenir au salon ? Les points de cette partie seront perdus.')) socket.emit('toLobby'); });
     on('[data-host-action]', (e) => {
       const el = e.currentTarget;

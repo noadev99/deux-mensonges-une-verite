@@ -14,7 +14,10 @@
     'J\'ai peur ', 'Je sais ', 'Une fois, je me suis retrouvé(e) ', 'Je collectionne ', 'J\'ai été viré(e) ',
   ];
 
-  const anecList = (g, opts = {}) => g.current.items.map((t, i) => {
+  const ordinal = (i) => (i === 0 ? '1ʳᵉ anecdote' : `${i + 1}ᵉ anecdote`);
+  const anecList = (g, opts = {}) => g.current.items.map((t0, i) => {
+    const t = g.oral ? ordinal(i) : t0;
+    const Lx = g.oral ? ['1', '2', '3'] : L;
     const c = g.current;
     let cls = 'anec', badge = '', voters = '';
     if (opts.showTruth && c.trueIndex != null) {
@@ -27,9 +30,9 @@
     }
     if (opts.clickable) {
       if (c.myVote === i) cls += ' sel';
-      return `<button class="${cls}" data-true="${i}"><span class="l">${L[i]}</span>${esc(t)}</button>`;
+      return `<button class="${cls}" data-true="${i}"><span class="l">${Lx[i]}</span>${esc(t)}</button>`;
     }
-    return `<div class="${cls}">${badge}<span class="l">${L[i]}</span>${esc(t)}${voters}</div>`;
+    return `<div class="${cls}">${badge}<span class="l">${Lx[i]}</span>${esc(t)}${voters}</div>`;
   }).join('');
 
   const sumGains = (...list) => {
@@ -45,6 +48,23 @@
   // ─── Écrans ────────────────────────────────────────────────────────────────
   const screens = {
     writing(S, g) {
+      if (g.oral) {
+        if (g.submitted.includes(S.you)) {
+          return `${phaseHead('Préparation', 'C\'est noté 🤫', g)}
+            <div class="card center keep"><p style="margin:0">Ta vraie anecdote sera la <b>n°${g.myTrue + 1}</b>. Garde bien tes 3 histoires en tête !</p>
+            <div style="height:10px"></div><button class="ghost" data-edit>✏️ Changer</button></div>
+            <div class="card"><div data-live="writingStatus"></div></div>
+            ${UI.forceLink('Commencer sans les retardataires')}`;
+        }
+        return `${phaseHead('Préparation', 'Prépare tes 3 anecdotes 🎤', g)}
+          <div class="card keep">
+            <p style="margin-top:0">Pense à <b>3 anecdotes sur toi : 2 fausses, 1 vraie</b>. Tu les raconteras à voix haute, dans l'ordre.</p>
+            <p class="muted">💡 Choisis une vérité que tes amis ne connaissent pas.</p>
+            <h2>Laquelle sera la vraie ?</h2>
+            <div class="dm-nums">${[0, 1, 2].map((i) => `<button class="dm-num" data-truenum="${i}">${ordinal(i)}</button>`).join('')}</div>
+          </div>
+          <div class="card"><div data-live="writingStatus"></div></div>`;
+      }
       if (g.submitted.includes(S.you)) {
         return `
           ${phaseHead('Préparation', 'C\'est envoyé ! 🤫', g)}
@@ -114,6 +134,14 @@
 
     guessTrue(S, g) {
       const c = g.current;
+      if (c.isAuthor && g.oral) {
+        return `
+          ${progress(g)}
+          ${phaseHead(roundStep(g), 'À toi ! 🎤', g)}
+          <div class="card keep center"><p style="margin:0">Raconte tes <b>3 anecdotes à voix haute</b>, dans l'ordre.<br>La vraie est la <b>n°${c.trueIndex + 1}</b>. Garde ton sérieux 😏</p></div>
+          <div class="card"><h2>Ils réfléchissent…</h2><div data-live="waitTrue"></div></div>
+          ${UI.forceLink('Révéler maintenant')}`;
+      }
       if (c.isAuthor) {
         return `
           ${progress(g)}
@@ -126,7 +154,7 @@
         ${progress(g)}
         ${phaseHead(roundStep(g), 'Laquelle est vraie ? 🤔', g)}
         <div class="card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${av(P(c.authorId))}<b>${name(c.authorId)}</b> dit la vérité sur une seule :</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${av(P(c.authorId))}<b>${name(c.authorId)}</b> ${g.oral ? 'raconte ses 3 anecdotes 🎤 Laquelle est vraie ?' : 'dit la vérité sur une seule :'}</div>
           ${anecList(g, { clickable: true })}
           <p class="center" data-live="voteCount"></p>
         </div>
@@ -152,7 +180,7 @@
         <div class="card center reveal dm-story">
           ${av(P(c.authorId), 'lg')}
           <h2 style="margin:12px 0 4px">${c.isAuthor ? 'Raconte-leur l\'histoire vraie' : `${name(c.authorId)} raconte l'histoire vraie`}</h2>
-          <div class="dm-truth">${esc(c.items[c.trueIndex])}</div>
+          <div class="dm-truth">${g.oral ? `C'était la ${ordinal(c.trueIndex)} !` : esc(c.items[c.trueIndex])}</div>
           <p class="muted" style="margin-bottom:0">${c.isAuthor ? 'Quand, où, comment… les autres veulent tous les détails !' : 'Pose-lui toutes tes questions 👀'}</p>
         </div>
         ${UI.hostButton(last ? 'Voir le podium 🏆' : 'Série suivante')}`;
@@ -189,6 +217,21 @@
         🤥 <b>+75</b> par joueur berné, 🎭 <b>+150</b> si personne ne trouve la vérité
       </div>`,
 
+    tv: (S, g) => {
+      if (g.phase === 'writing') {
+        return `${phaseHead('Préparation', g.oral ? 'Chacun prépare ses 3 anecdotes 🎤' : 'Chacun écrit ses 3 anecdotes ✍️', g)}
+          <div class="card center"><p class="tv-big" style="margin:0">2 mensonges, 1 vérité…</p></div>
+          <div class="card"><div data-live="writingStatus"></div></div>`;
+      }
+      if (g.phase === 'match') {
+        return `${phaseHead('Le grand jeu d\'association', 'Qui a écrit quoi ? 🕵️', g)}
+          <div class="dm-tvsets">${g.sets.map((x) => `<div class="card dm-set"><div class="dm-sethead"><b class="dm-label">${x.label}</b><span class="muted">Série ${x.label}</span></div>
+            <ul class="dm-items">${x.items.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>
+          <div class="card"><div data-live="matchStatus"></div></div>`;
+      }
+      return null;
+    },
+
     key: (S, g) => [g.phase, g.round, g.current?.myVote, (g.submitted || []).includes(S.you), !!g.myMatch, JSON.stringify(match)].join('|'),
 
     onState: (S, g) => {
@@ -217,6 +260,7 @@
       const on = (sel, fn) => root.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
       on('[data-true]', (e) => UI.send('voteTrue', Number(e.currentTarget.dataset.true)));
       on('[data-edit]', () => UI.send('edit'));
+      on('[data-truenum]', (e) => UI.send('submit', { trueIndex: Number(e.currentTarget.dataset.truenum) }));
       root.querySelectorAll('[data-t]').forEach((el) => el.addEventListener('input', () => { draft.texts[+el.dataset.t] = el.value; saveDraft(); }));
       root.querySelectorAll('input[name=truth]').forEach((el) => el.addEventListener('change', () => { draft.trueIndex = +el.value; saveDraft(); }));
       on('[data-inspi]', () => {

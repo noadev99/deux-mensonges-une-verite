@@ -7,8 +7,8 @@
   let animatedFor = '';   // révélation déjà jouée pour cette manche
   let revealTimer = null;
 
-  const promptCard = (c, extra = '') => `
-    <div class="card center nt-prompt">
+  const promptCard = (c, extra = '', keep = false) => `
+    <div class="card center nt-prompt ${keep ? 'keep' : ''}">
       <div class="nt-q">${esc(c.q)}</div>
       <div class="nt-ends"><span>0 · ${esc(c.low)}</span><span>${esc(c.high)} · 10</span></div>
       ${extra}
@@ -39,7 +39,7 @@
       }
       return `
         <div class="phase"><div class="step">Écriture ${UI.timer(g.remaining)}</div><div class="t">Ta note secrète : ${t.number} / 10</div></div>
-        ${promptCard(t, scale('show', { mine: t.number }))}
+        ${promptCard(t, scale('show', { mine: t.number }), true)}
         <div class="card stack">
           <p class="muted" style="margin:0">Écris une histoire qui vaut <b>${t.number} sur 10</b> sur cette échelle. Elle peut être vraie ou inventée. Ne donne pas le chiffre : les autres doivent le deviner !</p>
           <textarea id="story" maxlength="320" placeholder="Il était une fois…">${esc(draft.text)}</textarea>
@@ -51,11 +51,21 @@
     guess(S, g) {
       const c = g.current;
       const step = `Histoire ${g.round} sur ${g.totalRounds} ${UI.timer(g.remaining)}`;
-      const storyCard = `<div class="card"><div class="nt-by">${av(P(c.authorId))}<b>${name(c.authorId)}</b><span class="muted">raconte…</span></div><p class="nt-story">${esc(c.story)}</p></div>`;
+      const storyCard = c.story
+        ? `<div class="card"><div class="nt-by">${av(P(c.authorId))}<b>${name(c.authorId)}</b><span class="muted">raconte…</span></div><p class="nt-story">${esc(c.story)}</p></div>`
+        : `<div class="card center nt-oral"><div>${av(P(c.authorId), 'lg')}</div><div class="nt-q" style="margin-top:10px">🎤 ${name(c.authorId)} raconte à voix haute</div><p class="muted" style="margin-bottom:0">Écoute bien, puis donne ta note.</p></div>`;
       if (c.isAuthor) {
+        if (!c.story) {
+          return `
+            <div class="phase"><div class="step">${step}</div><div class="t">À toi de raconter ! 🎤</div></div>
+            ${promptCard(c, scale('show', { mine: c.number }), true)}
+            <div class="card keep center"><p style="margin:0">Raconte à voix haute une histoire, vraie ou inventée, qui vaut <b>${c.number} sur 10</b>.<br><span class="muted">Ne dis pas le chiffre !</span></p></div>
+            <div class="card"><div data-live="guessing"></div></div>
+            ${UI.forceLink('Révéler maintenant')}`;
+        }
         return `
           <div class="phase"><div class="step">${step}</div><div class="t">Ils devinent ta note 😈</div></div>
-          ${promptCard(c, scale('show', { mine: c.number }))}
+          ${promptCard(c, scale('show', { mine: c.number }), true)}
           ${storyCard}
           <div class="card"><div data-live="guessing"></div></div>
           ${UI.forceLink('Révéler maintenant')}`;
@@ -83,7 +93,7 @@
           ${scale('reveal', { guesses: g.guesses })}
         </div>
         <div class="nt-after">
-          <div class="card"><div class="nt-by">${av(P(c.authorId))}<b>${name(c.authorId)}</b></div><p class="nt-story">${esc(c.story)}</p></div>
+          ${c.story ? `<div class="card"><div class="nt-by">${av(P(c.authorId))}<b>${name(c.authorId)}</b></div><p class="nt-story">${esc(c.story)}</p></div>` : ''}
           <div class="card gains-card">${UI.gainsBlock(g.result.gains)}</div>
           <div class="card"><h2>Classement</h2>${UI.scoreboard(g.scores, UI.gainTotals(g.result.gains))}</div>
         </div>
@@ -141,6 +151,24 @@
         <li>Histoire par histoire, les autres <b>devinent la note</b>. Puis la jauge révèle la vraie.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">🎯 Note exacte : <b>+100</b> · À 1 près : <b>+60</b> · À 2 près : <b>+30</b><br>✍️ L'auteur gagne la moyenne des points des autres : dose bien ton histoire !</div>`,
+
+    // écran partagé : pendant l'écriture et les devinettes, on n'affiche que le public
+    tv: (S, g) => {
+      if (g.phase === 'write') {
+        return `<div class="phase"><div class="step">Écriture ${UI.timer(g.remaining)}</div><div class="t">Chacun écrit son histoire ✍️</div></div>
+          <div class="card center"><p class="tv-big" style="margin:0">Une note secrète de 0 à 10, une histoire à doser…</p></div>
+          <div class="card"><div data-live="writing"></div></div>`;
+      }
+      if (g.phase === 'guess') {
+        const c = g.current;
+        return `<div class="phase"><div class="step">Histoire ${g.round} sur ${g.totalRounds} ${UI.timer(g.remaining)}</div><div class="t">Quelle note ? 🤔</div></div>
+          ${promptCard(c, scale('show'))}
+          ${c.story ? `<div class="card"><div class="nt-by">${av(P(c.authorId))}<b>${name(c.authorId)}</b><span class="muted">raconte…</span></div><p class="nt-story tv-big" style="font-size:1.6rem">${esc(c.story)}</p></div>`
+            : `<div class="card center nt-oral"><div>${av(P(c.authorId), 'lg')}</div><div class="tv-big" style="margin-top:12px">🎤 ${name(c.authorId)} raconte…</div></div>`}
+          <div class="card"><div data-live="guessing"></div></div>`;
+      }
+      return null; // les autres écrans sont les mêmes que sur les téléphones
+    },
 
     key: (S, g) => [g.phase, g.round, !!g.myStory, g.myGuess].join('|'),
 

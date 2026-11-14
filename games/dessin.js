@@ -154,6 +154,9 @@ function stateFor(ctx, g, pid) {
     s.prev = g.step > 0 ? g.chains[c][g.step - 1] : null; // ce qu'il faut dessiner / deviner
     s.finished = act.filter((p) => done(g, p.id)).map((p) => p.id);
     s.needed = act.length;
+  } else if (g.phase === 'play') { // écran partagé : seulement l'avancement
+    s.finished = act.filter((p) => done(g, p.id)).map((p) => p.id);
+    s.needed = act.length;
   }
   if (g.phase === 'album') {
     const a = g.album;

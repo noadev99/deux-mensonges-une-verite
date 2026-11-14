@@ -76,6 +76,11 @@
       </ol>
       <div class="muted" style="font-size:.92rem">😂 Chaque vote reçu : <b>+100</b> · 👑 Tout le monde a voté pour toi : <b>+200</b><br>👌 Tu as voté pour la gagnante : <b>+25</b></div>`,
 
+    tv: (S, g) => g.phase !== 'write' ? null : `
+      ${UI.header(g.round, g.totalRounds, `Phrase ${g.round} sur ${g.totalRounds}`, 'Complétez la phrase ✍️')}
+      <div class="card center"><p class="ch-prompt tv-big">${phrase(g.prompt)}</p></div>
+      <div class="card"><div data-live="writing"></div></div>`,
+
     key: (S, g) => [g.phase, g.round, !!g.myAnswer, g.myVote].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),

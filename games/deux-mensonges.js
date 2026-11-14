@@ -28,8 +28,9 @@ const LABELS = 'ABCDEFGHIJKLMNOP';
 // ─── Cycle de vie ────────────────────────────────────────────────────────────
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['authorFound', 'trueFound', 'fooled', 'incognito']);
-  const g = { scores, stats, anecdotes: {}, sets: [], matches: {}, round: 0, trueVotes: {} };
-  setPhase(ctx, g, 'writing', TIME.writing, () => { if (Object.keys(g.anecdotes).length >= 2) startMatch(ctx, g); });
+  const g = { scores, stats, anecdotes: {}, sets: [], matches: {}, round: 0, trueVotes: {}, oral: ctx.oral() };
+  // à l'oral : on prépare ses anecdotes dans sa tête, on indique juste laquelle est vraie (1 min)
+  setPhase(ctx, g, 'writing', g.oral ? 60000 : TIME.writing, () => { if (Object.keys(g.anecdotes).length >= 2) startMatch(ctx, g); });
   return g;
 }
 
@@ -45,10 +46,15 @@ function setPhase(ctx, g, phase, ms, onTimeout) {
 
 function startMatch(ctx, g) {
   g.sets = shuffle(Object.keys(g.anecdotes)).map((authorId, i) => {
-    const items = shuffle(g.anecdotes[authorId]);
+    // à l'oral, l'auteur raconte dans son ordre : on ne mélange pas
+    const items = g.oral ? g.anecdotes[authorId] : shuffle(g.anecdotes[authorId]);
     return { label: LABELS[i], authorId, items, trueIndex: items.findIndex((x) => x.isTrue) };
   });
   g.matches = {};
+  if (g.oral) { // pas d'association à l'oral : on sait qui parle
+    g.found = g.sets.map(() => []);
+    return startRound(ctx, g, 0);
+  }
   setPhase(ctx, g, 'match', TIME.match(g.sets.length), () => revealMatch(ctx, g));
 }
 
@@ -147,6 +153,11 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
     case 'submit': {
       if (g.phase !== 'writing') return;
       const { texts, trueIndex } = payload || {};
+      if (g.oral) {
+        if (![0, 1, 2].includes(trueIndex)) return { error: 'Choisis laquelle sera la vraie' };
+        g.anecdotes[pid] = [0, 1, 2].map((i) => ({ text: `Anecdote n°${i + 1}`, isTrue: i === trueIndex }));
+        break;
+      }
       if (!Array.isArray(texts) || texts.length !== 3) return { error: 'Il faut 3 anecdotes' };
       const clean = texts.map((t) => String(t || '').trim().replace(/\s+/g, ' ').slice(0, 200));
       if (clean.some((t) => t.length < 3)) return { error: 'Remplis bien les 3 anecdotes' };
@@ -206,10 +217,12 @@ function stateFor(ctx, g, pid) {
     remaining: g.deadline ? Math.max(0, g.deadline - Date.now()) : 0,
     round: g.round + 1,
     totalRounds: g.sets.length,
+    oral: g.oral,
   };
 
   if (g.phase === 'writing') {
-    s.myAnecdotes = g.anecdotes[pid] || null;
+    s.myAnecdotes = g.oral ? null : g.anecdotes[pid] || null;
+    s.myTrue = g.oral && g.anecdotes[pid] ? g.anecdotes[pid].findIndex((a) => a.isTrue) : null;
     s.submitted = Object.keys(g.anecdotes);
   }
 
@@ -264,6 +277,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 12,
   duration: '20–40 min',
+  oral: true,
   create,
   onAction,
   onPlayersChanged: autoAdvance,

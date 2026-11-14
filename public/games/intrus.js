@@ -3,9 +3,9 @@
   const { esc, P, av, name } = UI;
 
   const roleCard = (g) => g.isIntruder
-    ? `<div class="card center intr-role intr-bad"><div class="muted">Ton rôle</div><h2>🕵️ Tu es l'intrus !</h2>
+    ? `<div class="card center intr-role intr-bad keep"><div class="muted">Ton rôle</div><h2>🕵️ Tu es l'intrus !</h2>
         <div class="muted">Tu ne connais pas le mot. Écoute les indices, fonds-toi dans la masse…</div></div>`
-    : `<div class="card center intr-role"><div class="muted">Le mot secret</div><div class="intr-word">${esc(g.word)}</div>
+    : `<div class="card center intr-role keep"><div class="muted">Le mot secret</div><div class="intr-word">${esc(g.word)}</div>
         <div class="muted">Donne un indice assez clair pour les autres… mais pas trop pour l'intrus !</div></div>`;
 
   const cluesCard = (g) => `<div class="card"><h2>Indices</h2><div data-live="clues"></div></div>`;
@@ -18,7 +18,7 @@
         const isNow = showSpeaker && g.speaker === id && g.tour === tour;
         if (!c && !isNow && tour > g.tour) return;
         rows.push(`<div class="score ${isNow ? 'intr-now' : ''}">${av(P(id))}<span class="n">${name(id)}</span>
-          ${c ? `<b class="intr-clue">${esc(c.text)}</b>` : isNow ? '<span class="wait">✍️</span>' : '<span class="muted">—</span>'}</div>`);
+          ${c ? (c.text == null ? '<b class="intr-clue">🎤 dit</b>' : `<b class="intr-clue">${esc(c.text)}</b>`) : isNow ? '<span class="wait">✍️</span>' : '<span class="muted">—</span>'}</div>`);
       });
       if (tour < g.tours && g.tour > tour) rows.push('<div class="muted center" style="font-size:.8rem;padding:4px">— tour 2 —</div>');
     }
@@ -31,9 +31,11 @@
       return `
         ${UI.header(g.round, g.totalRounds, `Manche ${g.round} / ${g.totalRounds} · Tour ${g.tour} / ${g.tours}`, myTurn ? "À toi ! ✍️" : `${name(g.speaker)} réfléchit…`)}
         ${roleCard(g)}
-        ${myTurn ? `<div class="card stack">
+        ${myTurn ? (g.oral
+          ? `<div class="card center keep"><p style="margin:0 0 10px">Dis ton indice <b>à voix haute</b> (un seul mot), puis :</p><button class="full alt" data-said>C'est dit ✅</button></div>`
+          : `<div class="card stack">
             <input id="clue" maxlength="30" placeholder="Ton indice (un mot)" autocomplete="off" />
-            <button class="full" data-clue>Envoyer</button></div>` : ''}
+            <button class="full" data-clue>Envoyer</button></div>`) : ''}
         ${cluesCard(g)}
         ${UI.forceLink(`Passer le tour de ${name(g.speaker)}`)}`;
     },
@@ -98,6 +100,25 @@
       <div class="muted" style="font-size:.92rem">👃 Voter pour l'intrus : <b>+100</b> · 🤝 Intrus démasqué sans voler le mot : <b>+50</b> pour toute l'équipe<br>
       🥷 Intrus jamais démasqué : <b>+200</b> · 🧠 Démasqué mais devine le mot : <b>+150</b></div>`,
 
+    tv: (S, g) => {
+      if (g.phase === 'clues') {
+        return `${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds} · Tour ${g.tour} sur ${g.tours}`, `${name(g.speaker)} ${g.oral ? 'parle' : 'réfléchit'}… ${g.oral ? '🎤' : '✍️'}`)}
+          <div class="card center"><div class="muted">Le mot secret</div><div class="tv-big">🤫 caché</div><p class="muted" style="margin-bottom:0">Tout le monde le connaît… sauf l'intrus.</p></div>
+          ${cluesCard(g)}`;
+      }
+      if (g.phase === 'vote') {
+        return `${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds} · Vote`, "Qui est l'intrus ? 🔎")}
+          <div class="card"><h2>Indices</h2>${cluesList(g, false)}</div>
+          <p class="center white tv-big" data-live="voteCount"></p>`;
+      }
+      if (g.phase === 'guess') {
+        return `${UI.header(g.round, g.totalRounds, `Manche ${g.round} sur ${g.totalRounds}`, 'Démasqué ! 😱')}
+          <div class="card center reveal">${av(P(g.intruderId), 'lg')}<h2 style="margin:10px 0 4px">${name(g.intruderId)} était l'intrus</h2>
+          <div class="muted">Dernière chance : il/elle essaie de deviner le mot… <span class="wait">🤞</span></div></div>`;
+      }
+      return null;
+    },
+
     key: (S, g) => [g.phase, g.round, g.speaker === S.you, g.phase === 'clues' ? g.speaker : '', g.myVote].join('|'),
 
     screen: (S, g) => screens[g.phase](S, g),
@@ -113,6 +134,7 @@
       const sendClue = () => UI.send('clue', root.querySelector('#clue').value);
       const sendGuess = () => UI.send('guess', root.querySelector('#guess').value);
       on('[data-clue]', sendClue);
+      on('[data-said]', () => UI.send('clue', ''));
       on('[data-guess]', sendGuess);
       submitOnEnter('clue', sendClue);
       submitOnEnter('guess', sendGuess);

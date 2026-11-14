@@ -27,6 +27,7 @@ function create(ctx) {
   const rounds = Math.min(MAX_ROUNDS, Math.max(3, ids.length));
   const g = {
     scores, stats,
+    oral: ctx.oral(), // à l'oral : chacun dit son indice à voix haute
     round: 0, totalRounds: rounds,
     words: sample(WORDS, rounds),
     // chaque joueur est intrus au plus une fois (si assez de manches)
@@ -115,6 +116,11 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
 
   if (type === 'clue') {
     if (g.phase !== 'clues' || currentSpeaker(g) !== pid) return;
+    if (g.oral) { // indice dit à voix haute : on note juste que c'est fait
+      g.clues.push({ pid, text: null, tour: g.tour });
+      nextTurn(g);
+      return autoAdvance(ctx, g);
+    }
     const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 30);
     if (!text) return { error: 'Écris un indice' };
     if (text.split(' ').length > 2) return { error: 'Un seul mot (deux maximum) !' };
@@ -160,7 +166,9 @@ function stateFor(ctx, g, pid) {
     phase: g.phase, round: g.round, totalRounds: g.totalRounds, scores: g.scores,
     participants: Object.keys(g.scores),
     isIntruder,
-    word: isIntruder && g.phase !== 'reveal' ? null : g.word,
+    // le mot n'est montré qu'aux joueurs qui ne sont pas l'intrus (jamais à l'écran partagé avant la fin)
+    word: g.phase === 'reveal' || (pid in g.scores && !isIntruder) ? g.word : null,
+    oral: g.oral,
     order: g.order, turn: g.turn, tour: g.tour, tours: TOURS,
     speaker: g.phase === 'clues' ? currentSpeaker(g) : null,
     clues: g.clues,
@@ -190,6 +198,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 12,
   duration: '15–20 min',
+  oral: true,
   create,
   onAction,
   onPlayersChanged: autoAdvance,

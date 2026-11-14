@@ -137,7 +137,7 @@
     }
     if (g.type === 'draw') {
       return `${head('Dessine ça !')}
-        <div class="card center dc-prompt"><div class="muted">À dessiner</div><div class="dc-text">${esc(g.prev?.content || '…')}</div></div>
+        <div class="card center dc-prompt keep"><div class="muted">À dessiner</div><div class="dc-text">${esc(g.prev?.content || '…')}</div></div>
         <div class="card dc-padcard">
           <canvas id="pad" class="dc-pad" aria-label="Zone de dessin"></canvas>
           <div class="dc-tools">
@@ -153,7 +153,7 @@
     }
     // deviner
     return `${head('Qu\'est-ce que c\'est ?')}
-      <div class="card center">${g.prev ? shownEntry(g.prev, true) : ''}</div>
+      <div class="card center keep">${g.prev ? shownEntry(g.prev, true) : ''}</div>
       <div class="card stack">
         <input id="txt" maxlength="100" placeholder="Je pense que c'est…" autocomplete="off" value="${esc(text.value)}" />
         <button class="full alt" data-send>Envoyer</button>
@@ -184,6 +184,10 @@
         <li>À la fin, on feuillette chaque chaîne ensemble pour voir comment le message a dérivé.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">⏱️ 45 s pour écrire, 90 s pour dessiner, 40 s pour deviner. Ce qui est en cours est envoyé à la fin du temps.<br>❤️ Chaque cœur reçu pendant la révélation : <b>+100</b></div>`,
+
+    tv: (S, g) => g.phase !== 'play' ? null : `${progressBar(g)}
+      <div class="phase"><div class="step">${stepLabel(g)} · <span class="dc-timer">…</span></div><div class="t">${g.type === 'text' ? 'Chacun écrit une phrase ✍️' : g.type === 'draw' ? 'Tout le monde dessine 🎨' : 'Tout le monde devine 🔎'}</div></div>
+      <div class="card"><div data-live="waiting"></div></div>`,
 
     key: (S, g) => [g.phase, g.step, g.done, g.album ? `${g.album.chain}:${g.album.shown}:` + g.album.entries.map((e) => e.hearts + (e.mine ? 'm' : '')).join(',') : ''].join('|'),
 

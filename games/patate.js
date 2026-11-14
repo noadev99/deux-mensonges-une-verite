@@ -30,6 +30,7 @@ function create(ctx) {
     scores, stats, round: 0, totalRounds: ROUNDS,
     categories: sample(CATEGORIES, ROUNDS),
     starters: shuffle(Object.keys(scores)),
+    oral: ctx.oral(), // à l'oral : on crie sa réponse, le bouton sert juste à passer la bombe
   };
   newRound(g);
   return g;
@@ -92,6 +93,13 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
   if (type === 'answer') {
     if (g.phase !== 'playing' || g.holder !== pid) return;
+    if (g.oral) {
+      g.answers.push({ pid, text: null });
+      g.stats[pid].answers++;
+      g.holder = nextPlayer(ctx, g, pid);
+      g.passedAt = Date.now();
+      return;
+    }
     const text = String(payload || '').trim().replace(/\s+/g, ' ').slice(0, 40);
     if (normalize(text).length < 2) return { error: 'Trop court !' };
     if (g.answers.some((a) => normalize(a.text) === normalize(text))) return { error: 'Déjà dit ! Trouve autre chose 🔥' };
@@ -126,6 +134,7 @@ function stateFor(ctx, g, pid) {
     answers: g.answers,
     // temps écoulé depuis l'allumage (la durée totale reste secrète)
     elapsed: g.startedAt ? Date.now() - g.startedAt : 0,
+    oral: g.oral,
   };
   if (g.phase === 'boom') s.result = g.result;
   if (g.phase === 'end') s.awards = g.awards;
@@ -142,6 +151,7 @@ module.exports = {
   minPlayers: 3,
   maxPlayers: 12,
   duration: '10 min',
+  oral: true,
   create,
   onAction,
   onPlayersChanged,
