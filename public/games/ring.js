@@ -54,20 +54,20 @@
   const dist = (x, y, a, b) => Math.hypot(x - a, y - b);
   const ARENAS = {
     rond: {
-      R: (t) => Math.max(95, 290 - 3.6 * t),
+      R: (t) => Math.max(100, 308 - 3.6 * t),
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t)); },
       spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 130, CY + Math.sin(a) * 130]; },
     },
     trou: {
-      S: (t) => Math.max(150, 275 - 2.6 * t),
+      S: (t) => Math.max(160, 295 - 2.6 * t),
       h: (t) => Math.min(115, 45 + 1.4 * t),
       inside(x, y, t) { const s = this.S(t); return Math.abs(x - CX) < s && Math.abs(y - CY) < s && dist(x, y, CX, CY) > this.h(t); },
       draw(c, t) { iceRect(c, CX, CY, this.S(t)); hole(c, CX, CY, this.h(t)); },
       spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 165, CY + Math.sin(a) * 165]; },
     },
     tourne: {
-      R: (t) => Math.max(110, 285 - 3 * t), w: 0.75,
+      R: (t) => Math.max(115, 305 - 3 * t), w: 0.75,
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t)); spokes(c, CX, CY, this.R(t), t * this.w); },
       // le manège fait tourner et éjecte doucement vers l'extérieur
@@ -78,7 +78,7 @@
       spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 120, CY + Math.sin(a) * 120]; },
     },
     iles: {
-      r: (t) => Math.max(85, 185 - 1.9 * t), bw: (t) => Math.max(0, 80 - 1.6 * t),
+      r: (t) => Math.max(90, 200 - 1.9 * t), bw: (t) => Math.max(0, 80 - 1.6 * t),
       inside(x, y, t) {
         const r = this.r(t), bw = this.bw(t);
         return dist(x, y, CX - 235, CY) < r || dist(x, y, CX + 235, CY) < r || (Math.abs(y - CY) < bw / 2 && Math.abs(x - CX) < 235);
@@ -92,7 +92,7 @@
       spawn(i, n, rot, t) { const side = i % 2 ? 1 : -1; const k = Math.floor(i / 2); const a = rot + k * 2.1; return [CX + side * 235 + Math.cos(a) * 55, CY + Math.sin(a) * 55]; },
     },
     finale: {
-      R: (t) => Math.max(70, 250 - 4.5 * t), icy: true,
+      R: (t) => Math.max(75, 272 - 4.5 * t), icy: true,
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t), true); },
       spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 110, CY + Math.sin(a) * 110]; },
@@ -227,7 +227,7 @@
     const ids = g.players.filter((id) => g.alive.includes(id));
     const players = ids.map((id, i) => {
       const [x, y] = arena.spawn(i, ids.length, rot, 0);
-      return { id, x, y, vx: 0, vy: 0, r: 26, color: colorOf(id), charge: 0, prevA: false, prevB: false, dashT: 0, dashCd: 0,
+      return { id, x, y, vx: 0, vy: 0, r: 20, color: colorOf(id), charge: 0, prevA: false, prevB: false, dashT: 0, dashCd: 0,
         anchoring: false, anchorT: 0, anchorCd: 0, lastHit: null, state: 'alive', fallT: 0 };
     });
     sim = {
