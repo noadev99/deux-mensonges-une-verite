@@ -17,6 +17,7 @@ const UI = (() => {
   const qrImg = (code, cls = '') => `<img class="qr ${cls}" src="/api/qr?u=${encodeURIComponent(joinUrl(code))}" alt="QR code pour rejoindre le salon ${code}">`;
   let showQr = false; // QR code affiché dans le salon (téléphone)
   let homeMode = 'phone'; // accueil : « sur mon téléphone » ou « mode télé »
+  let edOpen = false;     // éditeur de bouille déplié
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
@@ -38,9 +39,16 @@ const UI = (() => {
   saveLook();
   const ROWS = [['eyes', 'Yeux'], ['mouth', 'Bouche'], ['acc', 'Accessoire']];
   const SWATCHES = [['col', 'Couleur', () => PERSO.COLS]];
+  const myBouille = () => `<span class="av xl my-bouille" style="background:${PERSO.color(edLook)}">${PERSO.head(edLook)}</span>`;
+  // déplier / replier l'éditeur sans redessiner l'écran (garde le pseudo en cours de saisie)
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-edit-bouille]')) return;
+    edOpen = !edOpen;
+    document.querySelectorAll('.bouille-ed').forEach((el) => el.classList.toggle('open', edOpen));
+    document.querySelectorAll('[data-edit-bouille]').forEach((el) => el.setAttribute('aria-expanded', edOpen));
+  });
   const persoEditor = () => `<div class="perso-wrap">
       <div class="perso-ed">
-        <div class="perso-prev"><span class="av xl" style="background:${PERSO.color(edLook)}">${PERSO.head(edLook)}</span></div>
         <div class="perso-ctrl">${ROWS.map(([k, lab]) => `<div class="pr"><span class="pl">${lab}</span>
             <button class="pa" data-pk="${k}" data-d="-1" aria-label="${lab} précédent">‹</button><span class="pv">${esc(PERSO.label(k, edLook[k]))}</span><button class="pa" data-pk="${k}" data-d="1" aria-label="${lab} suivant">›</button></div>`).join('')}
           ${SWATCHES.map(([k, lab, list]) => `<div class="pr"><span class="pl">${lab}</span><div class="sw">${list().map((col, i) => `<button class="swc ${edLook[k] === i ? 'sel' : ''}" data-pk="${k}" data-v="${i}" style="background:${col}" aria-label="${lab} ${i + 1}"></button>`).join('')}</div></div>`).join('')}
@@ -58,6 +66,7 @@ const UI = (() => {
     }
     saveLook();
     document.querySelectorAll('.perso-wrap').forEach((w) => { w.outerHTML = persoEditor(); });
+    document.querySelectorAll('.my-bouille').forEach((w) => { w.outerHTML = myBouille(); });
     if (S && !S.spectator) socket.emit('setLook', edLook); // dans le salon : les autres voient le changement
   });
   const name = (id) => esc(P(id)?.name ?? '?');
@@ -256,6 +265,7 @@ const UI = (() => {
   socket.on('state', (s) => {
     if (outdated(s.build)) return;
     const first = !S;
+    if (first) edOpen = false; // on entre dans le salon : éditeur de bouille replié
     S = s;
     render();
     if (first) keepAwake();
@@ -269,8 +279,8 @@ const UI = (() => {
     const code = new URLSearchParams(location.search).get('salon') || '';
     const boxes = catalog.map((g) => `<span class="box" style="background:${g.color}" title="${esc(g.name)}">${ICONS.game(g.id)}</span>`).join('');
     const tabs = code ? '' : `<div class="modes" role="tablist">
-        <button class="mode ${homeMode === 'phone' ? 'sel' : ''}" data-mode="phone" role="tab" aria-selected="${homeMode === 'phone'}">📱 Sur mon téléphone</button>
-        <button class="mode ${homeMode === 'tv' ? 'sel' : ''}" data-mode="tv" role="tab" aria-selected="${homeMode === 'tv'}">📺 Mode télé</button>
+        <button class="mode ${homeMode === 'phone' ? 'sel' : ''}" data-mode="phone" role="tab" aria-selected="${homeMode === 'phone'}">📱 Téléphone</button>
+        <button class="mode ${homeMode === 'tv' ? 'sel' : ''}" data-mode="tv" role="tab" aria-selected="${homeMode === 'tv'}">📺 Télé</button>
       </div>`;
     if (!code && homeMode === 'tv') {
       $app.innerHTML = `
@@ -291,20 +301,22 @@ const UI = (() => {
       return;
     }
     $app.innerHTML = `
-      <div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
-      <div class="boxes">${boxes}</div>
+      <div class="logo"><span>Soirée</span> <span>Jeux</span></div>
+      <div class="boxes strip">${boxes}</div>
       ${tabs}
-      <div class="card perso-card"><h2 style="margin:0 0 8px">Ta bouille</h2>${persoEditor()}</div>
-      <div class="card stack">
-        <label for="name"><h2 style="margin:0">Ton pseudo</h2></label>
-        <input id="name" maxlength="20" placeholder="Ex. : Noa" autocomplete="nickname" value="${esc(localStorage.getItem('name') || '')}" />
+      <div class="card me-card">
+        <div class="me-row">
+          <button class="me-av" data-edit-bouille aria-expanded="${edOpen}" title="Modifier ma bouille">${myBouille()}<span class="edit-badge">✏️</span></button>
+          <div class="me-name"><label for="name">Ton pseudo</label>
+            <input id="name" maxlength="20" placeholder="Ex. : Noa" autocomplete="nickname" value="${esc(localStorage.getItem('name') || '')}" /></div>
+        </div>
+        <div class="bouille-ed ${edOpen ? 'open' : ''}">${persoEditor()}</div>
         ${code ? '' : '<button class="full" id="create">Créer un salon</button>'}
       </div>
-      ${code ? '' : '<div class="or">ou rejoins tes amis</div>'}
-      <div class="card stack">
-        <label for="code"><h2 style="margin:0">${code ? 'Tu es invité(e) dans le salon' : 'Code du salon'}</h2></label>
-        <input id="code" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" value="${esc(code)}" />
-        <button class="full alt" id="join" style="--game:var(--blue)">Rejoindre</button>
+      <div class="card join-card">
+        <label for="code" class="lbl">${code ? 'Tu es invité(e) dans le salon' : 'Ou rejoins tes amis'}</label>
+        <div class="row"><input id="code" class="codeinput" maxlength="4" placeholder="ABCD" autocomplete="off" value="${esc(code)}" />
+          <button class="alt" id="join" style="--game:var(--blue)">Rejoindre</button></div>
       </div>
       ${code ? '<p class="center"><a class="link" href="/">Créer mon propre salon</a></p>' : ''}`;
     $app.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { homeMode = b.dataset.mode; renderHome(); }));
@@ -322,42 +334,45 @@ const UI = (() => {
     const n = S.players.filter((p) => p.connected).length;
     const missing = Math.max(0, g.minPlayers - n);
     const shown = isHost() ? S.games : S.games.filter((x) => x.id === S.gameId);
+    const fits = S.games.filter((x) => n >= x.minPlayers && n <= x.maxPlayers && x.id !== S.gameId);
     return `
-      <div class="code-label">Code du salon</div>
-      <div class="code">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div>
-      <div class="invite">
-        <button class="ghost" data-invite>${ICON.send} Inviter</button>
-        <button class="ghost" data-qr>${showQr ? 'Cacher le QR code' : '▦ QR code'}</button>
-        ${S.tv ? '' : '<button class="ghost" data-tv>📺 Mode salon</button>'}
+      <div class="lob-head">
+        <div class="lob-code"><span class="code-label">Code du salon</span><div class="code sm">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div></div>
+        <div class="lob-actions">
+          <button class="iconbtn" data-invite title="Inviter">${ICON.send}<span>Inviter</span></button>
+          <button class="iconbtn ${showQr ? 'on' : ''}" data-qr title="QR code">▦<span>QR</span></button>
+          ${S.tv ? '' : '<button class="iconbtn" data-tv title="Afficher sur une télé">📺<span>Télé</span></button>'}
+        </div>
       </div>
       ${showQr ? `<div class="card center qrcard">${qrImg(S.code)}<p class="muted" style="margin:8px 0 0">Scanne avec l'appareil photo pour rejoindre</p></div>` : ''}
-      ${S.tv ? '<p class="center white tvon">📺 Un écran est connecté : le jeu s\'affiche dessus, les téléphones servent de manettes.</p>' : ''}
+      ${S.tv ? '<p class="center white tvon">📺 La télé est branchée : les téléphones servent de manettes.</p>' : ''}
 
       <div class="card">
-        <div class="cardhead"><h2>Joueurs</h2><span class="muted">${n} / 16</span></div>
+        <div class="cardhead"><h2>Joueurs <small class="muted">${n}/16</small></h2>
+          <button class="chipbtn" data-edit-bouille aria-expanded="${edOpen}">${myBouille().replace('av xl', 'av sm')} Ma bouille ✏️</button></div>
+        <div class="bouille-ed ${edOpen ? 'open' : ''}">${persoEditor()}</div>
         <div class="players figs" data-live="lobbyPlayers"></div>
       </div>
-      <details class="card perso-card"><summary>😀 Modifier ma bouille</summary><div style="height:10px"></div>${persoEditor()}</details>
 
-      <div class="card">
-        <h2>${isHost() ? 'Choisis un jeu' : "Le jeu choisi par l'hôte"}</h2>
-        <div class="games ${shown.length === 1 ? 'solo' : ''}">${shown.map((x) => {
-          const tag = isHost() ? 'button' : 'div';
-          return `<${tag} class="gamecard ${x.id === S.gameId ? 'sel' : ''}" data-game="${x.id}" style="--c:${x.color}">
-            <span class="lid">${ICONS.game(x.id)}</span>
-            <span class="info"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.tagline)}</div>
-            <div class="m"><span>${ICON.players}${x.minPlayers} à ${x.maxPlayers}</span><span>${ICON.clock}${esc(x.duration)}</span>${x.oral ? '<span>🎤 oral</span>' : ''}</div></span></${tag}>`;
-        }).join('')}</div>
+      <div class="card game-panel" style="--c:${g.color}">
+        <div class="gp-top">
+          <span class="gp-art">${ICONS.game(g.id)}</span>
+          <div class="gp-info"><div class="gp-kicker">${isHost() ? 'Le jeu choisi' : `${name(S.hostId)} a choisi`}</div>
+            <div class="gp-name">${esc(g.name)}</div><div class="gp-tag">${esc(g.tagline)}</div>
+            <div class="m"><span>${ICON.players}${g.minPlayers} à ${g.maxPlayers}</span><span>${ICON.clock}${esc(g.duration)}</span></div></div>
+        </div>
+        ${optionsCard(g)}
+        ${g.oral ? `<div class="opt-row"><span class="opt-label">🎤 À l'oral</span>${isHost()
+          ? `<button class="switch ${S.oral ? 'on' : ''}" data-oral aria-pressed="${S.oral}"><span></span></button>`
+          : `<b>${S.oral ? 'oui' : 'non'}</b>`}<small class="muted">${S.oral ? 'on parle à voix haute, le téléphone sert à voter' : 'tout s\'écrit sur le téléphone'}</small></div>` : ''}
+        ${GAMES[S.gameId]?.rules ? `<details class="gp-rules"><summary>Comment on joue ?</summary>${GAMES[S.gameId].rules()}</details>` : ''}
       </div>
 
-      ${optionsCard(g)}
-      ${g.oral ? `<div class="card oralcard">
-        <div class="cardhead"><h2>🎤 Réponses à l'oral</h2>${isHost()
-          ? `<button class="switch ${S.oral ? 'on' : ''}" data-oral aria-pressed="${S.oral}"><span></span></button>`
-          : `<b>${S.oral ? 'activé' : 'désactivé'}</b>`}</div>
-        <p class="muted" style="margin:0">${S.oral ? 'On raconte et on répond à voix haute, comme dans la même pièce. Le téléphone sert juste à voter.' : 'Les réponses s\'écrivent sur le téléphone. Active l\'oral si vous êtes tous dans la même pièce.'}</p>
+      ${isHost() ? `<div class="card">
+        <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
+        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${n < x.minPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}">
+          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${n < x.minPlayers ? `<small>${x.minPlayers} joueurs min.</small>` : ''}</button>`).join('')}</div>
       </div>` : ''}
-      ${GAMES[S.gameId]?.rules ? `<div class="card"><details><summary>Comment on joue à ${esc(g.name)} ?</summary>${GAMES[S.gameId].rules()}</details></div>` : ''}
       ${soireeCard()}
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>
 
@@ -372,10 +387,10 @@ const UI = (() => {
     return g.options.map((o) => {
       const cur = S.options?.[o.key] ?? o.default;
       const choice = o.choices.find((c) => c.value === cur) || o.choices[0];
-      return `<div class="card optcard"><h2>${esc(o.label)}</h2>
+      return `<div class="opt-block"><span class="opt-label">${esc(o.label)}</span>
         ${isHost()
           ? `<div class="opts">${o.choices.map((c) => `<button class="opt ${c.value === cur ? 'sel' : ''}" data-opt-key="${esc(o.key)}" data-opt-value="${esc(c.value)}">
-              <b>${esc(c.label)}</b>${c.hint ? `<small>${esc(c.hint)}</small>` : ''}</button>`).join('')}</div>`
+              <b>${esc(c.label)}</b>${c.value === cur && c.hint ? `<small>${esc(c.hint)}</small>` : ''}</button>`).join('')}</div>`
           : `<p style="margin:0"><b>${esc(choice.label)}</b>${choice.hint ? ` <span class="muted">· ${esc(choice.hint)}</span>` : ''}</p>`}
       </div>`;
     }).join('');
@@ -468,6 +483,8 @@ const UI = (() => {
         // sur l'écran partagé, un jeu peut fournir une vue dédiée (sans secrets ni formulaires)
         const body = (S.spectator && mod.tv && mod.tv(S, S.game)) || mod.screen(S, S.game);
         $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}${S.oral && g.oral ? ' · 🎤' : ''}</span><span class="room">${room}</span></div>` + body;
+        // autocollant dessiné du jeu, collé dans l'en-tête de l'écran
+        $app.querySelector('.phase')?.insertAdjacentHTML('afterbegin', `<span class="phase-sticker" style="--c:${g.color}" aria-hidden="true">${ICONS.game(g.id)}</span>`);
         if (document.body.classList.contains('tvmode')) controllerMode();
         if (S.game.phase === 'end' && confettiFor !== S.history.length) { confettiFor = S.history.length; confetti(); }
       }
@@ -523,6 +540,11 @@ const UI = (() => {
       setTimeout(() => { delete el.dataset.busy; el.classList.remove('busy'); }, 1500); // si rien ne change (erreur), on réactive
     });
     on('[data-game]', (e) => isHost() && socket.emit('selectGame', e.currentTarget.dataset.game));
+    on('[data-random-game]', () => {
+      const n = S.players.filter((p) => p.connected).length;
+      const list = S.games.filter((x) => n >= x.minPlayers && n <= x.maxPlayers && x.id !== S.gameId);
+      if (list.length) socket.emit('selectGame', list[Math.floor(Math.random() * list.length)].id);
+    });
     on('[data-leave]', () => { socket.emit('leave'); localStorage.removeItem('session'); S = null; renderHome(); });
     on('[data-invite]', () => {
       const url = `${location.origin}/?salon=${S.code}`;

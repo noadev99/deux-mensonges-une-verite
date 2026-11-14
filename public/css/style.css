@@ -640,3 +640,151 @@ body.tv .pfig .av.xl { width: 84px; height: 84px; }
 .al-btns button.sel { background: #9bf0c2; } .al-btns button.sel.bad { background: #ffb3c4; }
 body.tv .board { padding: 24px; }
 body.tv .pcard.lg { --w: 130px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Refonte : plus compact + style « dessiné par un illustrateur »
+   (grain de papier, bords irréguliers, trait d'encre vibrant, griffonnages,
+    surligneur, scotch, annotations manuscrites)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --hand: 'Gochi Hand', 'Fredoka', cursive;
+  --paper-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .06  0 0 0 0 .18  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --doodles: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='.09'><path d='M30 40l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/><path d='M190 30c10-8 22 4 12 12s-24-2-14-14 30-2 26 14'/><path d='M120 120q10-14 20 0t20 0 20 0'/><circle cx='60' cy='190' r='9'/><path d='M210 180l14 14m0-14l-14 14'/><path d='M40 120c-6 6 0 14 6 10'/><path d='M150 220l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'/><path d='M230 100q-8 10 0 18'/><path d='M100 60h8m-4-4v8'/></svg>");
+}
+body { background-image:
+    radial-gradient(circle at 15% 10%, rgba(255,111,163,.26), transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(109,139,255,.28), transparent 45%),
+    var(--doodles);
+  background-size: auto, auto, 260px 260px; }
+
+/* cartes : papier + bords faits main (chaque carte un peu différente) */
+.card { padding: 16px; margin-bottom: 14px; background-image: var(--paper-grain);
+  border-radius: 24px 19px 26px 17px / 19px 25px 17px 24px; }
+.card:nth-of-type(3n+2) { border-radius: 18px 26px 19px 25px / 25px 18px 26px 19px; }
+.card:nth-of-type(3n) { border-radius: 26px 18px 22px 24px / 17px 26px 21px 18px; }
+button { border-radius: 17px 14px 18px 13px / 14px 18px 13px 17px; }
+input, textarea { border-radius: 15px 12px 16px 13px / 12px 16px 13px 15px; }
+.av { border-radius: 50% 47% 52% 48% / 48% 52% 47% 50%; }
+
+/* trait d'encre vibrant sur tous les dessins */
+.art, .bart, .face, .ico, .logo span { filter: url(#ink); }
+.av.sm .face { filter: url(#ink-soft); }
+
+/* titres soulignés au surligneur */
+.card > h2, .cardhead h2, .card > details > summary h2 { width: fit-content; padding: 0 4px; margin-left: -4px;
+  background: linear-gradient(100deg, transparent 2%, color-mix(in srgb, var(--game) 55%, transparent) 4%, color-mix(in srgb, var(--game) 40%, transparent) 94%, transparent 97%) no-repeat 0 82% / 100% .48em; }
+/* annotations manuscrites */
+.code-label, .gp-kicker, .opt-label, .lbl, .phase .step, .or, .tag, .me-name label, .cp-legend, .bt-rule { font-family: var(--hand); font-size: 1.08rem; letter-spacing: .01em; }
+.phase .step { font-size: 1.15rem; }
+
+/* ─── Accueil compact ─── */
+.logo { margin: 10px 0 4px; }
+.logo span { font-size: clamp(2.4rem, 11vw, 3.4rem); }
+.logo span:last-child { margin-left: .2em; }
+.boxes.strip { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; gap: 8px; margin: 12px -16px 16px; padding: 6px 16px 10px; scrollbar-width: none; }
+.boxes.strip::-webkit-scrollbar { display: none; }
+.boxes.strip .box { flex: none; width: 44px; height: 44px; border-radius: 13px 11px 14px 10px; }
+.boxes.strip .box .art { width: 34px; height: 34px; }
+.modes { margin-bottom: 14px; }
+.mode { padding: 10px 12px; font-size: .95rem; }
+.me-row { display: flex; align-items: center; gap: 14px; }
+.me-av { position: relative; padding: 0; background: none; border: 0; box-shadow: none; flex: none; }
+.me-av .av.xl { width: 74px; height: 74px; }
+.me-av:hover .av { transform: rotate(-5deg); }
+.edit-badge { position: absolute; right: -6px; bottom: -4px; background: #fff; border: 2px solid var(--ink); border-radius: 50%; width: 28px; height: 28px; display: grid; place-items: center; font-size: .8rem; }
+.me-name { flex: 1; min-width: 0; }
+.me-name label { display: block; margin-bottom: 4px; color: var(--muted); }
+.bouille-ed { display: none; margin-top: 12px; padding-top: 12px; border-top: 2px dashed var(--paper-2); }
+.bouille-ed.open { display: block; animation: fadein .25s ease both; }
+.me-card #create { margin-top: 14px; }
+.join-card .lbl { display: block; margin-bottom: 8px; color: var(--muted); }
+.join-card .codeinput { min-width: 0; }
+.join-card .row > button { flex: 0 0 auto; }
+
+/* ─── Salon compact ─── */
+.lob-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 14px; flex-wrap: wrap; }
+.lob-code { display: flex; flex-direction: column; align-items: flex-start; }
+.lob-code .code-label { text-align: left; }
+.code.sm { gap: 7px; margin: 4px 0 0; justify-content: flex-start; }
+.code.sm span { width: 42px; height: 48px; font-size: 1.6rem; box-shadow: 3px 3px 0 var(--ink); }
+.lob-actions { display: flex; gap: 8px; }
+.iconbtn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 10px 6px; font-size: 1.1rem; background: var(--paper-2); min-width: 54px; }
+.iconbtn span { font-size: .72rem; font-weight: 700; }
+.iconbtn .ico { width: 20px; height: 20px; }
+.iconbtn.on { background: var(--mustard); }
+.chipbtn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; font-size: .85rem; background: var(--paper-2); box-shadow: 2px 2px 0 var(--ink); }
+.chipbtn .av.sm { width: 22px; height: 22px; }
+.cardhead { align-items: center; margin-bottom: 10px; }
+.cardhead h2 { margin: 0; }
+.cardhead h2 small { font-family: var(--body); font-size: .85rem; }
+.players.figs { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; }
+.pfig { padding: 8px 2px 6px; gap: 4px; border-radius: 16px 13px 17px 12px / 13px 17px 12px 16px; }
+.pfig .av.xl { width: 46px; height: 46px; box-shadow: 2px 2px 0 var(--ink); }
+.pfig .pn { font-size: .76rem; }
+.pfig .mkhost { top: 2px; right: 2px; }
+
+/* panneau du jeu choisi */
+.game-panel { position: relative; background-color: color-mix(in srgb, var(--c) 16%, var(--paper)); }
+.game-panel::before { content: ''; position: absolute; top: -11px; left: 50%; width: 86px; height: 22px; transform: translateX(-50%) rotate(-3deg);
+  background: color-mix(in srgb, var(--c) 70%, #fff); opacity: .85; border-left: 2px dotted rgba(26,15,46,.25); border-right: 2px dotted rgba(26,15,46,.25); }
+.gp-top { display: flex; align-items: center; gap: 14px; }
+.gp-art { flex: none; width: 86px; height: 86px; display: grid; place-items: center; background: var(--c); border: var(--line); border-radius: 22px 18px 24px 16px; box-shadow: var(--pop-sm); transform: rotate(-4deg); }
+.gp-art .art { width: 66px; height: 66px; }
+.gp-info { min-width: 0; }
+.gp-kicker { color: var(--muted); }
+.gp-name { font-family: var(--display); font-size: 1.6rem; line-height: 1.05; }
+.gp-tag { color: var(--muted); font-size: .92rem; margin-top: 2px; }
+.game-panel .m { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.game-panel .m span { display: inline-flex; align-items: center; gap: 4px; font-size: .76rem; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 99px; background: var(--paper); border: 2px solid var(--ink); }
+.game-panel .m .ico { width: 14px; height: 14px; }
+.opt-block { margin-top: 12px; }
+.opt-label { display: block; color: var(--muted); margin-bottom: 4px; }
+.opt-block .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt-block .opt { flex: 1 1 140px; padding: 8px 10px; text-align: left; background: #fff; box-shadow: 2px 2px 0 var(--ink); font-size: .92rem; }
+.opt-block .opt.sel { background: var(--c, var(--mustard)); }
+.opt-block .opt small { display: block; font-weight: 400; font-size: .78rem; margin-top: 2px; }
+.opt-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.opt-row .opt-label { margin: 0; }
+.opt-row small { flex-basis: 100%; }
+.gp-rules { margin-top: 12px; }
+.gp-rules summary { cursor: pointer; font-weight: 600; }
+/* grille compacte des jeux */
+.gtiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.gtile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 7px; background: #fff; box-shadow: 2px 2px 0 var(--ink); font-size: .78rem; line-height: 1.1; }
+.gtile .gt-art { width: 52px; height: 52px; display: grid; place-items: center; background: var(--c); border: 2px solid var(--ink); border-radius: 15px 12px 16px 11px; }
+.gtile .gt-art .art { width: 40px; height: 40px; }
+.gtile:nth-child(odd) .gt-art { transform: rotate(-4deg); } .gtile:nth-child(even) .gt-art { transform: rotate(3deg); }
+.gtile.sel { background: color-mix(in srgb, var(--c) 30%, #fff); box-shadow: 0 0 0 3px var(--c), 3px 3px 0 3px var(--ink); }
+.gtile.few { opacity: .55; }
+.gtile small { font-weight: 400; font-size: .66rem; color: var(--muted); }
+
+/* ─── Écrans de jeu plus serrés ─── */
+.topbar { margin-bottom: 8px; }
+.phase { margin: 0 0 12px; }
+.phase .t { font-size: 1.7rem; }
+.score { padding: 6px 4px; }
+.score .p { font-size: 1.05rem; }
+.progress { margin-bottom: 8px; }
+.lob-head { flex-wrap: nowrap; }
+.code.sm span { width: 36px; height: 42px; font-size: 1.35rem; border-radius: 11px 9px 12px 8px; }
+.iconbtn { min-width: 46px; padding: 6px 7px 5px; }
+.pfig .mkhost { background: transparent; border: 0; box-shadow: none; padding: 0; opacity: .45; transform: scale(.8); }
+.pfig .mkhost:hover { opacity: 1; }
+
+/* autocollant du jeu dans l'en-tête des écrans de jeu */
+.phase { position: relative; padding: 0 58px; }
+.phase-sticker { position: absolute; right: 0; top: 50%; width: 52px; height: 52px; margin-top: -26px; display: grid; place-items: center;
+  background: var(--c); border: 2.5px solid var(--ink); border-radius: 16px 12px 17px 11px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(7deg); animation: sticker 4s ease-in-out infinite; }
+.phase-sticker::after { content: ''; position: absolute; top: -8px; left: 50%; width: 34px; height: 12px; transform: translateX(-50%) rotate(-8deg); background: rgba(255,255,255,.55); }
+.phase-sticker .art { width: 40px; height: 40px; }
+@keyframes sticker { 50% { transform: rotate(3deg) translateY(-2px); } }
+/* barre de progression façon coup de feutre */
+.progress { height: 14px; border-radius: 9px 12px 8px 13px; background: rgba(255,255,255,.1); }
+.progress > div { background: repeating-linear-gradient(-45deg, var(--game) 0 7px, color-mix(in srgb, var(--game) 75%, #fff) 7px 11px); border-right: 2px solid var(--ink); }
+/* listes « qui a répondu » plus discrètes pendant les jeux */
+#app:not(.wide) .players { gap: 5px; }
+#app:not(.wide) .player { font-size: .82rem; padding: 2px 9px 2px 2px; gap: 5px; }
+#app:not(.wide) .player .av { width: 26px; height: 26px; }
+body.tv .phase { padding: 0 90px; }
+body.tv .phase-sticker { width: 80px; height: 80px; margin-top: -40px; }
+body.tv .phase-sticker .art { width: 62px; height: 62px; }
