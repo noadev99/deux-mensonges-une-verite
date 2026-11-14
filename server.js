@@ -43,7 +43,14 @@ function newCode() {
   return c;
 }
 
-function newPlayer(room, name) {
+// Perso complet (dessiné côté client, public/js/perso.js) : des numéros par partie du corps
+const LOOK_KEYS = ['skin', 'hairColor', 'hair', 'eyes', 'mouth', 'acc', 'top', 'bottom', 'shoes', 'col'];
+const cleanLook = (l) => Object.fromEntries(LOOK_KEYS.map((k) => {
+  const v = l && l[k];
+  return [k, Number.isInteger(v) && v >= 0 && v < 64 ? v : Math.floor(Math.random() * 64)];
+}));
+
+function newPlayer(room, name, look) {
   const used = new Set([...room.players.values()].map((p) => p.avatar));
   const pool = AVATARS.filter((a) => !used.has(a));
   const list = pool.length ? pool : AVATARS;
@@ -52,6 +59,7 @@ function newPlayer(room, name) {
     name: name.slice(0, 20),
     avatar: list[Math.floor(Math.random() * list.length)],
     color: COLORS[room.players.size % COLORS.length],
+    look: cleanLook(look),
     connected: true,
     socketId: null,
     soiree: 0, // points cumulés sur toute la soirée
@@ -172,7 +180,7 @@ function stateFor(room, pid) {
     spectator: pid === null,         // c'est l'écran partagé qui reçoit cet état
     history: room.history,
     players: [...room.players.values()].map((p) => ({
-      id: p.id, name: p.name, avatar: p.avatar, color: p.color, connected: p.connected, soiree: p.soiree,
+      id: p.id, name: p.name, avatar: p.avatar, color: p.color, look: p.look, connected: p.connected, soiree: p.soiree,
     })),
   };
   if (room.phase === 'playing' && room.game) s.game = GAMES[room.gameId].stateFor(ctx(room), room.game, pid);
@@ -223,16 +231,16 @@ io.on('connection', (socket) => {
     broadcast(r);
   };
 
-  socket.on('create', ({ name } = {}) => {
+  socket.on('create', ({ name, look } = {}) => {
     name = String(name || '').trim();
     if (!name) return err('Choisis un pseudo');
     const r = newRoom();
-    const p = newPlayer(r, name);
+    const p = newPlayer(r, name, look);
     r.hostId = p.id;
     attach(r, p);
   });
 
-  socket.on('join', ({ name, code } = {}) => {
+  socket.on('join', ({ name, code, look } = {}) => {
     name = String(name || '').trim();
     code = String(code || '').trim().toUpperCase();
     const r = rooms.get(code);
@@ -240,11 +248,11 @@ io.on('connection', (socket) => {
     if (!name) return err('Choisis un pseudo');
     // Même pseudo qu'un joueur absent → on lui rend sa place (téléphone changé, session perdue…)
     const same = [...r.players.values()].find((p) => p.name.toLowerCase() === name.toLowerCase());
-    if (same && !same.connected) return attach(r, same);
+    if (same && !same.connected) { if (look) same.look = cleanLook(look); return attach(r, same); }
     if (same) return err('Ce pseudo est déjà pris');
     if (r.phase !== 'lobby') return err('Une partie est en cours : attends la fin, ou reprends ta place avec ton ancien pseudo');
     if (r.players.size >= MAX_PLAYERS) return err('Salon plein');
-    const p = newPlayer(r, name);
+    const p = newPlayer(r, name, look);
     if (!r.hostId || !r.players.has(r.hostId)) r.hostId = p.id; // salon créé par un écran : le 1er joueur est l'hôte
     attach(r, p);
   });
@@ -297,6 +305,13 @@ io.on('connection', (socket) => {
   });
 
   // L'hôte active / désactive les réponses à l'oral
+  // Le joueur change son perso (depuis le salon)
+  socket.on('setLook', (look) => {
+    if (!room || !player) return;
+    player.look = cleanLook(look);
+    broadcast(room);
+  });
+
   // L'hôte donne son rôle à un autre joueur connecté
   socket.on('setHost', (targetId) => {
     if (!isHost()) return;

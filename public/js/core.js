@@ -26,7 +26,41 @@ const UI = (() => {
   // ─── Helpers partagés avec les jeux ──────────────────────────────────────
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const P = (id) => S && S.players.find((p) => p.id === id);
-  const av = (p, cls = '') => (p ? `<span class="av ${cls}" style="background:${p.color}">${typeof p.avatar === 'number' ? ICONS.avatar(p.avatar) : esc(p.avatar)}</span>` : '');
+  const av = (p, cls = '') => (!p ? '' : p.look
+    ? `<span class="av perso ${cls}" style="background:${p.color}">${PERSO.head(p.look)}</span>`
+    : `<span class="av ${cls}" style="background:${p.color}">${typeof p.avatar === 'number' ? ICONS.avatar(p.avatar) : esc(p.avatar)}</span>`);
+  // perso entier, des pieds à la tête
+  const fig = (p, cls = '') => (p?.look ? `<span class="fig ${cls}">${PERSO.body(p.look)}</span>` : av(p, cls));
+
+  // ─── Éditeur de perso (accueil + salon) ───
+  let edLook;
+  try { edLook = PERSO.norm(JSON.parse(localStorage.getItem('look'))); if (!localStorage.getItem('look')) throw 0; } catch (e) { edLook = PERSO.random(); }
+  const saveLook = () => { try { localStorage.setItem('look', JSON.stringify(edLook)); } catch (e) { /* stockage bloqué */ } };
+  saveLook();
+  const ROWS = [['hair', 'Tête'], ['eyes', 'Yeux'], ['mouth', 'Bouche'], ['acc', 'Accessoire'], ['top', 'Haut'], ['bottom', 'Bas'], ['shoes', 'Pieds']];
+  const SWATCHES = [['skin', 'Peau', () => PERSO.SKINS], ['hairColor', 'Cheveux', () => PERSO.HAIRS], ['col', 'Tenue', () => PERSO.COLS]];
+  const persoEditor = () => `<div class="perso-wrap">
+      <div class="perso-ed">
+        <div class="perso-prev">${PERSO.body(edLook)}</div>
+        <div class="perso-ctrl">${ROWS.map(([k, lab]) => `<div class="pr"><span class="pl">${lab}</span>
+            <button class="pa" data-pk="${k}" data-d="-1" aria-label="${lab} précédent">‹</button><span class="pv">${esc(PERSO.label(k, edLook[k]))}</span><button class="pa" data-pk="${k}" data-d="1" aria-label="${lab} suivant">›</button></div>`).join('')}
+          ${SWATCHES.map(([k, lab, list]) => `<div class="pr"><span class="pl">${lab}</span><div class="sw">${list().map((col, i) => `<button class="swc ${edLook[k] === i ? 'sel' : ''}" data-pk="${k}" data-v="${i}" style="background:${col}" aria-label="${lab} ${i + 1}"></button>`).join('')}</div></div>`).join('')}
+        </div>
+      </div>
+      <button class="ghost full" data-pr-rand>🎲 Perso au hasard</button>
+    </div>`;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pk], [data-pr-rand]');
+    if (!b) return;
+    if (b.dataset.prRand != null) edLook = PERSO.random();
+    else {
+      const k = b.dataset.pk;
+      edLook[k] = b.dataset.v != null ? Number(b.dataset.v) : (edLook[k] + Number(b.dataset.d) + PERSO.SIZES[k]) % PERSO.SIZES[k];
+    }
+    saveLook();
+    document.querySelectorAll('.perso-wrap').forEach((w) => { w.outerHTML = persoEditor(); });
+    if (S && !S.spectator) socket.emit('setLook', edLook); // dans le salon : les autres voient le changement
+  });
   const name = (id) => esc(P(id)?.name ?? '?');
   const isHost = () => S && S.hostId === S.you;
   const gameInfo = (id) => S.games.find((g) => g.id === (id || S.gameId));
@@ -77,7 +111,7 @@ const UI = (() => {
     const order = [ranked[1], ranked[0], ranked[2]];
     const h = [100, 140, 72], col = ['#efe8fb', '#ffc23d', '#ff6fa3'], pos = [2, 1, 3];
     return `<div class="podium">${order.map((id, i) => id ? `
-      <div class="col reveal" style="animation-delay:${[.25, .5, 0][i]}s">${av(P(id), i === 1 ? 'lg' : '')}<div style="font-weight:600;margin:6px 0 0">${name(id)}</div><div class="muted">${scores[id]} pts</div>
+      <div class="col reveal" style="animation-delay:${[.25, .5, 0][i]}s">${fig(P(id), i === 1 ? 'big' : '')}<div style="font-weight:600;margin:6px 0 0">${name(id)}</div><div class="muted">${scores[id]} pts</div>
       <div class="bar" style="height:${h[i]}px;background:${col[i]}">${pos[i]}</div></div>` : '<div class="col"></div>').join('')}</div>`;
   }
 
@@ -261,6 +295,7 @@ const UI = (() => {
       <div class="logo"><span>Soirée</span><br><span>Jeux</span></div>
       <div class="boxes">${boxes}</div>
       ${tabs}
+      <div class="card perso-card"><h2 style="margin:0 0 8px">Ton perso</h2>${persoEditor()}</div>
       <div class="card stack">
         <label for="name"><h2 style="margin:0">Ton pseudo</h2></label>
         <input id="name" maxlength="20" placeholder="Ex. : Noa" autocomplete="nickname" value="${esc(localStorage.getItem('name') || '')}" />
@@ -276,8 +311,8 @@ const UI = (() => {
     $app.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => { homeMode = b.dataset.mode; renderHome(); }));
     const getName = () => { const n = document.getElementById('name').value.trim(); localStorage.setItem('name', n); return n; };
     const c = document.getElementById('create');
-    if (c) c.onclick = () => socket.emit('create', { name: getName() });
-    const join = () => socket.emit('join', { name: getName(), code: document.getElementById('code').value });
+    if (c) c.onclick = () => socket.emit('create', { name: getName(), look: edLook });
+    const join = () => socket.emit('join', { name: getName(), code: document.getElementById('code').value, look: edLook });
     document.getElementById('join').onclick = join;
     document.getElementById('code').addEventListener('keydown', (e) => e.key === 'Enter' && join());
   }
@@ -301,8 +336,9 @@ const UI = (() => {
 
       <div class="card">
         <div class="cardhead"><h2>Joueurs</h2><span class="muted">${n} / 16</span></div>
-        <div class="players" data-live="lobbyPlayers"></div>
+        <div class="players figs" data-live="lobbyPlayers"></div>
       </div>
+      <details class="card perso-card"><summary>👕 Modifier mon perso</summary><div style="height:10px"></div>${persoEditor()}</details>
 
       <div class="card">
         <h2>${isHost() ? 'Choisis un jeu' : "Le jeu choisi par l'hôte"}</h2>
@@ -358,7 +394,7 @@ const UI = (() => {
           <div class="code">${[...S.code].map((c) => `<span>${c}</span>`).join('')}</div>
         </div>
         <div class="tv-side">
-          <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players" data-live="lobbyPlayers"></div></div>
+          <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players figs" data-live="lobbyPlayers"></div></div>
           <div class="card tv-games-card">
             <div class="cardhead"><h2>Les jeux</h2><span class="muted">${S.games.length} jeux · l'hôte choisit sur son téléphone</span></div>
             <div class="tv-games">${S.games.map((x) => `
@@ -395,9 +431,11 @@ const UI = (() => {
       const g = gameInfo();
       const n = S.players.filter((p) => p.connected).length;
       const seats = Math.max(0, g.minPlayers - n);
-      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span>${
+      // les persos en pied
+      return S.players.map((p) => `<div class="pfig ${p.connected ? '' : 'off'} ${p.id === S.you ? 'me' : ''}" style="--c:${p.color}">${fig(p)}
+          <span class="pn">${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span>${
         isHost() && p.id !== S.you && p.connected ? `<button class="mkhost" data-make-host="${esc(p.id)}" title="Passer le rôle d'hôte à ${esc(p.name)}">${crown}</button>` : ''}</div>`).join('')
-        + Array.from({ length: seats }, () => '<div class="player seat"><span class="av">?</span><span>En attente…</span></div>').join('');
+        + Array.from({ length: seats }, () => '<div class="pfig seat"><span class="fig">?</span><span class="pn">En attente…</span></div>').join('');
     },
   };
 

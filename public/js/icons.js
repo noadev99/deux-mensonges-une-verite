@@ -160,5 +160,6 @@ const ICONS = (() => {
     game: (id) => GAMES[id] || '',
     avatar,
     ui,
+    parts: { EYES, MOUTHS }, // réutilisés par le perso complet (perso.js)
   };
 })();
