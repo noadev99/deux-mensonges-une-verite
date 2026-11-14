@@ -121,6 +121,8 @@ a.link { color: #fff; cursor: pointer; text-decoration: underline; text-underlin
 .players { display: flex; flex-wrap: wrap; gap: 8px; }
 .player { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--paper-2); border: 2px solid var(--ink); font-weight: 500; }
 .player.off { opacity: .4; }
+.mkhost { padding: 2px 8px; margin-left: 2px; border-radius: 999px; font-size: .8rem; box-shadow: none; background: var(--mustard); line-height: 1; display: inline-flex; align-items: center; opacity: .85; }
+.mkhost:hover { opacity: 1; }
 .player.seat { border-style: dashed; background: transparent; color: var(--muted); }
 .player.seat .av { background: transparent; border-style: dashed; color: var(--muted); font-size: 1rem; }
 .av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 1.2rem; flex: none; border: 2px solid var(--ink); background: #fff; }

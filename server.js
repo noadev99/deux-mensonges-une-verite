@@ -297,6 +297,15 @@ io.on('connection', (socket) => {
   });
 
   // L'hôte active / désactive les réponses à l'oral
+  // L'hôte donne son rôle à un autre joueur connecté
+  socket.on('setHost', (targetId) => {
+    if (!isHost()) return;
+    const t = room.players.get(targetId);
+    if (!t || !t.connected || t.id === player.id) return;
+    room.hostId = t.id;
+    broadcast(room);
+  });
+
   socket.on('setOral', (on) => {
     if (!isHost() || room.phase !== 'lobby') return;
     room.oral = !!on;

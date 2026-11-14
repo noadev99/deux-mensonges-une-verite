@@ -395,7 +395,8 @@ const UI = (() => {
       const g = gameInfo();
       const n = S.players.filter((p) => p.connected).length;
       const seats = Math.max(0, g.minPlayers - n);
-      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span></div>`).join('')
+      return S.players.map((p) => `<div class="player ${p.connected ? '' : 'off'}">${av(p)}<span>${esc(p.name)}${p.id === S.hostId ? ' ' + crown : ''}${p.id === S.you ? ' (toi)' : ''}${p.connected ? '' : ' 💤'}</span>${
+        isHost() && p.id !== S.you && p.connected ? `<button class="mkhost" data-make-host="${esc(p.id)}" title="Passer le rôle d'hôte à ${esc(p.name)}">${crown}</button>` : ''}</div>`).join('')
         + Array.from({ length: seats }, () => '<div class="player seat"><span class="av">?</span><span>En attente…</span></div>').join('');
     },
   };
@@ -454,6 +455,14 @@ const UI = (() => {
     });
     if (hidden) $app.querySelector('.topbar')?.insertAdjacentHTML('afterend', '<div class="tv-look">📺 Regarde l\'écran !</div>');
   }
+
+  // Passer le rôle d'hôte (bouton couronne à côté d'un joueur, visible par l'hôte)
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-make-host]');
+    if (!b || !S) return;
+    const p = S.players.find((x) => x.id === b.dataset.makeHost);
+    if (p && confirm(`Passer le rôle d'hôte à ${p.name} ? C'est lui/elle qui lancera les parties.`)) socket.emit('setHost', p.id);
+  });
 
   function bindCore() {
     const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
