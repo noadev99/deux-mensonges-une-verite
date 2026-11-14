@@ -359,10 +359,17 @@ const UI = (() => {
         </div>
         <div class="tv-side">
           <div class="card"><div class="cardhead"><h2>Joueurs</h2><span class="muted">${n}</span></div><div class="players" data-live="lobbyPlayers"></div></div>
-          <div class="card tv-game" style="--c:${g.color}">
-            <div class="gamecard sel" style="--c:${g.color}"><span class="lid">${ICONS.game(g.id)}</span><span class="info"><div class="t">${esc(g.name)}</div><div class="d">${esc(g.tagline)}</div>
-              <div class="m">${S.oral && g.oral ? '<span>🎤 à l\'oral</span>' : ''}${(g.options || []).map((o) => { const c = o.choices.find((x) => x.value === (S.options?.[o.key] ?? o.default)); return c ? `<span>${esc(c.label)}</span>` : ''; }).join('')}</div></span></div>
-            ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : ''}
+          <div class="card tv-games-card">
+            <div class="cardhead"><h2>Les jeux</h2><span class="muted">${S.games.length} jeux · l'hôte choisit sur son téléphone</span></div>
+            <div class="tv-games">${S.games.map((x) => `
+              <div class="tv-g ${x.id === S.gameId ? 'sel' : ''}" style="--c:${x.color}">
+                <span class="tv-gi">${ICONS.game(x.id)}</span>
+                <span class="tv-gn">${esc(x.name)}${x.id === S.gameId ? '<small>Choisi ✓</small>' : ''}</span>
+              </div>`).join('')}</div>
+          </div>
+          <div class="card tv-game">
+            <div class="cardhead"><h2>${esc(g.name)}</h2><span class="m">${S.oral && g.oral ? '<span>🎤 à l\'oral</span>' : ''}${(g.options || []).map((o) => { const c = o.choices.find((x) => x.value === (S.options?.[o.key] ?? o.default)); return c ? `<span>${esc(c.label)}</span>` : ''; }).join('')}</span></div>
+            ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : `<p>${esc(g.tagline)}</p>`}
           </div>
           ${soireeCard()}
           <p class="center white">${P(S.hostId) ? `${name(S.hostId)} ${crown} lance la partie depuis son téléphone` : `En attente des joueurs… <b>le premier à rejoindre sera l'hôte</b> ${crown}`}</p>
