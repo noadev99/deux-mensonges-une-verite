@@ -69,6 +69,15 @@ const ICONS = (() => {
       <circle cx="57" cy="10" r="4.5" fill="#ffc23d"/>
       <path d="M57 1v3M63 10h2M61 4l2-2M51 4l-2-2" stroke-width="2.5"/>`),
 
+    // 🎨 un cadre avec un gribouillis, un pinceau et une bulle : dessiner puis deviner
+    dessin: art(`
+      <rect x="6" y="10" width="38" height="34" rx="4" fill="#fff"/>
+      <path d="M13 34c4-10 8-12 11-6s7 4 12-8" stroke="#f0506e"/>
+      <circle cx="16" cy="19" r="3" fill="#ffc23d" stroke-width="2.5"/>
+      <g transform="rotate(35 48 30)"><rect x="44" y="14" width="8" height="24" rx="2" fill="#6d8bff"/><path d="M44 38c0 6 8 6 8 0z" fill="${INK}"/></g>
+      <path d="M36 48h20a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H44l-6 4v-4h-2a3 3 0 0 1-3-3v-6a3 3 0 0 1 3-3z" fill="#ffc23d"/>
+      <path d="M41 54h1M46 54h1M51 54h1" stroke-width="3.5"/>`),
+
     // 🏅 un podium avec une étoile sur la première marche
     classement: art(`
       <rect x="24" y="26" width="16" height="30" fill="#ffc23d"/>

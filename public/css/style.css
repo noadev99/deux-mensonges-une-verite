@@ -297,3 +297,29 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 
 /* ─── Bandeau de reconnexion ─── */
 .offline { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 40; background: var(--mustard); color: var(--ink); border: var(--line); border-radius: 999px; padding: 8px 18px; font-weight: 600; box-shadow: var(--pop-sm); white-space: nowrap; }
+
+/* ─── Dessin en chaîne ─── */
+.dc-timer { display: inline-block; min-width: 3.2em; padding: 1px 8px; border-radius: 99px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); font-weight: 700; }
+.dc-timer.hurry { background: var(--bad); color: #fff; animation: bob .5s ease-in-out infinite; }
+.dc-prompt { padding: 12px 16px; }
+.dc-text { font-family: var(--display); font-size: 1.5rem; line-height: 1.2; }
+.dc-padcard { padding: 12px; }
+.dc-pad { display: block; width: 100%; max-width: min(100%, 52vh); margin: 0 auto; aspect-ratio: 1; background: #fff; border: var(--line); border-radius: 14px; touch-action: none; cursor: crosshair; }
+.dc-tools { margin-top: 12px; display: grid; gap: 10px; }
+.dc-colors { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.dc-color { height: 34px; padding: 0; border-radius: 10px; border-width: 2px; box-shadow: none; }
+.dc-color.sel { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--ink); transform: scale(.92); }
+.dc-row { display: flex; gap: 8px; align-items: center; }
+.dc-width { width: 46px; height: 42px; padding: 0; display: grid; place-items: center; background: var(--paper); border-width: 2px; box-shadow: none; }
+.dc-width span { display: block; border-radius: 50%; background: var(--ink); }
+.dc-width.sel { background: var(--game); }
+.dc-act { flex: 1; padding: 9px 6px; font-size: .9rem; background: var(--paper-2); border-width: 2px; box-shadow: 2px 2px 0 var(--ink); }
+.dc-img { display: block; width: 100%; max-width: min(420px, 52vh); margin: 0 auto; aspect-ratio: 1; border: var(--line); border-radius: 14px; background: #fff; }
+.dc-img.big { max-width: min(480px, 56vh); }
+.dc-empty { display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+.dc-entry { position: relative; }
+.dc-entry .dc-text { text-align: center; padding: 8px 4px; }
+.dc-who { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dc-heart { position: absolute; right: 12px; top: 10px; padding: 4px 10px; font-size: .95rem; border-width: 2px; box-shadow: 2px 2px 0 var(--ink); background: var(--paper); }
+.dc-heart.on { background: #ffd0df; }
+.dc-heart.mine { border: 2px dashed #cfc4e3; border-radius: 12px; color: var(--muted); }

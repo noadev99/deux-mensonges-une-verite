@@ -19,6 +19,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | ✍️ La Chute — phrases à trou, vote pour la réponse la plus drôle | 3–16 |
 | 💣 Patate chaude — réponds vite avant que la bombe explose | 3–12 |
 | 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
+| 🎨 Dessin en chaîne — dessine, devine, redessine… et regarde le message dériver | 3–10 |
 
 ## Lancer en local
 ```bash

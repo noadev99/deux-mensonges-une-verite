@@ -8,6 +8,7 @@ const list = [
   require('./chute'),
   require('./patate'),
   require('./classement'),
+  require('./dessin'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));
