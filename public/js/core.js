@@ -49,6 +49,8 @@ const UI = (() => {
   }
 
   const send = (type, payload) => socket.emit('action', { type, payload });
+  // action de l'hôte : on joint le numéro de l'état affiché, le serveur ignore les clics en retard
+  const sendHost = (type) => socket.emit('action', { type, v: S && S.v });
 
   // Bouton principal réservé à l'hôte, collé en bas de l'écran
   const hostButton = (label, action = 'next') => `<div class="dock">${isHost()
@@ -183,7 +185,22 @@ const UI = (() => {
   }
   socket.on('joined', (d) => localStorage.setItem('session', JSON.stringify(d)));
   socket.on('errorMsg', toast);
-  socket.on('state', (s) => { const first = !S; S = s; render(); if (first) keepAwake(); });
+  // Le serveur a été mis à jour pendant que la page était ouverte : on recharge la nouvelle version
+  const outdated = (build) => {
+    if (!build || !window.BUILD || build === window.BUILD) return false;
+    if (sessionStorage.getItem('reloadedFor') === build) return false; // évite une boucle
+    sessionStorage.setItem('reloadedFor', build);
+    location.reload();
+    return true;
+  };
+  socket.on('hello', ({ build } = {}) => outdated(build));
+  socket.on('state', (s) => {
+    if (outdated(s.build)) return;
+    const first = !S;
+    S = s;
+    render();
+    if (first) keepAwake();
+  });
 
   // ─── Accueil ──────────────────────────────────────────────────────────────
   function renderHome() {
@@ -316,7 +333,14 @@ const UI = (() => {
     const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
     on('[data-core]', (e) => socket.emit(e.currentTarget.dataset.core));
     on('[data-quit]', () => { if (confirm('Arrêter la partie et revenir au salon ? Les points de cette partie seront perdus.')) socket.emit('toLobby'); });
-    on('[data-host-action]', (e) => send(e.currentTarget.dataset.hostAction));
+    on('[data-host-action]', (e) => {
+      const el = e.currentTarget;
+      if (el.dataset.busy) return; // déjà cliqué : on attend le nouvel écran
+      el.dataset.busy = '1';
+      el.classList.add('busy');
+      sendHost(el.dataset.hostAction);
+      setTimeout(() => { delete el.dataset.busy; el.classList.remove('busy'); }, 1500); // si rien ne change (erreur), on réactive
+    });
     on('[data-game]', (e) => isHost() && socket.emit('selectGame', e.currentTarget.dataset.game));
     on('[data-leave]', () => { socket.emit('leave'); localStorage.removeItem('session'); S = null; renderHome(); });
     on('[data-invite]', () => {

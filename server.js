@@ -15,7 +15,16 @@ const app = express();
 const server = http.createServer(app);
 // Un téléphone en veille ou sur une autre appli n'est déclaré absent qu'après ~1 min
 const io = new Server(server, { pingInterval: 20000, pingTimeout: 40000 });
-app.use(express.static(path.join(__dirname, 'public')));
+// Numéro de version : change à chaque démarrage du serveur (donc à chaque mise à jour).
+// Les pages ouvertes avec une ancienne version se rechargent toutes seules.
+const fs = require('fs');
+const BUILD = Date.now().toString(36);
+const INDEX = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8')
+  .replace(/(src|href)="\/(js|games|css)\/([^"]+)"/g, `$1="/$2/$3?v=${BUILD}"`)
+  .replace('<div id="app"></div>', `<div id="app"></div>\n<script>window.BUILD = '${BUILD}';</script>`);
+const sendIndex = (req, res) => { res.set('Cache-Control', 'no-store'); res.type('html').send(INDEX); };
+app.get(['/', '/index.html'], sendIndex);
+app.use(express.static(path.join(__dirname, 'public'), { index: false, maxAge: '7d' }));
 
 const MAX_PLAYERS = 16;
 // Numéro de la bouille dessinée côté client (public/js/icons.js → ICONS.avatar)
@@ -113,6 +122,8 @@ function stateFor(room, pid) {
     you: pid,
     hostId: room.hostId,
     phase: room.phase, // 'lobby' | 'playing'
+    build: BUILD,
+    v: room.v || 0, // numéro de l'état (anti double-clic de l'hôte)
     gameId: room.gameId,
     games: catalog,
     history: room.history,
@@ -125,6 +136,7 @@ function stateFor(room, pid) {
 }
 
 function broadcast(room) {
+  room.v = (room.v || 0) + 1;
   for (const p of room.players.values()) {
     if (p.connected && p.socketId) io.to(p.socketId).emit('state', stateFor(room, p.id));
   }
@@ -144,6 +156,7 @@ function startGame(room) {
 
 // ─── Sockets ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
+  socket.emit('hello', { build: BUILD }); // permet aux pages périmées de se recharger
   let room = null;
   let player = null;
 
@@ -243,8 +256,10 @@ io.on('connection', (socket) => {
   });
 
   // Toutes les actions de jeu passent par ici → module du jeu
-  socket.on('action', ({ type, payload } = {}) => {
+  socket.on('action', ({ type, payload, v } = {}) => {
     if (!room || !player || room.phase !== 'playing' || !room.game) return;
+    // « Suivant » cliqué sur un écran déjà dépassé (double-clic) : ignoré
+    if (type === 'next' && v != null && v !== room.v) return;
     const mod = GAMES[room.gameId];
     const res = mod.onAction(ctx(room), room.game, player.id, String(type || ''), payload, { isHost: isHost() });
     if (res && res.error) return err(res.error);

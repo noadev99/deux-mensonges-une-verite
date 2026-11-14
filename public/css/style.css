@@ -343,3 +343,6 @@ button .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px
 .dm-chip small { color: var(--muted); font-weight: 600; }
 .dm-story { padding: 24px 18px; }
 .dm-truth { font-size: 1.25rem; font-weight: 600; background: #e3fbf1; border: var(--line); border-radius: 14px; padding: 14px 16px; margin: 12px 0; box-shadow: var(--pop-sm); }
+
+/* bouton de l'hôte déjà cliqué, en attente du nouvel écran */
+[data-host-action].busy { opacity: .6; pointer-events: none; }
