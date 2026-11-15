@@ -67,7 +67,8 @@ const ALL_ANIME = [...ANIME.ENTRIES, ...PLUS.DICO_ANIME];
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'fooled']);
-  const g = { scores, stats, round: 0, totalRounds: ROUNDS, entries: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS) };
+  const n = ctx.rounds(ROUNDS);
+  const g = { scores, stats, round: 0, totalRounds: n, entries: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), n) };
   newRound(g);
   return g;
 }

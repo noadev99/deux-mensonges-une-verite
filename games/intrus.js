@@ -40,7 +40,7 @@ function drawNotes() {
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'escaped', 'stole', 'intruderTimes']);
   const ids = Object.keys(scores);
-  const rounds = Math.min(MAX_ROUNDS, Math.max(3, ids.length));
+  const rounds = ctx.rounds(Math.min(MAX_ROUNDS, Math.max(3, ids.length)));
   const g = {
     scores, stats,
     oral: ctx.oral(), // à l'oral : chacun dit son indice à voix haute

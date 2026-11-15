@@ -20,13 +20,16 @@ const EJECT_PTS = 1;           // par joueur éjecté
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['wins', 'ejections', 'falls']);
-  const g = { scores, stats, round: 0, totalRounds: ARENAS.length, phase: 'intro', result: null };
+  const n = ctx.rounds(ARENAS.length);
+  // version courte : les premières arènes + toujours la savonnette finale
+  const arenas = n >= ARENAS.length ? ARENAS : [...ARENAS.slice(0, n - 1), ARENAS[ARENAS.length - 1]];
+  const g = { scores, stats, round: 0, totalRounds: n, arenas, phase: 'intro', result: null };
   return g;
 }
 
 function startRound(ctx, g) {
   g.round++;
-  g.arena = ARENAS[g.round - 1];
+  g.arena = g.arenas[g.round - 1];
   g.players = active(ctx, g).map((p) => p.id);   // joueurs présents au début de la manche
   g.alive = [...g.players];
   g.out = [];                                     // ordre d'élimination (le 1er tombé en premier)

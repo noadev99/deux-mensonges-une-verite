@@ -115,14 +115,14 @@ function create(ctx) {
     const [q, low, high] = prompts[i % prompts.length];
     tasks[id] = { q, low, high, number: n };
   });
-  const g = { scores, stats, tasks, mode, stories: {}, order: [], round: 0, guesses: {}, locked: {}, qa: [], oral: ctx.oral() };
+  const g = { maxRounds: ctx.rounds(MAX_ROUNDS), scores, stats, tasks, mode, stories: {}, order: [], round: 0, guesses: {}, locked: {}, qa: [], oral: ctx.oral() };
   if (mode === 'gril') {
     // chacun passe à son tour sur le gril
-    g.order = shuffle(ids).slice(0, MAX_ROUNDS);
+    g.order = shuffle(ids).slice(0, g.maxRounds);
     startRound(ctx, g, 0);
   } else if (g.oral) {
     // à l'oral : pas d'écriture, chacun raconte à son tour à voix haute
-    g.order = shuffle(ids).slice(0, MAX_ROUNDS);
+    g.order = shuffle(ids).slice(0, g.maxRounds);
     startRound(ctx, g, 0);
   } else setPhase(ctx, g, 'write', TIME.write, () => { if (Object.keys(g.stories).length) startRounds(ctx, g); });
   return g;
@@ -137,7 +137,7 @@ function setPhase(ctx, g, phase, ms, onTimeout) {
 }
 
 function startRounds(ctx, g) {
-  g.order = shuffle(Object.keys(g.stories)).slice(0, MAX_ROUNDS);
+  g.order = shuffle(Object.keys(g.stories)).slice(0, g.maxRounds);
   startRound(ctx, g, 0);
 }
 

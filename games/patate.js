@@ -33,8 +33,8 @@ const ALL_ANIME = [...ANIME.CATEGORIES, ...PLUS.PATATE_ANIME];
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['answers', 'booms', 'survived']);
   const g = {
-    scores, stats, round: 0, totalRounds: ROUNDS,
-    categories: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS),
+    scores, stats, round: 0, totalRounds: ctx.rounds(ROUNDS),
+    categories: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ctx.rounds(ROUNDS)),
     starters: shuffle(Object.keys(scores)),
     oral: ctx.oral(), // à l'oral : on crie sa réponse (l'écrire est facultatif) puis on passe la bombe
   };

@@ -99,6 +99,10 @@ function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'resisted', 'questions']);
   const ids = shuffle(Object.keys(scores));
   const g = { scores, stats, seats: ids.length === 2 ? [...ids, ...ids] : ids, round: 0, oral: ctx.oral() };
+  // soirée enchaînée : moins de manches (à 2 joueurs, on garde un nombre pair pour l'équité)
+  let n = ctx.rounds(g.seats.length);
+  if (ids.length === 2 && n % 2) n = Math.max(2, n - 1);
+  g.seats = g.seats.slice(0, n);
   g.totalRounds = g.seats.length;
   newRound(ctx, g);
   return g;

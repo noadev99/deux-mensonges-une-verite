@@ -7,6 +7,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 ## Fonctionnement
 - **QR code** : scanne-le pour rejoindre un salon.
 - **Mode salon** : ouvre `/?ecran=CODE` sur une télé ou un ordi : le jeu s'affiche en grand, les téléphones servent de manettes. Rien de secret ne s'affiche sur l'écran.
+- **Soirée enchaînée** : l'hôte choisit une durée (20 min à 2 h) ou les jeux à jouer, et 3 à 5 manches par jeu ; les jeux s'enchaînent tout seuls. Points du marathon : 10 pour le 1er de chaque jeu, 1 pour le dernier.
 - **Bouille personnalisée** : avant d'entrer, chacun choisit sa bouille (couleur, yeux, bouche, accessoire), modifiable dans le salon.
 - **Réponses à l'oral** (réglage de l'hôte) : Note secrète, 2 Mensonges, L'Intrus et Patate chaude se jouent à voix haute.
 - Un salon (code à 4 lettres) pour toute la soirée : l'hôte choisit un jeu, on joue, on revient au salon, on enchaîne.

@@ -16,7 +16,9 @@ const pairKey = (a, b) => [a, b].sort().join('|');
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['betray', 'share', 'fooled']);
-  const g = { scores, stats, round: 0, totalRounds: POTS.length, met: {}, rested: {}, oral: ctx.oral() };
+  const n = ctx.rounds(POTS.length);
+  // en version courte on garde les plus gros butins (le coup final reste à 500)
+  const g = { scores, stats, round: 0, totalRounds: n, pots: POTS.slice(POTS.length - n), met: {}, rested: {}, oral: ctx.oral() };
   newRound(ctx, g);
   return g;
 }
@@ -54,7 +56,7 @@ function makeDuos(g, ids) {
 
 function newRound(ctx, g) {
   g.round++;
-  g.pot = POTS[g.round - 1];
+  g.pot = g.pots[g.round - 1];
   let ids = active(ctx, g).map((p) => p.id);
   if (ids.length < 2) ids = Object.keys(g.scores);
   const { duos, rest } = makeDuos(g, ids);

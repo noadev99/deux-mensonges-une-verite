@@ -85,7 +85,8 @@ const ALL_ANIME = [...ANIME.QUESTIONS, ...PLUS.QDN_ANIME];
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['elected', 'withCrowd']);
-  const g = { scores, stats, round: 1, totalRounds: ROUNDS, questions: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), ROUNDS) };
+  const n = ctx.rounds(ROUNDS);
+  const g = { scores, stats, round: 1, totalRounds: n, questions: ctx.fresh(byPack(ctx, ALL, ALL_ANIME), n) };
   newRound(g);
   return g;
 }

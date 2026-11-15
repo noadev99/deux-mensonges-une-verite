@@ -18,6 +18,7 @@ const UI = (() => {
   let showQr = false; // QR code affiché dans le salon (téléphone)
   let homeMode = 'phone'; // accueil : « sur mon téléphone » ou « mode télé »
   let edOpen = false;     // éditeur de bouille déplié
+  let mForm = { mode: 'duree', minutes: 50, rounds: 3, games: new Set() }; // formulaire de la soirée enchaînée
   let catalog = []; // liste des jeux (pour l'accueil, avant d'avoir rejoint un salon)
   fetch('/api/games').then((r) => r.json()).then((c) => { catalog = c; if (lastKey === 'home') renderHome(); }).catch(() => {});
 
@@ -177,6 +178,20 @@ const UI = (() => {
   function endFooter() {
     const last = S.history[S.history.length - 1];
     const mine = last && last.gains[S.you];
+    const m = S.marathon;
+    if (m && !m.done) {
+      // soirée enchaînée : points du jeu, classement du marathon, compte à rebours avant le jeu suivant
+      const res = m.results[m.results.length - 1];
+      const next = m.list[m.idx + 1];
+      return `<div class="card mth-card"><div class="cardhead"><h2>🎬 Soirée enchaînée</h2><span class="muted">jeu ${m.idx + 1} / ${m.list.length}</span></div>
+          ${res && res.pts[S.you] != null ? `<p class="center" style="margin:0 0 8px">Tu marques <b>+${res.pts[S.you]}</b> au marathon (1er = 10, dernier = 1)</p>` : ''}
+          ${scoreboard(m.totals, res ? res.pts : {})}
+          <p class="center mth-next">${next ? `Prochain jeu : <b>${esc(gameInfo(next)?.name)}</b>` : '🏁 C\'était le dernier jeu !'} ${m.nextIn != null ? `dans ${timer(m.nextIn)}` : ''}</p>
+        </div>
+        <div class="dock">${isHost()
+          ? `<div class="row"><button class="ghost" data-core="stopMarathon">Arrêter</button><button class="alt" data-core="marathonNext">${next ? 'Jeu suivant ➜' : 'Voir le podium 🏆'}</button></div>`
+          : `<p>Le jeu suivant démarre tout seul…</p>`}</div>`;
+    }
     return `
       ${mine ? `<p class="center white">+${mine} pts au classement de la soirée</p>` : ''}
       <div class="dock">${isHost()
@@ -379,6 +394,7 @@ const UI = (() => {
         ${GAMES[S.gameId]?.rules ? `<details class="gp-rules"><summary>Comment on joue ?</summary>${GAMES[S.gameId].rules()}</details>` : ''}
       </div>
 
+      ${marathonCard(n, nFor)}
       ${isHost() ? `<div class="card">
         <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
         <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
@@ -390,6 +406,32 @@ const UI = (() => {
       <div class="dock">${isHost()
         ? `<button class="alt" data-core="startGame" ${missing || (g.requiresTv && !S.tv) ? 'disabled' : ''}>${missing ? `Il manque ${missing} joueur${missing > 1 ? 's' : ''}` : g.requiresTv && !S.tv ? 'Branche la télé pour jouer 📺' : `Lancer ${esc(g.name)}`}</button>`
         : `<p>${name(S.hostId)} ${crown} va lancer la partie…</p>`}</div>`;
+  }
+
+  // ─── Soirée enchaînée : on choisit une durée OU des jeux, et 3 à 5 manches par jeu ───
+  function marathonCard(n, nFor) {
+    const m = S.marathon;
+    if (m && m.done) {
+      return `<div class="card mth-card"><h2>🏆 Fin de la soirée enchaînée</h2>${podium(m.totals)}
+        <div class="mth-list">${m.results.map((r) => { const best = Object.keys(r.pts).filter((id) => r.pts[id] === 10); return `<div class="mth-row"><span class="mini" style="background:${gameInfo(r.gameId)?.color}">${ICONS.game(r.gameId)}</span><span>${esc(gameInfo(r.gameId)?.name)}</span><small>${best.map(name).join(' & ')} 👑</small></div>`; }).join('')}</div>
+        ${isHost() ? '<button class="ghost full" data-core="stopMarathon">Fermer</button>' : ''}</div>`;
+    }
+    if (!isHost()) return '';
+    const ok = S.games.filter((x) => nFor(x) >= x.minPlayers && nFor(x) <= x.maxPlayers && (!x.requiresTv || S.tv));
+    const est = (x) => Math.round(x.est[0] + x.est[1] * mForm.rounds);
+    for (const id of [...mForm.games]) if (!ok.some((x) => x.id === id)) mForm.games.delete(id);
+    const chosen = ok.filter((x) => mForm.games.has(x.id));
+    const total = chosen.reduce((t, x) => t + est(x), 0);
+    return `<div class="card mth-form"><div class="cardhead"><h2>🎬 Soirée enchaînée</h2></div>
+      <p class="muted" style="margin:0 0 10px">Les jeux s'enchaînent tout seuls. Chaque jeu rapporte de 10 pts (1er) à 1 pt (dernier) : personne ne gagne tout sur un seul jeu.</p>
+      <div class="opts mth-tabs"><button class="opt ${mForm.mode === 'duree' ? 'sel' : ''}" data-m="mode" data-v="duree"><b>⏱️ Par durée</b></button><button class="opt ${mForm.mode === 'jeux' ? 'sel' : ''}" data-m="mode" data-v="jeux"><b>✅ Je choisis les jeux</b></button></div>
+      ${mForm.mode === 'duree'
+        ? `<div class="opt-block"><span class="opt-label">Durée de la soirée</span><div class="chips">${[20, 30, 50, 75, 90, 120].map((v) => `<button class="chipbtn ${mForm.minutes === v ? 'on' : ''}" data-m="minutes" data-v="${v}">${v < 60 ? v + ' min' : (v / 60 | 0) + ' h' + (v % 60 ? v % 60 : '')}</button>`).join('')}</div>
+           <small class="muted">Les jeux sont tirés au hasard parmi ceux jouables à ${n} (${ok.length} jeux).</small></div>`
+        : `<div class="opt-block"><span class="opt-label">Jeux à jouer, dans l'ordre où tu les coches</span><div class="mth-games">${ok.map((x) => `<button class="mth-g ${mForm.games.has(x.id) ? 'on' : ''}" data-mg="${x.id}" style="--c:${x.color}">${mForm.games.has(x.id) ? `<b class="mth-n">${[...mForm.games].indexOf(x.id) + 1}</b>` : ''}<span class="mini">${ICONS.game(x.id)}</span>${esc(x.name)}<small>~${est(x)} min</small></button>`).join('')}</div>
+           <small class="muted">${chosen.length} jeu${chosen.length > 1 ? 'x' : ''} · environ ${total} min</small></div>`}
+      <div class="opt-block"><span class="opt-label">Manches par jeu</span><div class="chips">${[3, 4, 5].map((v) => `<button class="chipbtn ${mForm.rounds === v ? 'on' : ''}" data-m="rounds" data-v="${v}">${v} manches</button>`).join('')}</div></div>
+      <button class="full alt" data-mstart style="margin-top:12px" ${mForm.mode === 'jeux' && !chosen.length ? 'disabled' : ''}>🎬 Lancer la soirée</button></div>`;
   }
 
   // Options du jeu (ex. thème) : l'hôte choisit, les autres voient le choix
@@ -472,7 +514,7 @@ const UI = (() => {
   // ─── Rendu ────────────────────────────────────────────────────────────────
   function screenKey() {
     if (S.phase === 'lobby') {
-      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length, S.tv, S.oral, showQr, JSON.stringify(S.options)].join('|');
+      return ['lobby', S.gameId, S.hostId, S.players.filter((p) => p.connected).length, S.history.length, S.tv, S.oral, showQr, JSON.stringify(S.options), S.marathon ? `${S.marathon.done}|${S.marathon.results.length}` : ''].join('|');
     }
     const mod = GAMES[S.gameId];
     return ['game', S.gameId, S.hostId, S.tv, mod.key ? mod.key(S, S.game) : S.game.phase].join('|');
@@ -498,7 +540,8 @@ const UI = (() => {
         const room = S.spectator ? `${qrImg(S.code, 'mini')}<span>Rejoindre : <b>${S.code}</b></span>` : `${quit}<span>Salon <b>${S.code}</b></span>`;
         // sur l'écran partagé, un jeu peut fournir une vue dédiée (sans secrets ni formulaires)
         const body = (S.spectator && mod.tv && mod.tv(S, S.game)) || mod.screen(S, S.game);
-        $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}${S.oral && g.oral ? ' · 🎤' : ''}</span><span class="room">${room}</span></div>` + body;
+        const mth = S.marathon && !S.marathon.done ? `<span class="mth-chip">🎬 ${S.marathon.idx + 1}/${S.marathon.list.length}</span>` : '';
+        $app.innerHTML = `<div class="topbar"><span class="chip"><span class="mini">${ICONS.game(g.id)}</span>${esc(g.name)}${S.oral && g.oral ? ' · 🎤' : ''}</span>${mth}<span class="room">${room}</span></div>` + body;
         // autocollant dessiné du jeu, collé dans l'en-tête de l'écran
         $app.querySelector('.phase')?.insertAdjacentHTML('afterbegin', `<span class="phase-sticker" style="--c:${g.color}" aria-hidden="true">${ICONS.game(g.id)}</span>`);
         if (document.body.classList.contains('tvmode')) controllerMode();
@@ -557,6 +600,18 @@ const UI = (() => {
       setTimeout(() => { delete el.dataset.busy; el.classList.remove('busy'); }, 1500); // si rien ne change (erreur), on réactive
     });
     on('[data-game]', (e) => isHost() && socket.emit('selectGame', e.currentTarget.dataset.game));
+    on('[data-m]', (e) => {
+      const { m, v } = e.currentTarget.dataset;
+      mForm[m] = m === 'mode' ? v : Number(v);
+      lastKey = null; render();
+    });
+    on('[data-mg]', (e) => {
+      const id = e.currentTarget.dataset.mg;
+      if (mForm.games.has(id)) mForm.games.delete(id); else mForm.games.add(id);
+      lastKey = null; render();
+    });
+    on('[data-mstart]', () => socket.emit('startMarathon', mForm.mode === 'jeux'
+      ? { games: [...mForm.games], rounds: mForm.rounds } : { minutes: mForm.minutes, rounds: mForm.rounds }));
     on('[data-random-game]', () => {
       const nFor = (x) => S.players.filter((p) => p.connected && (!p.kb || x.keyboard)).length;
       const list = S.games.filter((x) => nFor(x) >= x.minPlayers && nFor(x) <= x.maxPlayers && x.id !== S.gameId);

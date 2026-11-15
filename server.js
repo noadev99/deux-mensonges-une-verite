@@ -84,8 +84,15 @@ const GONE_AFTER = 20 * 60 * 1000;
 function purgeGone(room) {
   for (const [id, p] of room.players) if (!p.connected && p.leftAt && Date.now() - p.leftAt > GONE_AFTER) room.players.delete(id);
 }
+// Durée estimée d'un jeu (minutes) : [fixe, par manche] — sert à composer une soirée enchaînée
+const EST = {
+  'deux-mensonges': [12, 0], 'qui-de-nous': [1, 1], intrus: [1, 2.5], dico: [1, 2.5], chute: [1, 2.5], patate: [1, 1.5],
+  classement: [1, 2.5], dessin: [12, 0], note: [3, 2], butin: [1, 1.5], complot: [22, 0], alliances: [14, 0],
+  ring: [2, 1.2], image: [1, 2.5], trombi: [2, 3],
+};
+const estMinutes = (id, rounds) => { const [f, r] = EST[id] || [10, 0]; return Math.round(f + r * rounds); };
 const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv, keyboard }) =>
-  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [], requiresTv: !!requiresTv, keyboard: !!keyboard }));
+  ({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral: !!oral, options: options || [], requiresTv: !!requiresTv, keyboard: !!keyboard, est: EST[id] || [10, 0] }));
 
 // Options d'un jeu choisies par l'hôte (ex. thème des questions), avec les valeurs par défaut
 function gameOptions(room, gameId = room.gameId) {
@@ -118,6 +125,8 @@ function ctx(room) {
     endGame: (scores) => endGame(room, scores),
     oral: () => !!room.oral, // l'hôte a choisi « réponses à l'oral »
     option: (key) => gameOptions(room)[key], // option du jeu choisie par l'hôte
+    // nombre de manches : raccourci à 3, 4 ou 5 pendant une soirée enchaînée
+    rounds: (n) => (room.marathon && !room.marathon.done ? Math.max(1, Math.min(n, room.marathon.rounds)) : n),
     // fait vibrer le téléphone d'un joueur (jeux en temps réel)
     buzz: (pid, pattern) => { const p = room.players.get(pid); if (p?.connected && p.socketId) io.to(p.socketId).emit('buzz', pattern); },
     // Tire n éléments de list en évitant ceux déjà sortis dans ce salon
@@ -158,11 +167,47 @@ function endGame(room, scores) {
     room.players.get(id).soiree += gains[id];
   });
   const top = entries.length ? entries[0][1] : null;
+  marathonScore(room, entries);
   room.history.push({
     gameId: room.gameId,
     winners: entries.filter(([, s]) => s === top).map(([id]) => id),
     gains,
   });
+}
+
+// ─── Soirée enchaînée (marathon) ─────────────────────────────────────────────
+// Points du marathon : on classe les joueurs dans chaque jeu → 1er = 10, dernier = 1,
+// les autres entre les deux. Chaque jeu pèse pareil, quel que soit son barème.
+const MARATHON_WAIT = 25000; // pause entre deux jeux
+function marathonScore(room, entries) {
+  const m = room.marathon;
+  if (!m || m.done) return;
+  const n = entries.length;
+  const pts = {};
+  entries.forEach(([id, sc]) => {
+    const rank = entries.findIndex(([, s2]) => s2 === sc);
+    pts[id] = n <= 1 ? 10 : Math.round(1 + (9 * (n - 1 - rank)) / (n - 1));
+    m.totals[id] = (m.totals[id] || 0) + pts[id];
+  });
+  m.results.push({ gameId: room.gameId, pts });
+  m.nextAt = Date.now() + MARATHON_WAIT;
+  const step = m.idx;
+  setTimeout(() => { if (room.marathon === m && m.idx === step && room.gameEnded && room.phase === 'playing') { marathonNext(room); broadcast(room); } }, MARATHON_WAIT);
+}
+function marathonStart(room) {
+  const m = room.marathon;
+  while (m.idx < m.list.length && !playable(room, GAMES[m.list[m.idx]])) m.idx++; // jeu plus jouable (joueurs partis…) : on saute
+  if (m.idx >= m.list.length) { m.done = true; room.phase = 'lobby'; room.game = null; return; }
+  room.gameId = m.list[m.idx];
+  m.nextAt = null;
+  purgeGone(room);
+  startGame(room);
+}
+function marathonNext(room) {
+  const m = room.marathon;
+  if (!m || m.done) return;
+  m.idx++;
+  marathonStart(room);
 }
 
 // ─── État envoyé à chaque joueur ─────────────────────────────────────────────
@@ -179,6 +224,11 @@ function stateFor(room, pid) {
     oral: !!room.oral,
     options: gameOptions(room),     // options du jeu choisi (ex. { pack: 'anime' })
     tv: room.screens.size > 0,      // un écran partagé (mode salon) est connecté
+    marathon: room.marathon ? {
+      list: room.marathon.list, idx: room.marathon.idx, rounds: room.marathon.rounds, done: room.marathon.done,
+      totals: room.marathon.totals, results: room.marathon.results,
+      nextIn: room.marathon.nextAt ? Math.max(0, room.marathon.nextAt - Date.now()) : null,
+    } : null,
     spectator: pid === null,         // c'est l'écran partagé qui reçoit cet état
     history: room.history,
     players: [...room.players.values()].map((p) => ({
@@ -395,8 +445,42 @@ io.on('connection', (socket) => {
   });
 
   // Rejouer au même jeu
+  // Soirée enchaînée : l'hôte donne une liste de jeux OU une durée, et 3 à 5 manches par jeu
+  socket.on('startMarathon', ({ games, minutes, rounds } = {}) => {
+    if (!isHost() || room.phase !== 'lobby') return;
+    const r = Math.max(3, Math.min(5, Number(rounds) || 3));
+    const ok = Object.values(GAMES).filter((g) => playable(room, g));
+    let list;
+    if (Array.isArray(games) && games.length) list = games.filter((id) => ok.some((g) => g.id === id));
+    else {
+      const budget = Math.max(15, Math.min(240, Number(minutes) || 30));
+      list = []; let total = 0;
+      for (const g of shuffle(ok)) {
+        const t = estMinutes(g.id, r);
+        if (!list.length || total + t <= budget) { list.push(g.id); total += t; }
+      }
+    }
+    if (!list.length) return err('Aucun jeu jouable avec ce nombre de joueurs');
+    room.marathon = { list, idx: 0, rounds: r, totals: {}, results: [], done: false, nextAt: null };
+    for (const p of connected(room)) room.marathon.totals[p.id] = 0;
+    marathonStart(room);
+    broadcast(room);
+  });
+  socket.on('marathonNext', () => {
+    if (!isHost() || !room.marathon || room.phase !== 'playing' || !room.gameEnded) return;
+    marathonNext(room);
+    broadcast(room);
+  });
+  socket.on('stopMarathon', () => {
+    if (!isHost() || !room.marathon) return;
+    room.marathon = null;
+    room.phase = 'lobby';
+    room.game = null;
+    broadcast(room);
+  });
+
   socket.on('restartGame', () => {
-    if (!isHost() || room.phase !== 'playing') return;
+    if (!isHost() || room.phase !== 'playing' || (room.marathon && !room.marathon.done)) return;
     purgeGone(room);
     startGame(room);
     broadcast(room);
@@ -405,6 +489,7 @@ io.on('connection', (socket) => {
   // Retour au salon (changer de jeu)
   socket.on('toLobby', () => {
     if (!isHost()) return;
+    if (room.marathon && !room.marathon.done) room.marathon = null; // quitter le jeu arrête la soirée enchaînée
     room.phase = 'lobby';
     room.game = null;
     purgeGone(room);

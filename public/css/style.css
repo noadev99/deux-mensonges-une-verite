@@ -923,3 +923,23 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .tb-hot { padding: 12px; }
 .tb-direct { margin-top: 10px; } .tb-direct summary { cursor: pointer; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
 .tb-hot h2 { margin: 0 auto !important; }
+
+/* ═══ 🎬 Soirée enchaînée ═══ */
+.mth-form { background-color: #fff6e3; }
+.mth-tabs { display: flex; gap: 6px; }
+.mth-tabs .opt { flex: 1; text-align: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 4px; }
+.chipbtn.on { background: var(--mustard); }
+.mth-games { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin-bottom: 4px; }
+.mth-g { display: flex; align-items: center; gap: 6px; padding: 6px 8px; font-size: .85rem; text-align: left; background: #fff; box-shadow: 2px 2px 0 var(--ink); line-height: 1.1; }
+.mth-g small { margin-left: auto; color: var(--muted); font-weight: 400; font-size: .7rem; }
+.mth-g.on { background: color-mix(in srgb, var(--c) 40%, #fff); box-shadow: 0 0 0 3px var(--c), 2px 2px 0 3px var(--ink); }
+.mth-g .mini, .mth-row .mini { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 8px; background: var(--c); }
+.mth-g .mini .art, .mth-row .mini .art { width: 20px; height: 20px; }
+.mth-chip { padding: 3px 10px; border-radius: 99px; border: 2px solid var(--ink); background: #fff; font-family: var(--display); font-size: .85rem; box-shadow: 2px 2px 0 var(--ink); }
+.mth-card { background-color: #fff6e3; }
+.mth-next { margin: 10px 0 0; font-family: var(--hand); font-size: 1.15rem; }
+.mth-list { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.mth-row { display: flex; align-items: center; gap: 8px; }
+.mth-row small { margin-left: auto; color: var(--muted); }
+.mth-g { position: relative; } .mth-n { position: absolute; top: -8px; left: -6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: #fff; font-size: .72rem; }
