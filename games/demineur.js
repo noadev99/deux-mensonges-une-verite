@@ -9,12 +9,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const { shuffle, gain, applyGains, awards, active, initScores } = require('./_utils');
 
-const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const pick = (a) => (a.length ? a[Math.floor(Math.random() * a.length)] : undefined);
 const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
+// modules : base selon la bombe (1, 2, 3), + 1 module tous les 2 joueurs au-delà de 3 (jusqu'à 8 joueurs)
+// perMod : secondes accordées par module · hardP : chance qu'un module soit en version 💀
+// twistP : chance d'un piège sur la bombe
 const LEVELS = {
-  normal: { modules: [3, 4, 5], time: [270, 330, 390], strikes: 3, penalty: 20000, speedUp: 1.2 },
-  expert: { modules: [4, 5, 5], time: [240, 280, 320], strikes: 2, penalty: 30000, speedUp: 1.3 },
+  normal: { modules: [3, 4, 5], perMod: [80, 75, 70], hardBonus: 45, strikes: 3, penalty: 20000, speedUp: 1.2, hardP: [0.15, 0.3, 0.45], twistP: [0, 0.5, 0.8] },
+  expert: { modules: [4, 5, 6], perMod: [65, 60, 55], hardBonus: 35, strikes: 2, penalty: 30000, speedUp: 1.3, hardP: [0.4, 0.55, 0.7], twistP: [0.5, 0.8, 1] },
+};
+const MAX_SCALE = 8;      // au-delà de 8 joueurs, la bombe ne grossit plus
+const TWISTS = {
+  tournant: { emoji: '🔀', name: 'Fiches tournantes', desc: 'toutes les 60 s, chacun passe ses fiches au joueur suivant' },
+  masque: { emoji: '🙈', name: 'Chrono masqué', desc: 'le chrono est caché jusqu\'aux 30 dernières secondes' },
+  court: { emoji: '⚡', name: 'Court-circuit', desc: 'chaque erreur mélange aussi un autre module' },
 };
 
 // ═══ La bombe : numéro de série, piles, lampe ═══
@@ -175,6 +184,122 @@ function switches(p, expert) {
   return { type: 'switches', name: 'Interrupteurs', pub: { state: start }, sol: { target }, cards };
 }
 
+
+// ─── Variantes supplémentaires (tirées au hasard) ───
+// 🔌 Câbles « au numéro » : on calcule directement le numéro du câble à couper
+function wiresPos(p, expert) {
+  const n = expert ? rint(5, 7) : rint(4, 6);
+  const list = Array.from({ length: n }, () => ({ c: pick(COLORS), s: Math.random() < 0.3, cut: false }));
+  const col = pick(list).c;
+  const k = list.filter((w) => w.c === col).length;
+  const add = rint(1, 3), cond = pick(CONDS);
+  let v = k + p.piles * add + (cond.f(p) ? 2 : 0);
+  if (expert) v += list.filter((w) => w.s).length;
+  const r = v % n, target = r === 0 ? n - 1 : r - 1;
+  const cards = [
+    { title: '🔌 Câbles — compte', lines: [`Compte les câbles ${col.toUpperCase()} (rayés compris).`] },
+    { title: '🔌 Câbles — ajouts', lines: [`Ajoute ${add} par pile de la bombe.`, `Si ${cond.t}, ajoute encore 2.`, ...(expert ? ['Ajoute enfin 1 par câble rayé.'] : [])] },
+    { title: '🔌 Câbles — numéro', lines: ['Divise le résultat par le nombre de câbles et garde le RESTE.', 'Reste 0 : coupe le DERNIER câble. Sinon coupe le câble de ce numéro (numérotés de haut en bas).'] },
+  ];
+  return { type: 'wires', name: 'Câbles', pub: { list }, sol: { target, text: `couper le câble n°${target + 1}` }, cards };
+}
+
+// 🔌💀 Câbles multiples : il faut couper TOUS les câbles dangereux, dans le bon ordre
+function wiresMulti(p, expert) {
+  for (let tries = 0; tries < 200; tries++) {
+    const n = rint(6, expert ? 8 : 7);
+    const list = Array.from({ length: n }, () => ({ c: pick(COLORS), s: Math.random() < 0.35, cut: false }));
+    const danger = shuffle(COLORS.filter((c) => c !== 'blanc')).slice(0, 2);
+    const never = expert ? pick(['blanc', 'jaune']) : 'blanc';
+    const isDanger = (w) => w.c !== never && (danger.includes(w.c) !== w.s);
+    const targets = list.map((w, i) => (isDanger(w) ? i : -1)).filter((i) => i >= 0);
+    if (targets.length < 2 || targets.length > n - 2) continue;
+    const up = pick(CONDS);
+    const order = up.f(p) ? targets.slice().reverse() : targets;
+    const cards = [
+      { title: '🔌💀 Câbles multiples — couleurs dangereuses', lines: [`Un câble ${danger[0].toUpperCase()} ou ${danger[1].toUpperCase()} est dangereux.`] },
+      { title: '🔌💀 Câbles multiples — rayures', lines: ['Une rayure INVERSE tout : un câble rayé de couleur dangereuse est sans danger, un câble rayé d\'une autre couleur devient dangereux.', `Exception : un câble ${never.toUpperCase()} n'est jamais dangereux.`] },
+      { title: '🔌💀 Câbles multiples — ordre', lines: ['Coupe TOUS les câbles dangereux, un par un.', `Si ${up.t} : du plus BAS au plus HAUT. Sinon du plus HAUT au plus BAS.`, 'Un câble coupé à tort ou dans le désordre = erreur.'] },
+    ];
+    return { type: 'wires', hard: true, name: 'Câbles multiples 💀', pub: { list }, sol: { order, text: `couper ${order.map((i) => `n°${i + 1}`).join(' puis ')}` }, cards };
+  }
+  return wires(p, expert);
+}
+
+// 🔢💀 Le code à 4 chiffres : chaque chiffre a sa propre fiche
+function code(p, expert, start, opts = {}) {
+  const info = serialInfo(p);
+  const m1 = rint(2, 3), a1 = rint(0, 4), c4 = pick(CONDS), c2 = pick(CONDS);
+  const d1 = (p.piles * m1 + a1) % 10;
+  const d2 = (info.last + (c2.f(p) ? 3 : 0)) % 10;
+  const d3 = (opts.nMods || 3) % 10;
+  let d4 = (d1 + d2 + d3) % 10;
+  if (c4.f(p)) d4 = 9 - d4;
+  let digits = [d1, d2, d3, d4];
+  if (expert) { const sw = pick(CONDS); if (sw.f(p)) digits = [d2, d1, d4, d3]; var swap = sw; }
+  const cards = [
+    { title: '🔢💀 Code — 1er chiffre', lines: [`Nombre de piles × ${m1}, plus ${a1}. Garde les unités.`] },
+    { title: '🔢💀 Code — 2e chiffre', lines: ['Le DERNIER chiffre du numéro de série.', `Si ${c2.t}, ajoute 3. Garde les unités.`] },
+    { title: '🔢💀 Code — 3e chiffre', lines: ['Le nombre de MODULES sur la bombe (tous, même désamorcés). Garde les unités.'] },
+    { title: '🔢💀 Code — 4e chiffre', lines: ['Additionne les trois premiers chiffres et garde les unités.', `Si ${c4.t}, remplace-le par 9 moins ce chiffre.`] },
+    { title: '🔢💀 Code — saisie', lines: ['Tape les 4 chiffres puis « Valider ». « Effacer » recommence la saisie.', ...(swap ? [`Si ${swap.t} : échange le 1er et le 2e chiffre, et le 3e et le 4e (après les calculs).`] : [])] },
+  ];
+  const sol = digits.join('');
+  return { type: 'code', hard: true, name: 'Code 💀', pub: { entry: '' }, sol: { code: sol, text: `le code ${sol}` }, cards };
+}
+
+// 🔣 L'intrus : un seul symbole n'apparaît dans aucune liste
+function symbolsIntrus(p, expert) {
+  const k = expert ? 7 : 6;
+  const idx = shuffle(GLYPHS.map((_, i) => i));
+  const shown = idx.slice(0, k), intruder = shown[rint(0, k - 1)];
+  const pool = shuffle([...shown.filter((i) => i !== intruder), ...idx.slice(k, k + (expert ? 8 : 7))]);
+  const parts = [pool.slice(0, 4), pool.slice(4, 8), pool.slice(8)];
+  const cards = parts.map((part, j) => ({ title: `🔣 Symboles — liste ${j + 1}/3`, lines: part.map((i) => `${GLYPHS[i][0]} ${GLYPHS[i][1]}`) }));
+  cards.push({ title: '🔣 Symboles — l\'intrus', lines: [`Parmi les ${k} symboles, un SEUL n'apparaît dans aucune des 3 listes.`, 'Appuie sur lui, et seulement lui.'] });
+  return { type: 'symbols', name: 'Symboles (intrus)', pub: { glyphs: shown.map((i) => GLYPHS[i][0]), done: [] }, sol: { order: [intruder], text: `l'intrus ${GLYPHS[intruder][0]} (${GLYPHS[intruder][1]})` }, cards };
+}
+
+// 🌡️ Thermostat « chrono » : on valide quand le chiffre des secondes du chrono est le bon
+function thermoChrono(p, expert) {
+  const info = serialInfo(p);
+  const a = rint(1, 3), cond = pick(CONDS);
+  let x = (p.piles * a + info.vowels) % 10;
+  if (cond.f(p)) x = 9 - x;
+  const color = pick(['rouge', 'bleu', 'vert', 'jaune']);
+  const cards = [
+    { title: '🌡️ Thermostat — en panne', lines: ['Ce thermostat n\'affiche rien : il faut regarder le CHRONO de la bombe.', 'Valide quand le DERNIER chiffre des secondes affichées vaut X.'] },
+    { title: '🌡️ Thermostat — calcul de X', lines: [`X = nombre de piles × ${a} + nombre de voyelles (A, E, U, Y) du numéro de série. Garde les unités.`, `Si ${cond.t}, X devient 9 moins X.`] },
+  ];
+  return { type: 'thermo', name: 'Thermostat', pub: { mode: 'chrono', color }, sol: { x, text: `valider quand les secondes finissent par ${x}` }, cards };
+}
+
+// 🎚️💀 Interrupteurs binaires : la position code un nombre
+function switchesBinary(p, expert) {
+  const info = serialInfo(p);
+  const m = rint(2, 5), inv = pick(CONDS);
+  let N = (info.sum + p.piles * m) % 32;
+  if (N === 0) N = 31;
+  let target = [16, 8, 4, 2, 1].map((b) => (N & b) > 0);
+  if (expert && inv.f(p)) target = target.map((v) => !v);
+  let start;
+  do { start = Array.from({ length: 5 }, () => Math.random() < 0.5); } while (start.every((v, i) => v === target[i]));
+  const cards = [
+    { title: '🎚️💀 Interrupteurs binaires — le nombre', lines: ['N = somme des chiffres du numéro de série', `+ ${m} par pile de la bombe.`, 'Garde le reste de la division par 32 (si c\'est 0, prends 31).'] },
+    { title: '🎚️💀 Interrupteurs binaires — la position', lines: ['Chaque interrupteur EN HAUT compte : n°1 = 16, n°2 = 8, n°3 = 4, n°4 = 2, n°5 = 1.', 'Mets en haut ceux dont la somme fait exactement N, les autres en bas, puis « Valider ».', ...(expert ? [`Si ${inv.t}, inverse TOUS les interrupteurs à la fin.`] : [])] },
+  ];
+  return { type: 'switches', hard: true, name: 'Interrupteurs binaires 💀', pub: { state: start }, sol: { target, text: `N = ${N} → ${target.map((v) => (v ? '⬆' : '⬇')).join(' ')}` }, cards };
+}
+
+// Variantes possibles pour chaque type de module ; « hard » = module très dur 💀
+const VARIANTS = {
+  wires: [{ f: wires }, { f: wiresPos }, { f: wiresMulti, hard: true }],
+  dial: [{ f: dial }, { f: code, hard: true }],
+  symbols: [{ f: symbols }, { f: symbolsIntrus }],
+  thermo: [{ f: thermo }, { f: thermoChrono, noMask: true }],
+  switches: [{ f: switches }, { f: switchesBinary, hard: true }],
+};
+
 const MAKERS = { wires, dial, symbols, thermo, switches };
 
 // ═══ Partie ═══
@@ -191,23 +316,58 @@ function startRound(ctx, g) {
   const i = Math.min(2, g.round - 1);
   const props = makeProps();
   const now = Date.now();
-  const types = shuffle(Object.keys(MAKERS)).slice(0, L.modules[i]);
-  g.props = props;
-  g.modules = types.map((t, k) => ({ ...MAKERS[t](props, expert, now), label: 'ABCDE'[k], solved: false, by: null }));
   g.players = active(ctx, g).map((p) => p.id);
+  // la bombe grossit avec le nombre de joueurs (jusqu'à 8)
+  const nP = Math.min(MAX_SCALE, g.players.length);
+  const nMods = Math.min(8, L.modules[i] + Math.max(0, Math.floor((nP - 3) / 2)));
+  // piège de bombe (au hasard)
+  g.twist = Math.random() < L.twistP[i] ? pick(Object.keys(TWISTS)) : null;
+  if (g.twist === 'tournant' && g.players.length < 2) g.twist = null;
+  // types de modules : tous différents tant que possible, puis on recommence
+  let types = [];
+  while (types.length < nMods) types.push(...shuffle(Object.keys(VARIANTS)));
+  types = types.slice(0, nMods);
+  g.props = props;
+  g.modules = types.map((t, k) => {
+    const label = 'ABCDEFGH'[k];
+    let vs = VARIANTS[t].filter((v) => !(g.twist === 'masque' && v.noMask));
+    const hard = vs.filter((v) => v.hard), easy = vs.filter((v) => !v.hard);
+    const v = hard.length && Math.random() < L.hardP[i] ? pick(hard) : pick(easy);
+    const m = v.f(props, expert, now, { nMods });
+    // chaque fiche indique son module (il peut y avoir deux modules du même type)
+    m.cards = m.cards.map((c) => ({ ...c, title: `${label} · ${c.title}` }));
+    return { ...m, label, solved: false, by: null };
+  });
   // fiches du manuel, mélangées puis distribuées : personne n'a tout
   const cards = shuffle(g.modules.flatMap((m) => m.cards.map((c) => ({ ...c, mod: m.label }))));
   g.hands = Object.fromEntries(g.players.map((id) => [id, []]));
   const ids = shuffle(g.players);
   cards.forEach((c, k) => g.hands[ids[k % ids.length]].push(c));
   ids.forEach((id) => { if (!g.hands[id].length) g.hands[id].push(pick(cards)); });
+  g.order = ids;
   g.strikes = 0;
-  g.maxStrikes = L.strikes;
-  g.rem = L.time[i] * 1000; g.remAt = now; g.rate = 1;
+  g.maxStrikes = L.strikes + (g.level === 'normal' && nP >= 6 ? 1 : 0);
+  const secs = g.modules.reduce((sum, m) => sum + L.perMod[i] + (m.hard ? L.hardBonus : 0), 0);
+  g.rem = secs * 1000; g.remAt = now; g.rate = 1;
   g.log = [];
   g.phase = 'bomb';
   g.result = null;
   armTimer(ctx, g);
+  if (g.twist === 'tournant') rotateLater(ctx, g);
+}
+
+// 🔀 piège « fiches tournantes » : toutes les 60 s, les fiches passent au joueur suivant
+function rotateLater(ctx, g) {
+  const round = g.round;
+  setImmediate(() => ctx.schedule(60000, () => {
+    if (g.phase !== 'bomb' || g.round !== round) return;
+    const ids = g.order;
+    const prev = ids.map((id) => g.hands[id]);
+    ids.forEach((id, k) => { g.hands[id] = prev[(k - 1 + ids.length) % ids.length]; });
+    g.log.unshift({ t: Date.now(), pid: null, ok: true, what: '🔀 Les fiches ont tourné !' });
+    for (const id of g.players) ctx.buzz(id, [60, 40, 60]);
+    rotateLater(ctx, g);
+  }));
 }
 
 const remaining = (g) => Math.max(0, g.rem - (Date.now() - g.remAt) * g.rate);
@@ -225,6 +385,17 @@ function strike(ctx, g, pid, what) {
   g.rem = Math.max(0, remaining(g) - L.penalty); g.remAt = Date.now(); g.rate *= L.speedUp;
   g.log.unshift({ t: Date.now(), pid, ok: false, what });
   for (const id of g.players) ctx.buzz(id, [300]);
+  if (g.twist === 'court') {
+    // ⚡ court-circuit : un autre module encore actif est mélangé
+    const m = pick(g.modules.filter((x) => !x.solved && ['dial', 'switches', 'symbols', 'code'].includes(x.type)));
+    if (m) {
+      if (m.type === 'dial') m.pub.value = rint(0, 9);
+      if (m.type === 'switches') m.pub.state = m.pub.state.map(() => Math.random() < 0.5);
+      if (m.type === 'symbols') m.pub.done = [];
+      if (m.type === 'code') m.pub.entry = '';
+      g.log.unshift({ t: Date.now(), pid: null, ok: false, what: `⚡ Court-circuit : le module ${m.label} est mélangé !` });
+    }
+  }
   if (g.strikes >= g.maxStrikes || g.rem <= 0) return finish(ctx, g, false, 'strikes');
   armTimer(ctx, g);
 }
@@ -279,7 +450,13 @@ function onAction(ctx, g, pid, type, p, { isHost }) {
     const w = m.pub.list[i];
     if (!w || w.cut) return;
     w.cut = true;
-    if (i === m.sol.target) solved(ctx, g, m, pid);
+    if (m.sol.order) {               // câbles multiples : tous, dans l'ordre
+      m.done = m.done || [];
+      const next = m.sol.order[m.done.length];
+      if (m.sol.order.includes(i)) m.done.push(i);
+      if (i !== next) strike(ctx, g, pid, `${m.label} · ${m.sol.order.includes(i) ? 'mauvais ordre' : 'câble sans danger coupé'}`);
+      if (g.phase === 'bomb' && m.sol.order.every((k) => m.pub.list[k].cut)) solved(ctx, g, m, pid);
+    } else if (i === m.sol.target) solved(ctx, g, m, pid);
     else strike(ctx, g, pid, `${m.label} · mauvais câble`);
   } else if (m.type === 'dial' && type === 'dial') {
     m.pub.value = (m.pub.value + (Number(p.d) > 0 ? 1 : 9)) % 10;
@@ -289,8 +466,22 @@ function onAction(ctx, g, pid, type, p, { isHost }) {
     if (i < 0 || i >= m.pub.glyphs.length || m.pub.done.includes(i)) return;
     if (m.sol.order[m.pub.done.length] === GLYPHS.findIndex((x) => x[0] === m.pub.glyphs[i])) {
       m.pub.done.push(i);
-      if (m.pub.done.length === m.pub.glyphs.length) solved(ctx, g, m, pid);
+      if (m.pub.done.length === m.sol.order.length) solved(ctx, g, m, pid);
     } else { m.pub.done = []; strike(ctx, g, pid, `${m.label} · mauvais symbole`); }
+  } else if (m.type === 'thermo' && type === 'ok' && m.pub.mode === 'chrono') {
+    // secondes affichées (arrondies au-dessus), avec une petite tolérance pour la latence
+    const r = remaining(g);
+    const sec = (ms) => Math.ceil(ms / 1000) % 10;
+    if (sec(r) === m.sol.x || sec(r + 350 * g.rate) === m.sol.x) solved(ctx, g, m, pid);
+    else strike(ctx, g, pid, `${m.label} · mauvais moment (…${sec(r)} s)`);
+  } else if (m.type === 'code' && type === 'key') {
+    const d = Math.floor(Number(p.d));
+    if (d >= 0 && d <= 9 && m.pub.entry.length < 4) m.pub.entry += String(d);
+  } else if (m.type === 'code' && type === 'clear') {
+    m.pub.entry = '';
+  } else if (m.type === 'code' && type === 'ok') {
+    if (m.pub.entry === m.sol.code) solved(ctx, g, m, pid);
+    else { const e = m.pub.entry; m.pub.entry = ''; strike(ctx, g, pid, `${m.label} · mauvais code (${e || 'vide'})`); }
   } else if (m.type === 'thermo' && type === 'ok') {
     const { seq, period, t0 } = m.pub;
     const el = Date.now() - t0, k = Math.floor(el / period);
@@ -314,7 +505,8 @@ function stateFor(ctx, g, pid) {
   if (g.modules) {
     s.bomb = {
       ...g.props, strikes: g.strikes, maxStrikes: g.maxStrikes, rem: remaining(g), rate: g.rate,
-      modules: g.modules.map((m) => ({ label: m.label, type: m.type, name: m.name, solved: m.solved, by: m.by, pub: m.pub })),
+      twist: g.twist ? { id: g.twist, ...TWISTS[g.twist] } : null,
+      modules: g.modules.map((m) => ({ label: m.label, type: m.type, name: m.name, hard: !!m.hard, solved: m.solved, by: m.by, pub: m.pub })),
     };
     s.hand = pid && g.hands ? g.hands[pid] || [] : [];
     s.handCount = g.hands ? Object.fromEntries(Object.entries(g.hands).map(([k, v]) => [k, v.length])) : {};
@@ -326,7 +518,7 @@ function stateFor(ctx, g, pid) {
     // solutions révélées après l'explosion (ou le désamorçage)
     s.solutions = g.modules.map((m) => ({
       label: m.label, name: m.name,
-      text: m.type === 'wires' ? `couper le câble n°${m.sol.target + 1} (${m.pub.list[m.sol.target].c}${m.pub.list[m.sol.target].s ? ' rayé' : ''})`
+      text: m.sol.text ? m.sol.text : m.type === 'wires' ? `couper le câble n°${m.sol.target + 1} (${m.pub.list[m.sol.target].c}${m.pub.list[m.sol.target].s ? ' rayé' : ''})`
         : m.type === 'dial' ? `le chiffre ${m.sol.code}`
           : m.type === 'symbols' ? m.sol.order.map((i) => GLYPHS[i][0]).join(' → ')
             : m.type === 'switches' ? m.sol.target.map((v) => (v ? '⬆' : '⬇')).join(' ')
@@ -345,8 +537,8 @@ module.exports = {
   tagline: 'En équipe : désamorcez la bombe… chacun n\'a qu\'un bout du manuel !',
   description: 'Jeu coopératif contre la montre : la bombe a plusieurs modules, le manuel est découpé entre les joueurs. Parlez-vous, vite !',
   minPlayers: 2,
-  maxPlayers: 8,
-  duration: '15 min',
+  maxPlayers: 10,
+  duration: '15–20 min',
   options: [
     { key: 'level', label: 'Difficulté', default: 'normal', choices: [
       { value: 'normal', label: 'Normal', hint: '3 erreurs permises, 3 à 5 modules' },
@@ -356,5 +548,5 @@ module.exports = {
   create,
   onAction,
   stateFor,
-  _test: { MAKERS, makeProps, serialInfo, GLYPHS },
+  _test: { MAKERS, VARIANTS, makeProps, serialInfo, GLYPHS, LEVELS },
 };

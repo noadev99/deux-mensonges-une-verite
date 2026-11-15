@@ -17,20 +17,21 @@
   // ═══ Bandeau de la bombe : chrono, erreurs, numéro de série, piles, lampe ═══
   function bombHead(b, big) {
     return `<div class="dm-head ${big ? 'big' : ''}">
-      <div class="dm-timer ${b.rate > 1 ? 'fast' : ''}" data-timer>${fmt(b.rem)}</div>
+      <div class="dm-timer ${b.rate > 1 ? 'fast' : ''}" data-timer>${b.twist?.id === 'masque' && b.rem > 30000 ? '??:??' : fmt(b.rem)}</div>
       <div class="dm-strikes">${Array.from({ length: b.maxStrikes }, (_, i) => `<span class="${i < b.strikes ? 'on' : ''}">✖</span>`).join('')}</div>
       <div class="dm-props">
         <span class="dm-serial" title="Numéro de série">N° ${esc(b.serial)}</span>
         <span class="dm-piles" title="Piles">${b.piles ? '🔋'.repeat(b.piles) : '<i>aucune pile</i>'}</span>
         <span class="dm-lamp" title="Lampe"><i style="background:${LAMP[b.lamp]}"></i>lampe ${esc(b.lamp)}</span>
       </div>
-    </div>`;
+    </div>${b.twist ? `<div class="dm-twist">${b.twist.emoji} <b>Piège : ${esc(b.twist.name)}</b> — ${esc(b.twist.desc)}</div>` : ''}`;
   }
 
   // ═══ Modules ═══
   function moduleHtml(m, live) {
     const dis = live ? '' : 'disabled';
     const lab = `<div class="dm-mhead"><b>${m.label}</b><span>${esc(m.name)}</span></div>`;
+    const cls = m.hard ? 'dm-mod hard' : 'dm-mod';
     if (m.solved) return `<div class="dm-mod solved">${lab}<div class="dm-ok">✅ Désamorcé${m.by && P(m.by) ? ` par ${name(m.by)}` : ''}</div></div>`;
     let body = '';
     if (m.type === 'wires') {
@@ -48,6 +49,14 @@
         const k = m.pub.done.indexOf(i);
         return `<button class="dm-sym ${k >= 0 ? 'done' : ''}" data-sym="${m.label}|${i}" ${dis || (k >= 0 ? 'disabled' : '')}>${g}&#xFE0E;${k >= 0 ? `<small>${k + 1}</small>` : ''}</button>`;
       }).join('')}</div>`;
+    } else if (m.type === 'thermo' && m.pub.mode === 'chrono') {
+      body = `<div class="dm-thermo off" style="--t:${THERMO[m.pub.color]}"><span class="dm-tlabel">Thermostat ${esc(m.pub.color.toUpperCase())}</span><span class="dm-temp">--</span><span class="dm-unit">⏱️</span></div>
+        <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider maintenant</button>`;
+    } else if (m.type === 'code') {
+      const e = m.pub.entry;
+      body = `<div class="dm-code">${[0, 1, 2, 3].map((k) => `<span>${e[k] ?? '·'}</span>`).join('')}</div>
+        <div class="dm-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => `<button data-key="${m.label}|${d}" ${dis || (e.length >= 4 ? 'disabled' : '')}>${d}</button>`).join('')}<button class="alt" data-clear="${m.label}" ${dis}>Effacer</button></div>
+        <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider</button>`;
     } else if (m.type === 'thermo') {
       body = `<div class="dm-thermo" style="--t:${THERMO[m.pub.color]}"><span class="dm-tlabel">Thermostat ${esc(m.pub.color.toUpperCase())}</span><span class="dm-temp" data-thermo="${m.label}">${thermoValue(m)}</span><span class="dm-unit">°</span></div>
         <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider maintenant</button>`;
@@ -55,7 +64,7 @@
       body = `<div class="dm-sws">${m.pub.state.map((up, i) => `<button class="dm-sw ${up ? 'up' : ''}" data-sw="${m.label}|${i}" ${dis}><i></i><small>${i + 1}</small></button>`).join('')}</div>
         <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider</button>`;
     }
-    return `<div class="dm-mod">${lab}${body}</div>`;
+    return `<div class="${cls}">${lab}${body}</div>`;
   }
 
   const bombHtml = (g, live, big) => `<div class="dm-bomb ${big ? 'big' : ''}">${bombHead(g.bomb, big)}<div class="dm-mods">${g.bomb.modules.map((m) => moduleHtml(m, live)).join('')}</div></div>`;
@@ -63,7 +72,7 @@
   const handHtml = (g) => `<div class="dm-hand">${g.hand.map((c) => `<div class="dm-card"><div class="dm-ctitle">${esc(c.title)}</div><ul>${c.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')}
     <p class="muted center" style="font-size:.85rem">Les autres ont les autres fiches : lisez-les à voix haute !</p></div>`;
 
-  const logHtml = (g) => (g.log.length ? `<div class="dm-log">${g.log.map((e) => `<span class="${e.ok ? 'ok' : 'ko'}">${e.ok ? '✅' : '💥'} ${name(e.pid)} · ${esc(e.what)}</span>`).join('')}</div>` : '');
+  const logHtml = (g) => (g.log.length ? `<div class="dm-log">${g.log.map((e) => `<span class="${e.ok ? 'ok' : 'ko'}">${e.pid ? `${e.ok ? '✅' : '💥'} ${name(e.pid)} · ` : ''}${esc(e.what)}</span>`).join('')}</div>` : '');
 
   // ═══ Écrans ═══
   const RULES = `<div class="rg-rules">
@@ -116,12 +125,13 @@
     raf = 0;
     if (!cur || cur.phase !== 'bomb') return;
     const left = timeLeft();
+    const hide = cur.bomb.twist?.id === 'masque' && left > 30000;
     document.querySelectorAll('[data-timer]').forEach((el) => {
-      el.textContent = fmt(left);
+      el.textContent = hide ? '??:??' : fmt(left);
       el.classList.toggle('danger', left < 30000);
     });
     for (const m of cur.bomb.modules) {
-      if (m.type !== 'thermo' || m.solved) continue;
+      if (m.type !== 'thermo' || m.solved || m.pub.mode === 'chrono') continue;
       document.querySelectorAll(`[data-thermo="${m.label}"]`).forEach((el) => { const v = String(thermoValue(m)); if (el.textContent !== v) el.textContent = v; });
     }
     raf = requestAnimationFrame(anim);
@@ -135,11 +145,13 @@
         <li>Jeu <b>en équipe</b> : une bombe s'affiche (sur la télé et sur chaque téléphone) avec plusieurs <b>modules</b>. Tout le monde peut y toucher.</li>
         <li>Le <b>manuel</b> est découpé en fiches réparties entre les joueurs : personne n'a tout. Lisez vos fiches à voix haute et recoupez-les. Les règles <b>changent à chaque bombe</b>.</li>
         <li>Modules : 🔌 câbles (un seul à couper), 🎛️ cadran (un chiffre à calculer), 🔣 symboles (le bon ordre), 🌡️ thermostat (valider au bon moment), 🎚️ interrupteurs (la bonne position).</li>
+        <li>Chaque module a plusieurs <b>variantes</b> tirées au hasard, dont des versions <b>très dures 💀</b> (câbles multiples, code à 4 chiffres, interrupteurs binaires).</li>
+        <li>La bombe <b>grossit avec le nombre de joueurs</b> (jusqu'à 8 modules) et peut cacher un <b>piège</b> : 🔀 fiches tournantes, 🙈 chrono masqué, ⚡ court-circuit.</li>
         <li>Chaque <b>erreur</b> fait perdre du temps et <b>accélère le chrono</b>. Trop d'erreurs ou plus de temps : BOUM.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">Bombe désamorcée : <b>+60</b> et +1 par 2 s restantes pour toute l'équipe · module désamorcé par toi : <b>+15</b> · erreur : <b>−8</b></div>`,
 
-    key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me, tab, armed, modKey(g), (g.log || []).length].join('|'),
+    key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me, tab, armed, modKey(g), (g.log || []).length, (g.hand || []).map((c) => c.title).join(',')].join('|'),
     screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
     tv: (S, g) => (screens[g.phase] || screens.intro)(S, g),
 
@@ -160,6 +172,8 @@
       root.querySelectorAll('[data-dial]').forEach((b) => b.addEventListener('click', () => { const [m, d] = b.dataset.dial.split('|'); UI.send('dial', { m, d: Number(d) }); }));
       root.querySelectorAll('[data-ok]').forEach((b) => b.addEventListener('click', () => UI.send('ok', { m: b.dataset.ok })));
       root.querySelectorAll('[data-sym]').forEach((b) => b.addEventListener('click', () => { const [m, i] = b.dataset.sym.split('|'); UI.send('sym', { m, i: Number(i) }); }));
+      root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => { const [m, d] = b.dataset.key.split('|'); UI.send('key', { m, d: Number(d) }); }));
+      root.querySelectorAll('[data-clear]').forEach((b) => b.addEventListener('click', () => UI.send('clear', { m: b.dataset.clear })));
       root.querySelectorAll('[data-sw]').forEach((b) => b.addEventListener('click', () => { const [m, i] = b.dataset.sw.split('|'); UI.send('sw', { m, i: Number(i) }); }));
     },
   });
