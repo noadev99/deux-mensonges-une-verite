@@ -197,8 +197,6 @@ const UI = (() => {
     else if (lastKey !== 'home') renderHome(); // ne pas effacer un pseudo en cours de saisie
   });
   socket.on('disconnect', () => setOffline(true));
-  // site protégé par un code : sans lui, on renvoie vers la page « Entre le code »
-  socket.on('connect_error', (e) => { if (e?.message === 'code') location.href = `/entrer?suite=${encodeURIComponent(location.pathname + location.search)}`; });
   socket.on('screenCreated', ({ code }) => {
     SCREEN = code;
     history.replaceState(null, '', `/?ecran=${code}`); // un rechargement garde l'écran sur ce salon

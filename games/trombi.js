@@ -14,13 +14,11 @@ const BOARD = 24;
 const PTS = { FIND_MAX: 150, FIND_MIN: 50, PER_QUESTION: 15, ELUSIVE: 100 };
 const TURNS_PER_PLAYER = 10;   // sécurité : la partie s'arrête au bout d'un moment
 
-// [nom, série, symbole]
+// [nom, série, symbole] — 158 personnages, 24 tirés au hasard à chaque partie
 const CHARACTERS = [
-  ['Luffy', 'One Piece', '👒'], ['Zoro', 'One Piece', '⚔️'], ['Nami', 'One Piece', '🍊'], ['Sanji', 'One Piece', '🍳'],
-  ['Chopper', 'One Piece', '🦌'], ['Robin', 'One Piece', '🌸'], ['Usopp', 'One Piece', '🎯'],
-  ['Naruto', 'Naruto', '🍥'], ['Sasuke', 'Naruto', '⚡'], ['Sakura', 'Naruto', '💪'], ['Kakashi', 'Naruto', '📖'],
-  ['Itachi', 'Naruto', '🔴'], ['Gaara', 'Naruto', '🏜️'], ['Hinata', 'Naruto', '👁️'],
-  ['Goku', 'Dragon Ball', '☁️'], ['Vegeta', 'Dragon Ball', '👑'], ['Bulma', 'Dragon Ball', '🔧'], ['Piccolo', 'Dragon Ball', '🟢'], ['Freezer', 'Dragon Ball', '❄️'],
+  ['Luffy', 'One Piece', '👒'], ['Zoro', 'One Piece', '⚔️'], ['Nami', 'One Piece', '🍊'], ['Sanji', 'One Piece', '🍳'], ['Chopper', 'One Piece', '🦌'], ['Robin', 'One Piece', '🌸'], ['Usopp', 'One Piece', '🎯'], ['Ace', 'One Piece', '🔥'], ['Shanks', 'One Piece', '🍺'], ['Law', 'One Piece', '💉'], ['Boa Hancock', 'One Piece', '🐍'], ['Jinbe', 'One Piece', '🌊'], ['Franky', 'One Piece', '🤖'], ['Brook', 'One Piece', '💀'], ['Buggy', 'One Piece', '🤡'], ['Doflamingo', 'One Piece', '🦩'], ['Mihawk', 'One Piece', '🦅'],
+  ['Naruto', 'Naruto', '🍥'], ['Sasuke', 'Naruto', '⚡'], ['Sakura', 'Naruto', '💪'], ['Kakashi', 'Naruto', '📖'], ['Itachi', 'Naruto', '🔴'], ['Gaara', 'Naruto', '🏜️'], ['Hinata', 'Naruto', '👁️'], ['Jiraiya', 'Naruto', '🐸'], ['Tsunade', 'Naruto', '🎰'], ['Orochimaru', 'Naruto', '🐍'], ['Minato', 'Naruto', '🟡'], ['Obito', 'Naruto', '🌀'], ['Madara', 'Naruto', '🍂'], ['Rock Lee', 'Naruto', '🥋'], ['Neji', 'Naruto', '☯️'], ['Shikamaru', 'Naruto', '♟️'], ['Pain', 'Naruto', '🌧️'],
+  ['Goku', 'Dragon Ball', '☁️'], ['Vegeta', 'Dragon Ball', '👑'], ['Bulma', 'Dragon Ball', '🔧'], ['Piccolo', 'Dragon Ball', '🟢'], ['Freezer', 'Dragon Ball', '❄️'], ['Gohan', 'Dragon Ball', '📚'], ['Trunks', 'Dragon Ball', '🗡️'], ['Krillin', 'Dragon Ball', '🥚'], ['Cell', 'Dragon Ball', '🪲'], ['Majin Buu', 'Dragon Ball', '🍬'],
   ['Tanjirō', 'Demon Slayer', '🌊'], ['Nezuko', 'Demon Slayer', '🎋'], ['Zenitsu', 'Demon Slayer', '⚡'], ['Inosuke', 'Demon Slayer', '🐗'], ['Rengoku', 'Demon Slayer', '🔥'],
   ['Deku', 'My Hero Academia', '💪'], ['Bakugo', 'My Hero Academia', '💥'], ['Todoroki', 'My Hero Academia', '🧊'], ['All Might', 'My Hero Academia', '🦸'], ['Uraraka', 'My Hero Academia', '🪐'],
   ['Eren', 'L\'Attaque des Titans', '🗝️'], ['Mikasa', 'L\'Attaque des Titans', '🧣'], ['Levi', 'L\'Attaque des Titans', '🧹'], ['Armin', 'L\'Attaque des Titans', '📘'],
@@ -28,10 +26,23 @@ const CHARACTERS = [
   ['Light', 'Death Note', '📓'], ['L', 'Death Note', '🍰'], ['Ryuk', 'Death Note', '🍎'],
   ['Gon', 'Hunter x Hunter', '🎣'], ['Kirua', 'Hunter x Hunter', '🛹'], ['Kurapika', 'Hunter x Hunter', '⛓️'], ['Hisoka', 'Hunter x Hunter', '🃏'],
   ['Sacha', 'Pokémon', '🧢'], ['Pikachu', 'Pokémon', '⚡'],
-  ['Ichigo', 'Bleach', '🗡️'], ['Edward Elric', 'Fullmetal Alchemist', '🦾'], ['Alphonse Elric', 'Fullmetal Alchemist', '🛡️'],
-  ['Saitama', 'One Punch Man', '🥚'], ['Anya', 'Spy x Family', '🥜'], ['Loid', 'Spy x Family', '🕵️'],
-  ['Totoro', 'Mon voisin Totoro', '🌳'], ['Chihiro', 'Le Voyage de Chihiro', '🛁'], ['Usagi', 'Sailor Moon', '🌙'],
-  ['Denji', 'Chainsaw Man', '🪚'], ['Power', 'Chainsaw Man', '😈'], ['Jotaro', 'JoJo\'s Bizarre Adventure', '⭐'],
+  ['Ichigo', 'Bleach', '🗡️'], ['Rukia', 'Bleach', '❄️'], ['Renji', 'Bleach', '🐒'], ['Byakuya', 'Bleach', '🌸'], ['Toshiro', 'Bleach', '🐉'], ['Aizen', 'Bleach', '👓'], ['Grimmjow', 'Bleach', '🐆'], ['Ulquiorra', 'Bleach', '🦇'], ['Yoruichi', 'Bleach', '🐈'], ['Kisuke', 'Bleach', '🎩'],
+  ['Edward Elric', 'Fullmetal Alchemist', '🦾'], ['Alphonse Elric', 'Fullmetal Alchemist', '🛡️'],
+  ['Anya', 'Spy x Family', '🥜'], ['Loid', 'Spy x Family', '🕵️'],
+  ['Denji', 'Chainsaw Man', '🪚'], ['Power', 'Chainsaw Man', '😈'],
+  ['Saitama', 'One Punch Man', '🥚'], ['Genos', 'One Punch Man', '🦾'], ['Tatsumaki', 'One Punch Man', '🌪️'], ['Fubuki', 'One Punch Man', '🍃'], ['Bang', 'One Punch Man', '🥋'], ['King', 'One Punch Man', '🎮'], ['Garou', 'One Punch Man', '🐺'], ['Metal Bat', 'One Punch Man', '🏏'],
+  ['Asta', 'Black Clover', '⚔️'], ['Yuno', 'Black Clover', '🌪️'], ['Noelle', 'Black Clover', '💧'], ['Yami', 'Black Clover', '🌑'], ['Fuegoleon', 'Black Clover', '🦁'], ['Mereoleona', 'Black Clover', '🔥'], ['Luck', 'Black Clover', '⚡'], ['Magna', 'Black Clover', '🧨'],
+  ['Senku', 'Dr. Stone', '🧪'], ['Chrome', 'Dr. Stone', '🪨'], ['Kohaku', 'Dr. Stone', '🏹'], ['Tsukasa', 'Dr. Stone', '🦴'], ['Gen', 'Dr. Stone', '🎭'], ['Suika', 'Dr. Stone', '🍉'], ['Ryusui', 'Dr. Stone', '⛵'], ['Xeno', 'Dr. Stone', '🚀'],
+  ['Natsu', 'Fairy Tail', '🐉'], ['Lucy', 'Fairy Tail', '🗝️'], ['Gray', 'Fairy Tail', '🧊'], ['Erza', 'Fairy Tail', '⚔️'], ['Wendy', 'Fairy Tail', '🌬️'], ['Gajeel', 'Fairy Tail', '🔩'], ['Juvia', 'Fairy Tail', '💧'], ['Laxus', 'Fairy Tail', '⚡'],
+  ['Subaru', 'Re:Zero', '🔁'], ['Emilia', 'Re:Zero', '❄️'], ['Rem', 'Re:Zero', '💙'], ['Ram', 'Re:Zero', '💗'],
+  ['Meliodas', 'Seven Deadly Sins', '🐉'], ['Elizabeth', 'Seven Deadly Sins', '🌼'], ['Ban', 'Seven Deadly Sins', '🦊'], ['King', 'Seven Deadly Sins', '🧸'], ['Diane', 'Seven Deadly Sins', '🌍'], ['Gowther', 'Seven Deadly Sins', '🪞'], ['Escanor', 'Seven Deadly Sins', '☀️'],
+  ['Sung Jin-Woo', 'Solo Leveling', '🗡️'], ['Cha Hae-In', 'Solo Leveling', '🌸'], ['Go Gun-Hee', 'Solo Leveling', '🏛️'], ['Beru', 'Solo Leveling', '🐜'], ['Igris', 'Solo Leveling', '🛡️'], ['Thomas Andre', 'Solo Leveling', '💪'], ['Baek Yoon-Ho', 'Solo Leveling', '🐯'], ['Choi Jong-In', 'Solo Leveling', '🔥'],
+  ['Kaneki', 'Tokyo Ghoul', '🦑'], ['Touka', 'Tokyo Ghoul', '🦋'], ['Hide', 'Tokyo Ghoul', '🎧'], ['Arima', 'Tokyo Ghoul', '♠️'], ['Uta', 'Tokyo Ghoul', '🎨'], ['Ayato', 'Tokyo Ghoul', '🐰'], ['Eto', 'Tokyo Ghoul', '✒️'], ['Yoshimura', 'Tokyo Ghoul', '☕'],
+  ['Thorfinn', 'Vinland Saga', '🗡️'], ['Askeladd', 'Vinland Saga', '🛡️'], ['Canute', 'Vinland Saga', '👑'], ['Einar', 'Vinland Saga', '🌾'], ['Leif', 'Vinland Saga', '⛵'], ['Hild', 'Vinland Saga', '🏹'], ['Snake', 'Vinland Saga', '🐍'], ['Bjorn', 'Vinland Saga', '🐻'],
+  ['Totoro', 'Mon voisin Totoro', '🌳'],
+  ['Chihiro', 'Le Voyage de Chihiro', '🛁'],
+  ['Usagi', 'Sailor Moon', '🌙'],
+  ['Jotaro', 'JoJo\'s Bizarre Adventure', '⭐'],
 ];
 
 function create(ctx) {
