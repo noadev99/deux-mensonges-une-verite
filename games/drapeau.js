@@ -11,15 +11,15 @@
 const { gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MODES = [
-  { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 260, speed: 0.75, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
-  { id: 'feu', name: 'Feu rouge, feu vert', emoji: '🚦', len: 140, hint: 'Secoue au vert, STOP au rouge… sinon retour au départ !' },
-  { id: 'mat', name: 'Le mât savonné', emoji: '🧗', len: 230, hint: 'Grimpe au mât… dès que tu t\'arrêtes, tu glisses !' },
+  { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 420, speed: 0.75, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
+  { id: 'feu', name: 'Feu rouge, feu vert', emoji: '🚦', len: 300, speed: 0.75, hint: 'Secoue au vert, STOP au rouge… sinon retour au départ !' },
+  { id: 'mat', name: 'Le mât savonné', emoji: '🧗', len: 380, speed: 0.75, hint: 'Grimpe au mât… dès que tu t\'arrêtes, tu glisses !' },
 ];
 const PLACE_PTS = [8, 5, 3, 2, 1];
 const MAX_RATE = 32;        // énergie maximale par seconde (une secousse très forte ≈ 20–30)
 const TICK = 250;           // le serveur renvoie l'état 4 fois par seconde
 const COUNTDOWN = 3500;
-const LIMIT = 75000;        // manche arrêtée au bout de 75 s
+const LIMIT = 120000;       // manche arrêtée au bout de 2 min
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['wins', 'energy', 'caught']);
@@ -63,9 +63,11 @@ function step(ctx, g) {
     }
   }
   if (g.mode.id === 'feu' && now > g.lightUntil) {
-    if (g.light === 'green') { g.light = 'orange'; g.lightUntil = now + 800; }
-    else if (g.light === 'orange') { g.light = 'red'; g.lightUntil = now + 1300 + Math.random() * 1400; }
-    else { g.light = 'green'; g.lightUntil = now + 1800 + Math.random() * 2600; }
+    // rythme imprévisible : vert très court ou très long, orange parfois éclair, rouge plus ou moins long
+    const r = Math.random();
+    if (g.light === 'green') { g.light = 'orange'; g.lightUntil = now + (Math.random() < 0.3 ? 350 + Math.random() * 200 : 650 + Math.random() * 500); }
+    else if (g.light === 'orange') { g.light = 'red'; g.lightUntil = now + 1000 + Math.random() * 3500; }
+    else { g.light = 'green'; g.lightUntil = now + (r < 0.25 ? 700 + Math.random() * 800 : r < 0.75 ? 2000 + Math.random() * 2500 : 4500 + Math.random() * 3500); }
     g.lightAt = now;
   }
   for (const id of g.players) g.rate[id] = (g.rate[id] || 0) * 0.5;   // la jauge retombe si on arrête
@@ -77,7 +79,12 @@ function finishRound(ctx, g) {
   if (g.phase !== 'race') return;
   const ranking = [...g.finished, ...g.players.filter((id) => !g.finished.includes(id)).sort((a, b) => g.pos[b] - g.pos[a])];
   const gains = {};
-  g.finished.forEach((id, i) => { if (PLACE_PTS[i]) gain(gains, id, PLACE_PTS[i], i === 0 ? `Premier au drapeau ${g.mode.emoji}` : `${i + 1}ᵉ au drapeau`); });
+  // points aux premiers arrivés ; si le temps est écoulé, aux plus avancés
+  ranking.forEach((id, i) => {
+    if (!PLACE_PTS[i] || !(g.pos[id] > 0)) return;
+    const done = g.finished.includes(id);
+    gain(gains, id, PLACE_PTS[i], done ? (i === 0 ? `Premier au drapeau ${g.mode.emoji}` : `${i + 1}ᵉ au drapeau`) : `${i + 1}ᵉ (le plus avancé à la fin du temps)`);
+  });
   if (g.finished[0]) g.stats[g.finished[0]].wins++;
   applyGains(g.scores, gains);
   g.result = { ranking, finished: g.finished.slice(), times: { ...g.times }, pos: { ...g.pos }, gains };

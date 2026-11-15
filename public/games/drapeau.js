@@ -152,7 +152,7 @@
         <li>3 manches : 🏃 <b>le sprint</b>, 🚦 <b>feu rouge, feu vert</b> (au rouge, si tu bouges, retour au départ !) et 🧗 <b>le mât savonné</b> (si tu t'arrêtes, tu glisses).</li>
         <li>Pas de capteur ? Tape très vite sur le gros bouton. Tiens bien ton téléphone !</li>
       </ol>
-      <div class="muted" style="font-size:.92rem">Points par manche : 8, 5, 3, 2, 1 aux premiers arrivés au drapeau</div>`,
+      <div class="muted" style="font-size:.92rem">Points par manche : 8, 5, 3, 2, 1 selon l'ordre d'arrivée (puis selon l'avancée) · manche arrêtée au bout de 2 min</div>`,
 
     key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me, needsPermission(), motion.denied, hasSensor()].join('|'),
     screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
