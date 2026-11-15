@@ -54,6 +54,11 @@ const serialInfo = (p) => {
   };
 };
 
+// textes d'aide pour les calculs (à lire à voix haute, sans ambiguïté)
+const VOY = 'voyelles (A, E, U ou Y — il n\'y a jamais de I ni de O)';
+const UNITS = 'Si ça fait 10 ou plus, garde seulement le DERNIER chiffre (ex. : 17 → 7, 23 → 3).';
+const times = (a, what) => (a === 1 ? what : `${what} × ${a}`);
+
 // conditions sur la bombe, utilisées dans plusieurs fiches
 const CONDS = [
   { t: 'la lampe est rouge', f: (p) => p.lamp === 'rouge' },
@@ -64,10 +69,10 @@ const CONDS = [
   { t: 'la bombe a au moins 2 piles', f: (p) => p.piles >= 2 },
   { t: 'la bombe n\'a aucune pile', f: (p) => p.piles === 0 },
   { t: 'le nombre de piles est impair', f: (p) => p.piles % 2 === 1 },
-  { t: 'le numéro de série finit par un chiffre pair', f: (p) => serialInfo(p).last % 2 === 0 },
-  { t: 'le numéro de série contient au moins 2 voyelles (A, E, U, Y)', f: (p) => serialInfo(p).vowels >= 2 },
+  { t: 'le numéro de série finit par un chiffre pair (2, 4, 6 ou 8)', f: (p) => serialInfo(p).last % 2 === 0 },
+  { t: 'le numéro de série contient au moins 2 voyelles (A, E, U ou Y)', f: (p) => serialInfo(p).vowels >= 2 },
   { t: 'le numéro de série contient au moins 3 chiffres', f: (p) => serialInfo(p).digits >= 3 },
-  { t: 'la somme des chiffres du numéro de série dépasse 12', f: (p) => serialInfo(p).sum > 12 },
+  { t: 'la somme des chiffres du numéro de série dépasse 12 (lettres ignorées)', f: (p) => serialInfo(p).sum > 12 },
 ];
 
 // ═══ Modules ═══
@@ -109,7 +114,7 @@ function wires(p, expert) {
 
 function dial(p, expert) {
   const info = serialInfo(p);
-  const base = pick([['voyelles (A, E, U, Y)', info.vowels], ['chiffres', info.digits], ['consonnes', info.consonants]]);
+  const base = pick([[VOY, info.vowels], ['chiffres', info.digits], ['consonnes', info.consonants]]);
   const mult = rint(2, 4), per = rint(1, 3);
   const adj = { rouge: rint(1, 5), verte: -rint(1, 5), bleue: 'x2', éteinte: 0 };
   let v = base[1] * mult + p.piles * per;
@@ -118,10 +123,10 @@ function dial(p, expert) {
   let flip = null;
   if (expert) { flip = pick(CONDS); if (flip.f(p)) v = 9 - v; }
   const cards = [
-    { title: '🎛️ Cadran — point de départ', lines: [`Compte les ${base[0]} du numéro de série et multiplie par ${mult}.`] },
-    { title: '🎛️ Cadran — piles', lines: [`Ajoute ${per} par pile de la bombe.`] },
-    { title: '🎛️ Cadran — lampe', lines: [`Lampe rouge : +${adj.rouge}`, `Lampe verte : ${adj.verte}`, 'Lampe bleue : multiplie par 2', 'Lampe éteinte : rien', 'Garde seulement le chiffre des unités (si c\'est négatif, ajoute 10).'] },
-    ...(flip ? [{ title: '🎛️ Cadran — piège', lines: [`Tout à la fin : si ${flip.t}, remplace le chiffre par 9 moins ce chiffre.`] }] : []),
+    { title: '🎛️ Cadran — point de départ', lines: [`Compte les ${base[0]} du numéro de série.`, `Multiplie ce nombre par ${mult}.`] },
+    { title: '🎛️ Cadran — piles', lines: [`Ajoute ${per} pour CHAQUE pile de la bombe (ex. : 3 piles → +${per * 3}).`] },
+    { title: '🎛️ Cadran — lampe', lines: [`Lampe rouge : +${adj.rouge}`, `Lampe verte : ${adj.verte}`, 'Lampe bleue : multiplie par 2', 'Lampe éteinte : rien', UNITS, 'Si c\'est négatif, ajoute 10 (ex. : −3 → 7).'] },
+    ...(flip ? [{ title: '🎛️ Cadran — piège', lines: [`Tout à la fin : si ${flip.t}, remplace le chiffre par 9 moins ce chiffre (ex. : 2 → 7).`] }] : []),
     { title: '🎛️ Cadran — validation', lines: ['Tourne le cadran sur le chiffre obtenu puis appuie sur « Valider ».'] },
   ];
   return { type: 'dial', name: 'Cadran', pub: { value: 0 }, sol: { code: v }, cards };
@@ -206,8 +211,8 @@ function wiresPos(p, expert) {
   const r = v % n, target = r === 0 ? n - 1 : r - 1;
   const cards = [
     { title: '🔌 Câbles — compte', lines: [`Compte les câbles ${col.toUpperCase()} (rayés compris).`] },
-    { title: '🔌 Câbles — ajouts', lines: [`Ajoute ${add} par pile de la bombe.`, `Si ${cond.t}, ajoute encore 2.`, ...(expert ? ['Ajoute enfin 1 par câble rayé.'] : [])] },
-    { title: '🔌 Câbles — numéro', lines: ['Divise le résultat par le nombre de câbles et garde le RESTE.', 'Reste 0 : coupe le DERNIER câble. Sinon coupe le câble de ce numéro (numérotés de haut en bas).'] },
+    { title: '🔌 Câbles — ajouts', lines: [`Ajoute ${add} pour CHAQUE pile de la bombe.`, `Si ${cond.t}, ajoute encore 2.`, ...(expert ? ['Ajoute enfin 1 par câble rayé.'] : [])] },
+    { title: '🔌 Câbles — numéro', lines: ['Tant que le résultat est plus grand que le nombre de câbles, enlève-lui le nombre de câbles (ex. : 11 avec 4 câbles → 7 → 3).', 'Coupe le câble qui porte ce numéro (de haut en bas).'] },
   ];
   return { type: 'wires', name: 'Câbles', pub: { list }, sol: { target, text: `couper le câble n°${target + 1}` }, cards };
 }
@@ -246,11 +251,11 @@ function code(p, expert, start, opts = {}) {
   let digits = [d1, d2, d3, d4];
   if (expert) { const sw = pick(CONDS); if (sw.f(p)) digits = [d2, d1, d4, d3]; var swap = sw; }
   const cards = [
-    { title: '🔢💀 Code — 1er chiffre', lines: [`Nombre de piles × ${m1}, plus ${a1}. Garde les unités.`] },
-    { title: '🔢💀 Code — 2e chiffre', lines: ['Le DERNIER chiffre du numéro de série.', `Si ${c2.t}, ajoute 3. Garde les unités.`] },
-    { title: '🔢💀 Code — 3e chiffre', lines: ['Le nombre de MODULES sur la bombe (tous, même désamorcés). Garde les unités.'] },
-    { title: '🔢💀 Code — 4e chiffre', lines: ['Additionne les trois premiers chiffres et garde les unités.', `Si ${c4.t}, remplace-le par 9 moins ce chiffre.`] },
-    { title: '🔢💀 Code — saisie', lines: ['Tape les 4 chiffres puis « Valider ». « Effacer » recommence la saisie.', ...(swap ? [`Si ${swap.t} : échange le 1er et le 2e chiffre, et le 3e et le 4e (après les calculs).`] : [])] },
+    { title: '🔢💀 Code — 1er chiffre', lines: [`Prends le nombre de piles et multiplie-le par ${m1}${a1 ? `, puis ajoute ${a1}` : ''}.`, UNITS] },
+    { title: '🔢💀 Code — 2e chiffre', lines: ['Prends le DERNIER chiffre du numéro de série.', `Si ${c2.t}, ajoute 3.`, UNITS] },
+    { title: '🔢💀 Code — 3e chiffre', lines: ['Compte les MODULES de la bombe (tous, même ceux déjà désamorcés).'] },
+    { title: '🔢💀 Code — 4e chiffre', lines: ['Additionne les trois premiers chiffres du code.', UNITS, `Puis, si ${c4.t}, remplace-le par 9 moins ce chiffre (ex. : 2 → 7).`] },
+    { title: '🔢💀 Code — saisie', lines: ['Tape les 4 chiffres puis « Valider ». « Effacer » recommence la saisie.', ...(swap ? [`Si ${swap.t} : une fois les 4 chiffres trouvés, échange le 1er avec le 2e, et le 3e avec le 4e (ex. : 1234 → 2143).`] : [])] },
   ];
   const sol = digits.join('');
   return { type: 'code', hard: true, name: 'Code 💀', pub: { entry: '' }, sol: { code: sol, text: `le code ${sol}` }, cards };
@@ -276,8 +281,8 @@ function thermoChrono(p, expert) {
   if (cond.f(p)) x = 9 - x;
   const color = pick(['rouge', 'bleu', 'vert', 'jaune']);
   const cards = [
-    { title: '🌡️ Thermostat — en panne', lines: ['Ce thermostat n\'affiche rien : il faut regarder le CHRONO de la bombe.', 'Valide quand le DERNIER chiffre des secondes affichées vaut X.'] },
-    { title: '🌡️ Thermostat — calcul de X', lines: [`X = nombre de piles × ${a} + nombre de voyelles (A, E, U, Y) du numéro de série. Garde les unités.`, `Si ${cond.t}, X devient 9 moins X.`] },
+    { title: '🌡️ Thermostat — en panne', lines: ['Ce thermostat n\'affiche rien : il faut regarder le CHRONO de la bombe.', 'Valide quand les secondes du chrono finissent par X (ex. : X = 4 → à 1:34, 1:24…).'] },
+    { title: '🌡️ Thermostat — calcul de X', lines: [`1. Prends le nombre de piles${a === 1 ? '' : `, multiplié par ${a}`}.`, `2. Ajoute le nombre de ${VOY} du numéro de série.`, `3. ${UNITS}`, `4. Si ${cond.t}, remplace X par 9 moins X (ex. : 2 → 7).`] },
   ];
   return { type: 'thermo', name: 'Thermostat', pub: { mode: 'chrono', color }, sol: { x, text: `valider quand les secondes finissent par ${x}` }, cards };
 }
@@ -293,8 +298,8 @@ function switchesBinary(p, expert) {
   let start;
   do { start = Array.from({ length: 5 }, () => Math.random() < 0.5); } while (start.every((v, i) => v === target[i]));
   const cards = [
-    { title: '🎚️💀 Interrupteurs binaires — le nombre', lines: ['N = somme des chiffres du numéro de série', `+ ${m} par pile de la bombe.`, 'Garde le reste de la division par 32 (si c\'est 0, prends 31).'] },
-    { title: '🎚️💀 Interrupteurs binaires — la position', lines: ['Chaque interrupteur EN HAUT compte : n°1 = 16, n°2 = 8, n°3 = 4, n°4 = 2, n°5 = 1.', 'Mets en haut ceux dont la somme fait exactement N, les autres en bas, puis « Valider ».', ...(expert ? [`Si ${inv.t}, inverse TOUS les interrupteurs à la fin.`] : [])] },
+    { title: '🎚️💀 Interrupteurs binaires — le nombre', lines: ['1. Additionne tous les chiffres du numéro de série (ignore les lettres).', `2. Ajoute ${m} pour CHAQUE pile de la bombe.`, '3. Tant que N dépasse 31, enlève-lui 32 (ex. : 40 → 8). Si tu tombes sur 0, prends 31.'] },
+    { title: '🎚️💀 Interrupteurs binaires — la position', lines: ['Valeurs : n°1 = 16, n°2 = 8, n°3 = 4, n°4 = 2, n°5 = 1.', 'Lève ceux dont les valeurs additionnées font exactement N, baisse les autres, puis « Valider ».', 'Astuce : du n°1 au n°5, lève-le si sa valeur rentre encore dans ce qui reste de N (ex. : N = 21 → 16 ✔ reste 5 ; 8 ✘ ; 4 ✔ reste 1 ; 2 ✘ ; 1 ✔).', ...(expert ? [`Si ${inv.t}, inverse TOUS les interrupteurs à la fin.`] : [])] },
   ];
   return { type: 'switches', hard: true, name: 'Interrupteurs binaires 💀', pub: { state: start }, sol: { target, text: `N = ${N} → ${target.map((v) => (v ? '⬆' : '⬇')).join(' ')}` }, cards };
 }
@@ -334,7 +339,7 @@ function dialTable(p) {
   const cards = [
     { title: '🎛️ Cadran — tableau (1/2)', lines: [row('rouge'), row('verte')] },
     { title: '🎛️ Cadran — tableau (2/2)', lines: [row('bleue'), row('éteinte')] },
-    { title: '🎛️ Cadran — ajustement', lines: [`Si ${cond.t}, ajoute ${add} (garde les unités).`, 'Puis tourne le cadran sur ce chiffre et « Valider ».'] },
+    { title: '🎛️ Cadran — ajustement', lines: [`Si ${cond.t}, ajoute ${add}. Si ça dépasse 9, enlève 10 (ex. : 12 → 2).`, 'Puis tourne le cadran sur ce chiffre et « Valider ».'] },
   ];
   return { type: 'dial', name: 'Cadran', pub: { value: 0 }, sol: { code: v, text: `le chiffre ${v}` }, cards };
 }
@@ -393,8 +398,8 @@ function switchesCount(p) {
   let start;
   do { start = Array.from({ length: 5 }, () => Math.random() < 0.5); } while (start.every((v, i) => v === target[i]));
   const cards = [
-    { title: '🎚️ Interrupteurs — combien ?', lines: [`K = nombre de piles + ${a} × le nombre de voyelles (A, E, U, Y) du numéro de série.`, 'Garde le reste de la division par 4, puis ajoute 1 : il faut exactement K interrupteurs EN HAUT.'] },
-    { title: '🎚️ Interrupteurs — lesquels ?', lines: ['L\'interrupteur dont le numéro = (dernier chiffre du numéro de série ÷ 5, le reste) + 1 doit rester EN BAS.', `Lève les K autres en partant de la ${left ? 'GAUCHE' : 'DROITE'}, puis « Valider ».`] },
+    { title: '🎚️ Interrupteurs — combien ?', lines: [`1. Compte les ${VOY} du numéro de série${a === 1 ? '' : `, et multiplie par ${a}`}.`, '2. Ajoute le nombre de piles.', '3. Lis le résultat dans ce tableau → c\'est K, le nombre d\'interrupteurs à lever :', '0, 4, 8, 12, 16, 20 → K = 1', '1, 5, 9, 13, 17, 21 → K = 2', '2, 6, 10, 14, 18, 22 → K = 3', '3, 7, 11, 15, 19 → K = 4'] },
+    { title: '🎚️ Interrupteurs — lesquels ?', lines: ['Regarde le DERNIER chiffre du numéro de série : il désigne l\'interrupteur INTERDIT, qui reste en bas :', '5 → n°1 · 6 → n°2 · 2 ou 7 → n°3 · 3 ou 8 → n°4 · 4 ou 9 → n°5', `En partant de la ${left ? 'GAUCHE (n°1)' : 'DROITE (n°5)'}, lève les K premiers interrupteurs en sautant l'interdit (K est sur la fiche « combien ? »).`, 'Tous les autres restent EN BAS, puis « Valider ».'] },
   ];
   return { type: 'switches', name: 'Interrupteurs', pub: { state: start }, sol: { target, text: target.map((v) => (v ? '⬆' : '⬇')).join(' ') }, cards };
 }
@@ -413,7 +418,7 @@ function buttonTaps(p) {
   const cards = [
     { title: '🔴 Bouton — couleur', lines: BTN_COLORS.map((c) => `Bouton ${c} : ${base[c]} appui${base[c] > 1 ? 's' : ''}`) },
     { title: '🔴 Bouton — mot écrit dessus', lines: [...BTN_WORDS.map((w) => `« ${w} » : ${mod[w] >= 0 ? '+' : ''}${mod[w]}`), 'Jamais moins de 1 appui.'] },
-    { title: '🔴 Bouton — bonus', lines: [`Si ${cond.t}, ajoute un appui par pile (12 au maximum).`, 'Appuie exactement ce nombre de fois, puis « Valider ». « Recommencer » remet à zéro.'] },
+    { title: '🔴 Bouton — bonus', lines: ['Pars du nombre de la couleur, ajoute (ou enlève) celui du mot.', `Si ${cond.t}, ajoute encore 1 appui pour CHAQUE pile (12 au maximum).`, 'Appuie exactement ce nombre de fois, puis « Valider ». « Recommencer » remet à zéro.'] },
   ];
   return { type: 'button', name: 'Gros bouton', pub: { color, word, count: 0, mode: 'taps' }, sol: { n: N, text: `${N} appui${N > 1 ? 's' : ''}` }, cards };
 }
@@ -427,7 +432,7 @@ function buttonTimer(p) {
   if (cond.f(p)) d = (d + 5) % 10;
   const cards = [
     { title: '🔴 Bouton — chiffre selon la couleur', lines: BTN_COLORS.map((c) => `Bouton ${c} : ${dig[c]}`) },
-    { title: '🔴 Bouton — quand appuyer ?', lines: ['Le mot écrit sur le bouton ne veut rien dire : ignore-le !', `Si ${cond.t}, ajoute 5 au chiffre (garde les unités).`, 'Appuie UNE fois quand ce chiffre apparaît N\'IMPORTE OÙ dans le chrono.'] },
+    { title: '🔴 Bouton — quand appuyer ?', lines: ['Le mot écrit sur le bouton ne veut rien dire : ignore-le !', `Si ${cond.t}, ajoute 5 au chiffre (si ça dépasse 9, enlève 10 : ex. 7 → 2).`, 'Appuie UNE fois quand ce chiffre apparaît N\'IMPORTE OÙ dans le chrono.'] },
   ];
   return { type: 'button', name: 'Gros bouton', pub: { color, word, count: 0, mode: 'timer' }, sol: { d, text: `appuyer quand un ${d} est sur le chrono` }, cards };
 }
