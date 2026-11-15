@@ -291,13 +291,166 @@ function switchesBinary(p, expert) {
   return { type: 'switches', hard: true, name: 'Interrupteurs binaires 💀', pub: { state: start }, sol: { target, text: `N = ${N} → ${target.map((v) => (v ? '⬆' : '⬇')).join(' ')}` }, cards };
 }
 
+
+// ─── Encore plus de variantes ───
+const ensure = (list, color) => { if (!list.some((w) => w.c === color && !w.s)) { const k = rint(0, list.length - 1); list[k] = { c: color, s: false, cut: false }; } };
+
+// 🔌 Câbles « couleur visée » : la lampe donne la couleur, une règle donne lequel
+function wiresColor(p, expert) {
+  const n = expert ? rint(5, 7) : rint(4, 6);
+  const lamps = ['rouge', 'verte', 'bleue', 'éteinte'];
+  const table = Object.fromEntries(lamps.map((l) => [l, pick(COLORS)]));
+  const col = table[p.lamp];
+  const list = Array.from({ length: n }, () => ({ c: pick(COLORS), s: Math.random() < 0.3, cut: false }));
+  ensure(list, col);
+  const cond = pick(CONDS);
+  const ids = list.map((w, i) => (w.c === col && !w.s ? i : -1)).filter((i) => i >= 0);
+  const target = cond.f(p) ? ids[ids.length - 1] : ids[0];
+  const cards = [
+    { title: '🔌 Câbles — couleur visée (1/2)', lines: [`Lampe rouge : ${table.rouge}`, `Lampe verte : ${table.verte}`] },
+    { title: '🔌 Câbles — couleur visée (2/2)', lines: [`Lampe bleue : ${table.bleue}`, `Lampe éteinte : ${table['éteinte']}`] },
+    { title: '🔌 Câbles — lequel ?', lines: ['Les câbles RAYÉS ne comptent pas.', 'Coupe le PREMIER câble de la couleur visée (en partant du haut).', `Si ${cond.t}, coupe plutôt le DERNIER.`] },
+  ];
+  return { type: 'wires', name: 'Câbles', pub: { list }, sol: { target, text: `couper le câble n°${target + 1} (${col})` }, cards };
+}
+
+// 🎛️ Cadran « tableau » : le chiffre se lit dans un tableau lampe × piles
+function dialTable(p) {
+  const lamps = ['rouge', 'verte', 'bleue', 'éteinte'];
+  const cols = [['0 pile', (x) => x === 0], ['1 ou 2 piles', (x) => x >= 1 && x <= 2], ['3 ou 4 piles', (x) => x >= 3]];
+  const tab = Object.fromEntries(lamps.map((l) => [l, cols.map(() => rint(0, 9))]));
+  const cond = pick(CONDS), add = rint(2, 7);
+  let v = tab[p.lamp][cols.findIndex((c) => c[1](p.piles))];
+  if (cond.f(p)) v = (v + add) % 10;
+  const row = (l) => `Lampe ${l} : ${cols.map((c, k) => `${c[0]} → ${tab[l][k]}`).join(' · ')}`;
+  const cards = [
+    { title: '🎛️ Cadran — tableau (1/2)', lines: [row('rouge'), row('verte')] },
+    { title: '🎛️ Cadran — tableau (2/2)', lines: [row('bleue'), row('éteinte')] },
+    { title: '🎛️ Cadran — ajustement', lines: [`Si ${cond.t}, ajoute ${add} (garde les unités).`, 'Puis tourne le cadran sur ce chiffre et « Valider ».'] },
+  ];
+  return { type: 'dial', name: 'Cadran', pub: { value: 0 }, sol: { code: v, text: `le chiffre ${v}` }, cards };
+}
+
+// 🔣 Symboles « familles » : appuyer sur tous ceux d'une même famille (dans n'importe quel ordre)
+function symbolsFamilies(p, expert) {
+  const fams = [0, 1, 2, 3].map(() => []);
+  shuffle(GLYPHS.map((_, i) => i)).forEach((g, k) => fams[k % 4].push(g));
+  const names = shuffle(['les ronds', 'les pointus', 'les doux', 'les bizarres']);
+  const [A, B, C] = shuffle([0, 1, 2, 3]);
+  const nA = rint(2, 3), nB = 2;
+  const first = fams[A][0], last = fams[B][0];
+  const mid = shuffle([...fams[A].slice(1, nA), ...fams[B].slice(1, nB), ...fams[C].slice(0, expert ? 2 : 1)]);
+  const shown = [first, ...mid, last];
+  const cond = pick(CONDS);
+  const fam = cond.f(p) ? B : A;
+  const set = shown.filter((g) => fams[fam].includes(g));
+  const line = (f) => `Famille « ${names[f]} » : ${fams[f].map((g) => `${GLYPHS[g][0]} ${GLYPHS[g][1]}`).join(', ')}`;
+  const cards = [
+    { title: '🔣 Symboles — familles (1/2)', lines: [line(0), line(1)] },
+    { title: '🔣 Symboles — familles (2/2)', lines: [line(2), line(3)] },
+    { title: '🔣 Symboles — lesquels ?', lines: ['Appuie sur TOUS les symboles de la famille du PREMIER symbole (à gauche), dans n\'importe quel ordre.', `Mais si ${cond.t} : la famille du DERNIER symbole (à droite).`, 'Une erreur remet le module à zéro.'] },
+  ];
+  return { type: 'symbols', name: 'Symboles (familles)', pub: { glyphs: shown.map((i) => GLYPHS[i][0]), done: [] }, sol: { set, order: set, text: `${set.map((i) => GLYPHS[i][0]).join(' ')} (${names[fam]})` }, cards };
+}
+
+// 🌡️ Thermostat « fourchette » : valider quand la température est dans la bonne fourchette
+function thermoRange(p, expert, start) {
+  const lamps = ['rouge', 'verte', 'bleue', 'éteinte'];
+  const rng = Object.fromEntries(lamps.map((l) => { const lo = rint(15, 70); return [l, [lo, lo + rint(10, 18)]]; }));
+  const cond = pick(CONDS);
+  let [lo, hi] = rng[p.lamp];
+  if (cond.f(p)) { lo += 10; hi += 10; }
+  const ok = (n) => n >= lo && n <= hi;
+  const seq = [];
+  for (let i = 0; i < 400; i++) { let n = rint(10, 99); if (i % 5 === 4 && !seq.slice(-4).some(ok)) n = rint(lo, Math.min(99, hi)); seq.push(n); }
+  const r = (l) => `Lampe ${l} : entre ${rng[l][0]} et ${rng[l][1]} (compris)`;
+  const cards = [
+    { title: '🌡️ Thermostat — fourchettes (1/2)', lines: [r('rouge'), r('verte')] },
+    { title: '🌡️ Thermostat — fourchettes (2/2)', lines: [r('bleue'), r('éteinte')] },
+    { title: '🌡️ Thermostat — décalage', lines: [`Si ${cond.t}, les deux bornes montent de 10.`, 'Valide quand la température est dans la fourchette (la couleur du thermostat ne compte pas).'] },
+  ];
+  return { type: 'thermo', name: 'Thermostat', pub: { color: pick(['rouge', 'bleu', 'vert', 'jaune']), seq, period: expert ? 1200 : 1500, t0: start }, sol: { ok, text: `entre ${lo} et ${hi}` }, cards };
+}
+
+// 🎚️ Interrupteurs « combien » : un nombre exact d'interrupteurs levés, avec une contrainte
+function switchesCount(p) {
+  const info = serialInfo(p);
+  const a = rint(1, 3);
+  const K = ((p.piles + info.vowels * a) % 4) + 1;
+  const down = (info.last % 5);
+  const left = Math.random() < 0.5;
+  const order = [0, 1, 2, 3, 4].filter((i) => i !== down);
+  const ups = (left ? order : order.slice().reverse()).slice(0, K);
+  const target = [0, 1, 2, 3, 4].map((i) => ups.includes(i));
+  let start;
+  do { start = Array.from({ length: 5 }, () => Math.random() < 0.5); } while (start.every((v, i) => v === target[i]));
+  const cards = [
+    { title: '🎚️ Interrupteurs — combien ?', lines: [`K = nombre de piles + ${a} × le nombre de voyelles (A, E, U, Y) du numéro de série.`, 'Garde le reste de la division par 4, puis ajoute 1 : il faut exactement K interrupteurs EN HAUT.'] },
+    { title: '🎚️ Interrupteurs — lesquels ?', lines: ['L\'interrupteur dont le numéro = (dernier chiffre du numéro de série ÷ 5, le reste) + 1 doit rester EN BAS.', `Lève les K autres en partant de la ${left ? 'GAUCHE' : 'DROITE'}, puis « Valider ».`] },
+  ];
+  return { type: 'switches', name: 'Interrupteurs', pub: { state: start }, sol: { target, text: target.map((v) => (v ? '⬆' : '⬇')).join(' ') }, cards };
+}
+
+// 🔴 Le gros bouton : appuyer exactement N fois
+const BTN_COLORS = ['rouge', 'bleu', 'jaune', 'vert', 'blanc'];
+const BTN_WORDS = ['APPUIE', 'STOP', 'ATTENDS', 'BOUM', 'NON', 'VITE'];
+function buttonTaps(p) {
+  const color = pick(BTN_COLORS), word = pick(BTN_WORDS);
+  const base = Object.fromEntries(BTN_COLORS.map((c) => [c, rint(1, 5)]));
+  const mod = Object.fromEntries(BTN_WORDS.map((w) => [w, rint(-1, 3)]));
+  const cond = pick(CONDS);
+  let N = Math.max(1, base[color] + mod[word]);
+  if (cond.f(p)) N += p.piles;
+  N = Math.min(12, Math.max(1, N));
+  const cards = [
+    { title: '🔴 Bouton — couleur', lines: BTN_COLORS.map((c) => `Bouton ${c} : ${base[c]} appui${base[c] > 1 ? 's' : ''}`) },
+    { title: '🔴 Bouton — mot écrit dessus', lines: [...BTN_WORDS.map((w) => `« ${w} » : ${mod[w] >= 0 ? '+' : ''}${mod[w]}`), 'Jamais moins de 1 appui.'] },
+    { title: '🔴 Bouton — bonus', lines: [`Si ${cond.t}, ajoute un appui par pile (12 au maximum).`, 'Appuie exactement ce nombre de fois, puis « Valider ». « Recommencer » remet à zéro.'] },
+  ];
+  return { type: 'button', name: 'Gros bouton', pub: { color, word, count: 0, mode: 'taps' }, sol: { n: N, text: `${N} appui${N > 1 ? 's' : ''}` }, cards };
+}
+
+// 🔴 Le gros bouton « au bon moment » : appuyer quand le chrono affiche un certain chiffre
+function buttonTimer(p) {
+  const color = pick(BTN_COLORS), word = pick(BTN_WORDS);
+  const dig = Object.fromEntries(BTN_COLORS.map((c) => [c, rint(0, 9)]));
+  const cond = pick(CONDS);
+  let d = dig[color];
+  if (cond.f(p)) d = (d + 5) % 10;
+  const cards = [
+    { title: '🔴 Bouton — chiffre selon la couleur', lines: BTN_COLORS.map((c) => `Bouton ${c} : ${dig[c]}`) },
+    { title: '🔴 Bouton — quand appuyer ?', lines: ['Le mot écrit sur le bouton ne veut rien dire : ignore-le !', `Si ${cond.t}, ajoute 5 au chiffre (garde les unités).`, 'Appuie UNE fois quand ce chiffre apparaît N\'IMPORTE OÙ dans le chrono.'] },
+  ];
+  return { type: 'button', name: 'Gros bouton', pub: { color, word, count: 0, mode: 'timer' }, sol: { d, text: `appuyer quand un ${d} est sur le chrono` }, cards };
+}
+
+// ⬆️💀 Les flèches : chaque caractère du numéro de série donne une direction
+const ARROWS = ['⬆', '➡', '⬇', '⬅'];
+function arrows(p, expert) {
+  const chars = shuffle((LETTERS + DIGITS).split(''));
+  const groups = [0, 1, 2, 3].map((k) => chars.filter((_, i) => i % 4 === k).sort());
+  const dirOf = (ch) => ARROWS[groups.findIndex((g) => g.includes(ch))];
+  const len = expert ? 5 : 4;
+  const cond = pick(CONDS);
+  let seq = p.serial.slice(0, len).split('').map(dirOf);
+  if (cond.f(p)) seq = seq.reverse();
+  const cards = [
+    { title: '⬆️💀 Flèches — directions (1/2)', lines: [`${ARROWS[0]} pour : ${groups[0].join(' ')}`, `${ARROWS[1]} pour : ${groups[1].join(' ')}`] },
+    { title: '⬆️💀 Flèches — directions (2/2)', lines: [`${ARROWS[2]} pour : ${groups[2].join(' ')}`, `${ARROWS[3]} pour : ${groups[3].join(' ')}`] },
+    { title: '⬆️💀 Flèches — séquence', lines: [`Prends les ${len} PREMIERS caractères du numéro de série, chacun donne une flèche.`, `Si ${cond.t}, tape-les dans l'ordre INVERSE.`, 'Puis « Valider ». « Effacer » recommence.'] },
+  ];
+  return { type: 'arrows', hard: true, name: 'Flèches 💀', pub: { entry: [], len }, sol: { seq, text: seq.join(' ') }, cards };
+}
+
 // Variantes possibles pour chaque type de module ; « hard » = module très dur 💀
 const VARIANTS = {
-  wires: [{ f: wires }, { f: wiresPos }, { f: wiresMulti, hard: true }],
-  dial: [{ f: dial }, { f: code, hard: true }],
-  symbols: [{ f: symbols }, { f: symbolsIntrus }],
-  thermo: [{ f: thermo }, { f: thermoChrono, noMask: true }],
-  switches: [{ f: switches }, { f: switchesBinary, hard: true }],
+  wires: [{ f: wires }, { f: wiresPos }, { f: wiresColor }, { f: wiresMulti, hard: true }],
+  dial: [{ f: dial }, { f: dialTable }, { f: code, hard: true }],
+  symbols: [{ f: symbols }, { f: symbolsIntrus }, { f: symbolsFamilies }],
+  thermo: [{ f: thermo }, { f: thermoRange }, { f: thermoChrono, noMask: true }],
+  switches: [{ f: switches }, { f: switchesCount }, { f: switchesBinary, hard: true }],
+  button: [{ f: buttonTaps }, { f: buttonTimer, noMask: true }],
+  arrows: [{ f: arrows, hard: true }],
 };
 
 const MAKERS = { wires, dial, symbols, thermo, switches };
@@ -324,15 +477,16 @@ function startRound(ctx, g) {
   g.twist = Math.random() < L.twistP[i] ? pick(Object.keys(TWISTS)) : null;
   if (g.twist === 'tournant' && g.players.length < 2) g.twist = null;
   // types de modules : tous différents tant que possible, puis on recommence
+  const pool = Object.keys(VARIANTS).filter((t) => t !== 'arrows' || Math.random() < L.hardP[i]);
   let types = [];
-  while (types.length < nMods) types.push(...shuffle(Object.keys(VARIANTS)));
+  while (types.length < nMods) types.push(...shuffle(pool));
   types = types.slice(0, nMods);
   g.props = props;
   g.modules = types.map((t, k) => {
     const label = 'ABCDEFGH'[k];
     let vs = VARIANTS[t].filter((v) => !(g.twist === 'masque' && v.noMask));
     const hard = vs.filter((v) => v.hard), easy = vs.filter((v) => !v.hard);
-    const v = hard.length && Math.random() < L.hardP[i] ? pick(hard) : pick(easy);
+    const v = hard.length && (!easy.length || Math.random() < L.hardP[i]) ? pick(hard) : pick(easy);
     const m = v.f(props, expert, now, { nMods });
     // chaque fiche indique son module (il peut y avoir deux modules du même type)
     m.cards = m.cards.map((c) => ({ ...c, title: `${label} · ${c.title}` }));
@@ -387,12 +541,14 @@ function strike(ctx, g, pid, what) {
   for (const id of g.players) ctx.buzz(id, [300]);
   if (g.twist === 'court') {
     // ⚡ court-circuit : un autre module encore actif est mélangé
-    const m = pick(g.modules.filter((x) => !x.solved && ['dial', 'switches', 'symbols', 'code'].includes(x.type)));
+    const m = pick(g.modules.filter((x) => !x.solved && ['dial', 'switches', 'symbols', 'code', 'button', 'arrows'].includes(x.type)));
     if (m) {
       if (m.type === 'dial') m.pub.value = rint(0, 9);
       if (m.type === 'switches') m.pub.state = m.pub.state.map(() => Math.random() < 0.5);
       if (m.type === 'symbols') m.pub.done = [];
       if (m.type === 'code') m.pub.entry = '';
+      if (m.type === 'button') m.pub.count = 0;
+      if (m.type === 'arrows') m.pub.entry = [];
       g.log.unshift({ t: Date.now(), pid: null, ok: false, what: `⚡ Court-circuit : le module ${m.label} est mélangé !` });
     }
   }
@@ -464,10 +620,30 @@ function onAction(ctx, g, pid, type, p, { isHost }) {
     if (m.pub.value === m.sol.code) solved(ctx, g, m, pid); else strike(ctx, g, pid, `${m.label} · mauvais chiffre (${m.pub.value})`);
   } else if (m.type === 'symbols' && type === 'sym') {
     if (i < 0 || i >= m.pub.glyphs.length || m.pub.done.includes(i)) return;
-    if (m.sol.order[m.pub.done.length] === GLYPHS.findIndex((x) => x[0] === m.pub.glyphs[i])) {
+    const gi = GLYPHS.findIndex((x) => x[0] === m.pub.glyphs[i]);
+    if (m.sol.set ? m.sol.set.includes(gi) : m.sol.order[m.pub.done.length] === gi) {
       m.pub.done.push(i);
       if (m.pub.done.length === m.sol.order.length) solved(ctx, g, m, pid);
     } else { m.pub.done = []; strike(ctx, g, pid, `${m.label} · mauvais symbole`); }
+  } else if (m.type === 'button' && type === 'press') {
+    if (m.pub.mode === 'timer') {
+      const digits = (ms) => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}${String(t % 60).padStart(2, '0')}`; };
+      const r = remaining(g);
+      if (digits(r).includes(String(m.sol.d)) || digits(r + 350 * g.rate).includes(String(m.sol.d))) solved(ctx, g, m, pid);
+      else strike(ctx, g, pid, `${m.label} · bouton au mauvais moment`);
+    } else if (m.pub.count < 20) m.pub.count++;
+  } else if (m.type === 'button' && type === 'clear') {
+    m.pub.count = 0;
+  } else if (m.type === 'button' && type === 'ok') {
+    if (m.pub.count === m.sol.n) solved(ctx, g, m, pid);
+    else { const c = m.pub.count; m.pub.count = 0; strike(ctx, g, pid, `${m.label} · ${c} appui${c > 1 ? 's' : ''}, mauvais compte`); }
+  } else if (m.type === 'arrows' && type === 'arrow') {
+    if (ARROWS.includes(p.d) && m.pub.entry.length < m.pub.len) m.pub.entry.push(p.d);
+  } else if (m.type === 'arrows' && type === 'clear') {
+    m.pub.entry = [];
+  } else if (m.type === 'arrows' && type === 'ok') {
+    if (m.pub.entry.join('') === m.sol.seq.join('')) solved(ctx, g, m, pid);
+    else { m.pub.entry = []; strike(ctx, g, pid, `${m.label} · mauvaise séquence`); }
   } else if (m.type === 'thermo' && type === 'ok' && m.pub.mode === 'chrono') {
     // secondes affichées (arrondies au-dessus), avec une petite tolérance pour la latence
     const r = remaining(g);
@@ -548,5 +724,5 @@ module.exports = {
   create,
   onAction,
   stateFor,
-  _test: { MAKERS, VARIANTS, makeProps, serialInfo, GLYPHS, LEVELS },
+  _test: { MAKERS, VARIANTS, makeProps, serialInfo, GLYPHS, LEVELS, ARROWS },
 };

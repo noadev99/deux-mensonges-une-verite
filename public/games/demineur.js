@@ -8,6 +8,7 @@
 
   const LAMP = { rouge: '#ff4d4d', verte: '#3fdf8f', bleue: '#4fa3ff', éteinte: '#3b3450' };
   const WIRE = { rouge: '#e8383d', bleu: '#3d7bff', jaune: '#ffd23d', vert: '#2fbf5f', noir: '#1a0f2e', blanc: '#f4f1ea' };
+  const BTN = { rouge: '#ff4d4d', bleu: '#4fa3ff', jaune: '#ffd23d', vert: '#3fdf8f', blanc: '#f4f1ea' };
   const THERMO = { rouge: '#ff6b6b', bleu: '#5aa9ff', vert: '#4fd18b', jaune: '#ffd23d' };
 
   const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -57,6 +58,16 @@
       body = `<div class="dm-code">${[0, 1, 2, 3].map((k) => `<span>${e[k] ?? '·'}</span>`).join('')}</div>
         <div class="dm-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => `<button data-key="${m.label}|${d}" ${dis || (e.length >= 4 ? 'disabled' : '')}>${d}</button>`).join('')}<button class="alt" data-clear="${m.label}" ${dis}>Effacer</button></div>
         <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider</button>`;
+    } else if (m.type === 'button') {
+      const taps = m.pub.mode === 'taps';
+      body = `<div class="dm-bigbtn-wrap"><button class="dm-bigbtn" style="--b:${BTN[m.pub.color]}" data-press="${m.label}" ${dis}>${esc(m.pub.word)}</button>
+        ${taps ? `<div class="dm-count">Appuis : <b>${m.pub.count}</b></div>` : ''}</div>
+        ${taps ? `<div class="dm-row2"><button class="alt" data-clear="${m.label}" ${dis}>Recommencer</button><button class="dm-validate" data-ok="${m.label}" ${dis}>Valider</button></div>` : ''}`;
+    } else if (m.type === 'arrows') {
+      const e = m.pub.entry;
+      body = `<div class="dm-code">${Array.from({ length: m.pub.len }, (_, k) => `<span>${e[k] ?? '·'}</span>`).join('')}</div>
+        <div class="dm-arrows">${['⬆', '➡', '⬇', '⬅'].map((d) => `<button data-arrow="${m.label}|${d}" ${dis || (e.length >= m.pub.len ? 'disabled' : '')}>${d}&#xFE0E;</button>`).join('')}</div>
+        <div class="dm-row2"><button class="alt" data-clear="${m.label}" ${dis}>Effacer</button><button class="dm-validate" data-ok="${m.label}" ${dis}>Valider</button></div>`;
     } else if (m.type === 'thermo') {
       body = `<div class="dm-thermo" style="--t:${THERMO[m.pub.color]}"><span class="dm-tlabel">Thermostat ${esc(m.pub.color.toUpperCase())}</span><span class="dm-temp" data-thermo="${m.label}">${thermoValue(m)}</span><span class="dm-unit">°</span></div>
         <button class="dm-validate" data-ok="${m.label}" ${dis}>Valider maintenant</button>`;
@@ -144,8 +155,8 @@
       <ol class="rules">
         <li>Jeu <b>en équipe</b> : une bombe s'affiche (sur la télé et sur chaque téléphone) avec plusieurs <b>modules</b>. Tout le monde peut y toucher.</li>
         <li>Le <b>manuel</b> est découpé en fiches réparties entre les joueurs : personne n'a tout. Lisez vos fiches à voix haute et recoupez-les. Les règles <b>changent à chaque bombe</b>.</li>
-        <li>Modules : 🔌 câbles (un seul à couper), 🎛️ cadran (un chiffre à calculer), 🔣 symboles (le bon ordre), 🌡️ thermostat (valider au bon moment), 🎚️ interrupteurs (la bonne position).</li>
-        <li>Chaque module a plusieurs <b>variantes</b> tirées au hasard, dont des versions <b>très dures 💀</b> (câbles multiples, code à 4 chiffres, interrupteurs binaires).</li>
+        <li>Modules : 🔌 câbles, 🎛️ cadran, 🔣 symboles, 🌡️ thermostat, 🎚️ interrupteurs, 🔴 gros bouton, ⬆️ flèches. Chacun a plusieurs façons de se désamorcer : c'est la fiche qui le dit !</li>
+        <li>Chaque module a plusieurs <b>variantes</b> tirées au hasard, dont des versions <b>très dures 💀</b> (câbles multiples, code à 4 chiffres, interrupteurs binaires, flèches).</li>
         <li>La bombe <b>grossit avec le nombre de joueurs</b> (jusqu'à 8 modules) et peut cacher un <b>piège</b> : 🔀 fiches tournantes, 🙈 chrono masqué, ⚡ court-circuit.</li>
         <li>Chaque <b>erreur</b> fait perdre du temps et <b>accélère le chrono</b>. Trop d'erreurs ou plus de temps : BOUM.</li>
       </ol>
@@ -173,6 +184,8 @@
       root.querySelectorAll('[data-ok]').forEach((b) => b.addEventListener('click', () => UI.send('ok', { m: b.dataset.ok })));
       root.querySelectorAll('[data-sym]').forEach((b) => b.addEventListener('click', () => { const [m, i] = b.dataset.sym.split('|'); UI.send('sym', { m, i: Number(i) }); }));
       root.querySelectorAll('[data-key]').forEach((b) => b.addEventListener('click', () => { const [m, d] = b.dataset.key.split('|'); UI.send('key', { m, d: Number(d) }); }));
+      root.querySelectorAll('[data-press]').forEach((b) => b.addEventListener('click', () => { navigator.vibrate?.(15); UI.send('press', { m: b.dataset.press }); }));
+      root.querySelectorAll('[data-arrow]').forEach((b) => b.addEventListener('click', () => { const [m, d] = b.dataset.arrow.split('|'); UI.send('arrow', { m, d }); }));
       root.querySelectorAll('[data-clear]').forEach((b) => b.addEventListener('click', () => UI.send('clear', { m: b.dataset.clear })));
       root.querySelectorAll('[data-sw]').forEach((b) => b.addEventListener('click', () => { const [m, i] = b.dataset.sw.split('|'); UI.send('sw', { m, i: Number(i) }); }));
     },

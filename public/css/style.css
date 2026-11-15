@@ -1077,3 +1077,12 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dm-keys { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .dm-keys button { padding: 8px 0; font-size: 1.15rem; box-shadow: 0 3px 0 var(--ink); }
 .dm-keys button.alt { grid-column: span 5; font-size: .95rem; }
+.dm-bigbtn-wrap { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px 0; }
+.dm-bigbtn { width: 110px; height: 110px; border-radius: 50%; background: var(--b); border: 4px solid var(--ink); box-shadow: 0 7px 0 var(--ink); font-family: var(--display); font-weight: 400; font-size: 1.15rem; color: var(--ink); text-shadow: 1px 1px 0 #fff; }
+.dm-bigbtn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 2px 0 var(--ink); }
+.dm-count { font-weight: 600; }
+.dm-count b { font-family: 'Courier New', monospace; font-size: 1.8rem; display: block; text-align: center; }
+.dm-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.dm-row2 .dm-validate { margin-top: 0; }
+.dm-arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
+.dm-arrows button { font-size: 1.6rem; padding: 6px 0; }
