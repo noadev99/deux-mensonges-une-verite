@@ -30,6 +30,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🗡️ Le Complot — des traîtres cachés sabotent vos missions, démasquez-les | 5–10 |
 | 🤝 Les Alliances — alliances secrètes, coffres communs… puis fidèle ou poignard | 3–10 |
 | 🧼 Le ring savonneux — action en temps réel sur la télé : les téléphones sont des manettes (joystick + A/B) | 2–6 |
+| 🏎️ Les Bolides — course de petites voitures sur la télé : drifts qui chargent un turbo, départ canon, aspiration, objets (piment, savon, bouchon, klaxon, mouette), 4 circuits | 2–6 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
 

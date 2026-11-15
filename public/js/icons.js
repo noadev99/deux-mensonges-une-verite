@@ -144,6 +144,16 @@ const ICONS = (() => {
       <path d="M6 14h34" stroke-width="5"/><path d="M6 14h34" stroke="#f0506e" stroke-width="2.5"/>
       <path d="M9 21h28" stroke="#f0506e" stroke-width="4"/>
       <path d="M13 14v42M33 14v42" stroke-width="6"/><path d="M13 14v42M33 14v42" stroke="#f0506e" stroke-width="3"/>`),
+
+    // 🏎️ un petit bolide vu de profil qui file, avec un drapeau à damier
+    bolides: art(`
+      <path d="M44 6v20" stroke-width="2.5"/><rect x="44" y="6" width="14" height="10" fill="#fff"/>
+      <path d="M44 6h4v5h-4zM51 6h4v5h-4zM48 11h3v5h-3zM55 11h3v5h-3z" fill="${INK}" stroke="none"/>
+      <path d="M8 44c0-6 4-10 10-10h6l6-8h12l8 8h4c4 0 6 3 6 7v3H8z" fill="#ff5d5d"/>
+      <path d="M31 28h10l5 6H27z" fill="#bfe9ff"/>
+      <circle cx="20" cy="46" r="7" fill="#3b3450"/><circle cx="20" cy="46" r="2.5" fill="#fff"/>
+      <circle cx="48" cy="46" r="7" fill="#3b3450"/><circle cx="48" cy="46" r="2.5" fill="#fff"/>
+      <path d="M2 34h4M1 40h4M4 52h8" stroke-width="2.5"/>`),
   };
 
   // ─── Pièces de plateau (cartes, jetons…) pour les jeux de trahison ───
