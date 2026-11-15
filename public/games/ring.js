@@ -50,24 +50,24 @@
   UI.on('buzz', (pattern) => navigator.vibrate?.(pattern));
 
   // ═══ Arènes (monde : 1000 × 640, centre 500 × 320) ═══
-  const W = 1000, H = 640, CX = 500, CY = 320;
+  const W = 1200, H = 768, CX = 600, CY = 384; // terrain agrandi : plateformes plus grandes par rapport aux persos
   const dist = (x, y, a, b) => Math.hypot(x - a, y - b);
   const ARENAS = {
     rond: {
-      R: (t) => Math.max(100, 308 - 3.6 * t),
+      R: (t) => Math.max(122, 376 - 4.4 * t),
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t)); },
-      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 130, CY + Math.sin(a) * 130]; },
+      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 160, CY + Math.sin(a) * 160]; },
     },
     trou: {
-      S: (t) => Math.max(160, 295 - 2.6 * t),
-      h: (t) => Math.min(115, 45 + 1.4 * t),
+      S: (t) => Math.max(195, 360 - 3.2 * t),
+      h: (t) => Math.min(140, 55 + 1.7 * t),
       inside(x, y, t) { const s = this.S(t); return Math.abs(x - CX) < s && Math.abs(y - CY) < s && dist(x, y, CX, CY) > this.h(t); },
       draw(c, t) { iceRect(c, CX, CY, this.S(t)); hole(c, CX, CY, this.h(t)); },
-      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 165, CY + Math.sin(a) * 165]; },
+      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 200, CY + Math.sin(a) * 200]; },
     },
     tourne: {
-      R: (t) => Math.max(115, 305 - 3 * t), w: 0.75,
+      R: (t) => Math.max(140, 372 - 3.7 * t), w: 0.75,
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t)); spokes(c, CX, CY, this.R(t), t * this.w); },
       // le manège fait tourner et éjecte doucement vers l'extérieur
@@ -75,27 +75,27 @@
         const dx = p.x - CX, dy = p.y - CY;
         p.vx += (-dy * this.w * 0.6 + dx * 0.22) * dt; p.vy += (dx * this.w * 0.6 + dy * 0.22) * dt;
       },
-      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 120, CY + Math.sin(a) * 120]; },
+      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 150, CY + Math.sin(a) * 150]; },
     },
     iles: {
-      r: (t) => Math.max(90, 200 - 1.9 * t), bw: (t) => Math.max(0, 80 - 1.6 * t),
+      r: (t) => Math.max(110, 244 - 2.3 * t), bw: (t) => Math.max(0, 96 - 1.9 * t),
       inside(x, y, t) {
         const r = this.r(t), bw = this.bw(t);
-        return dist(x, y, CX - 235, CY) < r || dist(x, y, CX + 235, CY) < r || (Math.abs(y - CY) < bw / 2 && Math.abs(x - CX) < 235);
+        return dist(x, y, CX - 287, CY) < r || dist(x, y, CX + 287, CY) < r || (Math.abs(y - CY) < bw / 2 && Math.abs(x - CX) < 287);
       },
       draw(c, t) {
         const bw = this.bw(t);
-        if (bw > 1) { c.save(); c.fillStyle = '#c98d4a'; c.strokeStyle = INK; c.lineWidth = 5; c.fillRect(CX - 235, CY - bw / 2, 470, bw); c.strokeRect(CX - 235, CY - bw / 2, 470, bw);
-          c.strokeStyle = 'rgba(26,15,46,.35)'; c.lineWidth = 2; for (let x = CX - 220; x < CX + 235; x += 22) { c.beginPath(); c.moveTo(x, CY - bw / 2); c.lineTo(x, CY + bw / 2); c.stroke(); } c.restore(); }
-        iceCircle(c, CX - 235, CY, this.r(t)); iceCircle(c, CX + 235, CY, this.r(t));
+        if (bw > 1) { c.save(); c.fillStyle = '#c98d4a'; c.strokeStyle = INK; c.lineWidth = 5; c.fillRect(CX - 287, CY - bw / 2, 574, bw); c.strokeRect(CX - 287, CY - bw / 2, 574, bw);
+          c.strokeStyle = 'rgba(26,15,46,.35)'; c.lineWidth = 2; for (let x = CX - 220; x < CX + 287; x += 22) { c.beginPath(); c.moveTo(x, CY - bw / 2); c.lineTo(x, CY + bw / 2); c.stroke(); } c.restore(); }
+        iceCircle(c, CX - 287, CY, this.r(t)); iceCircle(c, CX + 287, CY, this.r(t));
       },
-      spawn(i, n, rot, t) { const side = i % 2 ? 1 : -1; const k = Math.floor(i / 2); const a = rot + k * 2.1; return [CX + side * 235 + Math.cos(a) * 55, CY + Math.sin(a) * 55]; },
+      spawn(i, n, rot, t) { const side = i % 2 ? 1 : -1; const k = Math.floor(i / 2); const a = rot + k * 2.1; return [CX + side * 287 + Math.cos(a) * 70, CY + Math.sin(a) * 70]; },
     },
     finale: {
-      R: (t) => Math.max(75, 272 - 4.5 * t), icy: true,
+      R: (t) => Math.max(92, 332 - 5.5 * t), icy: true,
       inside(x, y, t) { return dist(x, y, CX, CY) < this.R(t); },
       draw(c, t) { iceCircle(c, CX, CY, this.R(t), true); },
-      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 110, CY + Math.sin(a) * 110]; },
+      spawn(i, n, rot, t) { const a = rot + (i / n) * Math.PI * 2; return [CX + Math.cos(a) * 135, CY + Math.sin(a) * 135]; },
     },
   };
 
@@ -136,10 +136,10 @@
     const gr = c.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#3ec1f3'); gr.addColorStop(1, '#1a6fb8');
     c.fillStyle = gr; c.fillRect(0, 0, W, H);
     c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 3; c.lineCap = 'round';
-    for (let row = 0; row < 9; row++) {
+    for (let row = 0; row < 11; row++) {
       const y = 30 + row * 72;
-      for (let k = 0; k < 7; k++) {
-        const x = ((k * 170 + row * 60 + t * (row % 2 ? 22 : -18)) % 1170 + 1170) % 1170 - 85;
+      for (let k = 0; k < 9; k++) {
+        const x = ((k * 170 + row * 60 + t * (row % 2 ? 22 : -18)) % 1370 + 1370) % 1370 - 85;
         c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 15, y - 9, x + 30, y); c.quadraticCurveTo(x + 45, y + 9, x + 60, y); c.stroke();
       }
     }
@@ -260,6 +260,9 @@
       const inp = inputs[p.id] || {};
       const jx = t > 0 ? inp.x || 0 : 0, jy = t > 0 ? inp.y || 0 : 0;
       const a = t > 0 && !!inp.a, b = t > 0 && !!inp.b;
+      // direction visée : la dernière direction franche du joystick (il revient souvent au centre quand on relâche A)
+      const jl = Math.hypot(jx, jy);
+      if (jl > 0.3) { p.aimX = jx / jl; p.aimY = jy / jl; p.aimT = now; }
       p.dashT = Math.max(0, p.dashT - dt); p.dashCd = Math.max(0, p.dashCd - dt); p.anchorCd = Math.max(0, p.anchorCd - dt);
       // B : l'ancre (lourd et immobile, 1,5 s max)
       if (b && p.anchorCd <= 0 && !p.charge) {
@@ -271,10 +274,11 @@
       if (a && p.dashCd <= 0 && !p.anchoring) p.charge = Math.min(1, p.charge + dt / 0.8);
       if (!a && p.prevA && p.charge > 0.05) {
         let dx = jx, dy = jy, l = Math.hypot(dx, dy);
-        if (l < 0.2) { dx = p.vx; dy = p.vy; l = Math.hypot(dx, dy); }
+        if (l < 0.3 && p.aimT && now - p.aimT < 1.5) { dx = p.aimX; dy = p.aimY; l = 1; }   // dernière direction visée
+        if (l < 0.3) { dx = p.vx; dy = p.vy; l = Math.hypot(dx, dy); }
         if (l < 1) { dx = CX - p.x; dy = CY - p.y; l = Math.hypot(dx, dy) || 1; }
         const sp = 330 + 470 * p.charge;
-        p.vx = (dx / l) * sp; p.vy = (dy / l) * sp; p.dashT = 0.35; p.dashCd = 0.55; p.charge = 0;
+        p.vx = (dx / l) * sp; p.vy = (dy / l) * sp; p.dashT = 0.35; p.dashCd = 0.55; p.power = p.charge; p.charge = 0;
         SFX.dash();
       }
       if (!a) p.charge = 0;
@@ -304,11 +308,18 @@
       b.x += nx * over * (ma / (ma + mb)); b.y += ny * over * (ma / (ma + mb));
       const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
       if (vn >= 0) continue;
-      let jimp = (-(1 + 0.95) * vn) / (1 / ma + 1 / mb);
-      const boost = (a.dashT > 0 ? 1.35 : 1) * (b.dashT > 0 ? 1.35 : 1);
-      jimp *= boost;
-      a.vx -= (jimp / ma) * nx; a.vy -= (jimp / ma) * ny;
-      b.vx += (jimp / mb) * nx; b.vy += (jimp / mb) * ny;
+      const jimp = (-(1 + 0.95) * vn) / (1 / ma + 1 / mb);
+      // recul : plus le dash est chargé, plus la cible est projetée (jusqu'à ~3,6× à pleine charge)
+      const pa = a.dashT > 0 ? a.power || 0 : 0, pb = b.dashT > 0 ? b.power || 0 : 0;
+      const ka = 1 + 2.6 * Math.pow(pb, 1.6), kb = 1 + 2.6 * Math.pow(pa, 1.6);
+      a.vx -= (jimp * ka / ma) * nx; a.vy -= (jimp * ka / ma) * ny;
+      b.vx += (jimp * kb / mb) * nx; b.vy += (jimp * kb / mb) * ny;
+      // vitesse d'éjection minimale garantie pour un gros dash
+      const kick = (v, dirx, diry, pw, m) => { if (pw < 0.15) return; const want = (220 + 700 * pw * pw) / (m > 1 ? 4 : 1); const along = v.vx * dirx + v.vy * diry; if (along < want) { v.vx += (want - along) * dirx; v.vy += (want - along) * diry; } };
+      kick(b, nx, ny, pa, mb); kick(a, -nx, -ny, pb, ma);
+      if (pa > 0.15) { a.vx *= 0.35; a.vy *= 0.35; a.dashT = 0; }   // le dasheur s'arrête net : tout part dans la cible
+      if (pb > 0.15) { b.vx *= 0.35; b.vy *= 0.35; b.dashT = 0; }
+      if (Math.max(pa, pb) > 0.6) sim.shake = Math.max(sim.shake || 0, Math.max(pa, pb) * 0.35);
       // qui a poussé qui (pour les points d'éjection)
       const sa = Math.hypot(a.vx, a.vy), sb = Math.hypot(b.vx, b.vy);
       b.lastHit = { by: a.id, t: now }; a.lastHit = { by: b.id, t: now };
@@ -362,11 +373,13 @@
     sim.splats = sim.splats.filter((s) => s.life > 0);
     for (const q of sim.parts) { q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.g) q.vy += q.g * dt; }
     sim.parts = sim.parts.filter((q) => q.life > 0);
+    if (sim.shake > 0) sim.shake = Math.max(0, sim.shake - dt);
   }
 
   function render(t, now) {
     const c = sim.ctx;
-    c.setTransform(sim.scale, 0, 0, sim.scale, 0, 0);
+    const sh = sim.shake > 0 ? sim.shake * 22 : 0;
+    c.setTransform(sim.scale, 0, 0, sim.scale, (Math.random() - 0.5) * sh * sim.scale, (Math.random() - 0.5) * sh * sim.scale);
     water(c, now);
     sim.arena.draw(c, Math.max(0, t));
     for (const s of sim.splats) drawSplat(c, s);
