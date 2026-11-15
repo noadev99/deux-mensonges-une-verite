@@ -60,7 +60,7 @@
   const lightHtml = (g) => (g.light ? `<div class="dr-light ${g.light}"><i></i><i></i><i></i></div>` : '');
   const RULES = `<div class="rg-rules">
       <div><span class="rg-ico">📳</span><b>Secoue !</b><small>plus tu secoues fort et vite, plus tu cours</small></div>
-      <div><span class="rg-ico">🚦</span><b>Feu rouge</b><small>au rouge, on s'arrête net… sinon on recule</small></div>
+      <div><span class="rg-ico">🚦</span><b>Feu rouge</b><small>au rouge, on s'arrête net… sinon retour au départ !</small></div>
       <div><span class="rg-ico">🧗</span><b>Le mât</b><small>si tu t'arrêtes, tu glisses vers le bas</small></div>
       <div><span class="rg-ico">✋</span><b>Tiens bien</b><small>ton téléphone (dragonne conseillée 😅)</small></div>
     </div>`;
@@ -149,7 +149,7 @@
     rules: () => `
       <ol class="rules">
         <li><b>Secoue ton téléphone</b> le plus fort et le plus vite possible : ton perso court vers le drapeau 🚩.</li>
-        <li>3 manches : 🏃 <b>le sprint</b>, 🚦 <b>feu rouge, feu vert</b> (au rouge, si tu bouges, tu recules !) et 🧗 <b>le mât savonné</b> (si tu t'arrêtes, tu glisses).</li>
+        <li>3 manches : 🏃 <b>le sprint</b>, 🚦 <b>feu rouge, feu vert</b> (au rouge, si tu bouges, retour au départ !) et 🧗 <b>le mât savonné</b> (si tu t'arrêtes, tu glisses).</li>
         <li>Pas de capteur ? Tape très vite sur le gros bouton. Tiens bien ton téléphone !</li>
       </ol>
       <div class="muted" style="font-size:.92rem">Points par manche : 8, 5, 3, 2, 1 aux premiers arrivés au drapeau</div>`,
@@ -181,7 +181,7 @@
     live: {
       sensor: () => (hasSensor() ? '✅' : '(secoue pour tester)'),
       cta: (S, g) => (g.me === 'done' ? `🚩 Arrivé ${g.finished.indexOf(S.you) + 1 === 1 ? '1er' : `${g.finished.indexOf(S.you) + 1}ᵉ`} !`
-        : g.caught.includes(S.you) ? '🚨 Pris au rouge !' : g.light === 'red' ? '✋ STOP !' : 'SECOUE !'),
+        : g.caught.includes(S.you) ? '🚨 Pris au rouge : retour au départ !' : g.light === 'red' ? '✋ STOP !' : 'SECOUE !'),
     },
 
     bind: (S, g, root) => {

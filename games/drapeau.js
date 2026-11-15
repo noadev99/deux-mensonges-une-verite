@@ -5,14 +5,14 @@
 // une vitesse maximale, pour éviter la triche) et renvoie l'état 4 fois par seconde.
 // 3 manches, 3 façons de courir :
 //   🏃 Le sprint     — le premier au drapeau gagne
-//   🚦 Feu rouge     — on ne secoue qu'au vert ; secouer au rouge fait reculer
+//   🚦 Feu rouge     — on ne secoue qu'au vert ; secouer au rouge renvoie au départ
 //   🧗 Le mât        — on grimpe au mât… et on glisse dès qu'on s'arrête
 // ─────────────────────────────────────────────────────────────────────────────
 const { gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MODES = [
   { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 160, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
-  { id: 'feu', name: 'Feu rouge, feu vert', emoji: '🚦', len: 140, hint: 'Secoue au vert, STOP au rouge… sinon tu recules !' },
+  { id: 'feu', name: 'Feu rouge, feu vert', emoji: '🚦', len: 140, hint: 'Secoue au vert, STOP au rouge… sinon retour au départ !' },
   { id: 'mat', name: 'Le mât savonné', emoji: '🧗', len: 130, hint: 'Grimpe au mât… dès que tu t\'arrêtes, tu glisses !' },
 ];
 const PLACE_PTS = [8, 5, 3, 2, 1];
@@ -100,8 +100,8 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
     g.rate[pid] = (g.rate[pid] || 0) + e;
     g.stats[pid].energy += e;
     if (g.mode.id === 'feu' && g.light === 'red' && now - g.lightAt > 350 && e > 0.6) {
-      // pris en train de bouger au rouge : on recule
-      g.pos[pid] = Math.max(0, g.pos[pid] - e * 2.5);
+      // pris en train de bouger au rouge : retour à la case départ !
+      g.pos[pid] = 0;
       if (!g.caughtAt[pid] || now - g.caughtAt[pid] > 1200) { g.caughtAt[pid] = now; g.stats[pid].caught++; ctx.buzz(pid, [250]); }
       return { quiet: true };
     }
