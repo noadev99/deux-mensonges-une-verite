@@ -45,12 +45,23 @@ button{width:100%;font:inherit;font-weight:600;font-size:1.1rem;padding:12px;bor
 <input type="hidden" name="suite" value="${String(next).replace(/[<>"&]/g, '')}"><button>Entrer</button></form></body></html>`;
 app.use(express.urlencoded({ extended: false, limit: '2kb' }));
 app.get('/entrer', (req, res) => (hasAccess(req.headers.cookie) ? res.redirect(safeNext(req.query.suite)) : res.type('html').send(loginPage(safeNext(req.query.suite), false))));
+// au plus 10 essais ratés par adresse et par quart d'heure (contre les essais en rafale)
+const tries = new Map();
+const ipOf = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+setInterval(() => { const now = Date.now(); for (const [k, v] of tries) if (now - v.t > 15 * 60 * 1000) tries.delete(k); }, 60 * 1000).unref();
 app.post('/entrer', (req, res) => {
   const next = safeNext(req.body.suite);
+  const ip = ipOf(req), t = tries.get(ip);
+  if (t && t.n >= 10 && Date.now() - t.t < 15 * 60 * 1000) return res.status(429).type('html').send(loginPage(next, true).replace('Mauvais code, réessaie 🙈', 'Trop d\'essais : réessaie dans un quart d\'heure ⏳'));
   const typed = String(req.body.code || '').trim().toLowerCase();
   const a = Buffer.from(typed.padEnd(64).slice(0, 64)), b = Buffer.from(SITE_CODE.toLowerCase().padEnd(64).slice(0, 64));
   const ok = SITE_CODE && typed.length === SITE_CODE.length && crypto.timingSafeEqual(a, b);
-  if (!ok) return setTimeout(() => res.status(401).type('html').send(loginPage(next, true)), 700); // un peu d'attente contre les essais en rafale
+  if (!ok) {
+    const cur = tries.get(ip);
+    tries.set(ip, cur && Date.now() - cur.t < 15 * 60 * 1000 ? { n: cur.n + 1, t: cur.t } : { n: 1, t: Date.now() });
+    return setTimeout(() => res.status(401).type('html').send(loginPage(next, true)), 700); // un peu d'attente contre les essais en rafale
+  }
+  tries.delete(ip);
   const secure = req.secure || req.headers['x-forwarded-proto'] === 'https';
   res.set('Set-Cookie', `sj_acces=${ACCESS}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`);
   res.redirect(next);
