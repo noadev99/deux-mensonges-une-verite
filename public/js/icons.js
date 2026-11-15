@@ -145,6 +145,13 @@ const ICONS = (() => {
       <path d="M9 21h28" stroke="#f0506e" stroke-width="4"/>
       <path d="M13 14v42M33 14v42" stroke-width="6"/><path d="M13 14v42M33 14v42" stroke="#f0506e" stroke-width="3"/>`),
 
+    // 🚩 un drapeau planté au bout de la piste, et un téléphone qui tremble
+    drapeau: art(`
+      <path d="M40 58V8" stroke-width="3.5"/><path d="M40 8l18 7-18 7z" fill="#ff5d5d"/>
+      <rect x="8" y="24" width="18" height="30" rx="4" fill="#fff" transform="rotate(-12 17 39)"/>
+      <rect x="11" y="28" width="12" height="18" rx="2" fill="#9fdcff" transform="rotate(-12 17 39)"/>
+      <path d="M4 22l-3-3M30 20l3-4M2 50l-2 3M32 52l3 3" stroke-width="2.5"/>`),
+
     // 🏎️ un petit bolide vu de profil qui file, avec un drapeau à damier
     bolides: art(`
       <path d="M44 6v20" stroke-width="2.5"/><rect x="44" y="6" width="14" height="10" fill="#fff"/>

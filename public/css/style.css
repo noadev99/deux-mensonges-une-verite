@@ -943,3 +943,62 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .mth-row { display: flex; align-items: center; gap: 8px; }
 .mth-row small { margin-left: auto; color: var(--muted); }
 .mth-g { position: relative; } .mth-n { position: absolute; top: -8px; left: -6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: #fff; font-size: .72rem; }
+
+/* ─── 🚩 La Course au drapeau ─── */
+.dr-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 4px 0; }
+.dr-mtitle { font-family: var(--display); font-size: 1.35rem; }
+.dr-tv .dr-mtitle { color: #fff; font-size: 2rem; text-shadow: 3px 3px 0 var(--ink); }
+.dr-modes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
+.dr-mode { padding: 3px 10px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; font-weight: 600; font-size: .9rem; }
+.dr-perm { margin: 8px auto; display: block; }
+.dr-ok { font-weight: 600; color: var(--good); }
+.dr-stage { position: relative; }
+.dr-lanes { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; padding: 10px; background: #8fd16a; border: var(--line); border-radius: 18px 14px 20px 13px; box-shadow: var(--pop-sm); }
+.dr-lane { position: relative; height: 36px; background: #d9a066; border: 2px solid var(--ink); border-radius: 10px; }
+.dr-lane::after { content: ''; position: absolute; right: 30px; top: 0; bottom: 0; border-right: 4px dashed #fff; }
+.dr-goal { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 1.4rem; z-index: 1; }
+.dr-name { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: .75rem; color: rgba(26,15,46,.55); pointer-events: none; }
+.dr-runner { position: absolute; top: 50%; left: calc(var(--p, 0%) * .86); transform: translateY(-50%); transition: left .26s linear, bottom .26s linear; z-index: 2; }
+.dr-runner .av { box-shadow: 0 0 0 3px var(--c); }
+.dr-runner.fast .av { animation: dr-hop .22s infinite alternate; }
+.dr-runner.caught .av { box-shadow: 0 0 0 4px var(--bad); animation: dr-shake .1s infinite; }
+.dr-runner.done .av { box-shadow: 0 0 0 4px var(--mustard); }
+.dr-fx { display: none; }
+.dr-runner.fast .dr-fx { display: block; position: absolute; left: -16px; top: 50%; width: 14px; height: 3px; background: #fff; border-radius: 2px; box-shadow: -4px -7px 0 #fff, -4px 7px 0 #fff; opacity: .8; }
+@keyframes dr-hop { to { transform: translateY(-5px) rotate(6deg); } }
+@keyframes dr-shake { 50% { transform: translateX(3px); } }
+.dr-lanes.big .dr-lane { height: 58px; }
+.dr-lanes.big .dr-name { font-size: 1rem; }
+.dr-lanes.big .dr-goal { font-size: 2.2rem; }
+/* le mât : des poteaux verticaux, on grimpe de bas en haut */
+.dr-lanes.mat { flex-direction: row; justify-content: center; align-items: stretch; height: 240px; background: linear-gradient(#9fdcff, #e8f8ff); gap: 10px; }
+.dr-lanes.mat.big { height: 46vh; }
+.dr-lanes.mat .dr-lane { height: auto; width: 36px; flex: 0 1 46px; background: repeating-linear-gradient(#e8c48a 0 14px, #c98d4a 14px 18px); border-radius: 18px; }
+.dr-lanes.mat .dr-lane::after { right: 0; left: 0; top: 30px; bottom: auto; border-right: none; border-top: 4px dashed #fff; }
+.dr-lanes.mat .dr-goal { right: auto; left: 50%; top: -6px; transform: translateX(-30%); }
+.dr-lanes.mat .dr-runner { top: auto; left: 50%; bottom: calc(var(--p, 0%) * .82); transform: translateX(-50%); }
+.dr-lanes.mat .dr-name { left: 50%; top: auto; bottom: -22px; transform: translateX(-50%); white-space: nowrap; color: var(--ink); }
+.dr-lanes.mat.big .dr-lane { flex-basis: 70px; }
+.dr-zone { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding: 16px 12px; background: var(--pc, var(--mint)); border: var(--line); border-radius: 22px 18px 24px 16px; box-shadow: var(--pop); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.dr-zone b { font-family: var(--display); font-weight: 400; font-size: 2.2rem; color: #fff; text-shadow: 3px 3px 0 var(--ink); }
+.dr-zone small { font-size: .78rem; opacity: .8; }
+.dr-zone.tap { padding: 34px 12px; }
+.dr-zone:active { transform: translateY(3px); box-shadow: 2px 2px 0 var(--ink); }
+.dr-phone-ico { font-size: 3rem; line-height: 1; transition: transform .05s; }
+.dr-meter { width: 80%; height: 14px; background: rgba(255,255,255,.6); border: 2px solid var(--ink); border-radius: 999px; overflow: hidden; }
+.dr-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--mustard), var(--bad)); transition: width .1s; }
+.dr-phone.done .dr-zone { filter: saturate(.4); }
+.dr-count { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 5rem; color: var(--mustard); text-shadow: 5px 5px 0 var(--ink); pointer-events: none; z-index: 5; }
+.dr-count:empty { display: none; }
+.dr-count.go { color: var(--pink); font-size: 3.6rem; }
+.dr-light { display: flex; gap: 8px; justify-content: center; width: max-content; margin: 0 auto 6px; padding: 8px 12px; background: var(--ink); border-radius: 16px; }
+.dr-light i { width: 30px; height: 30px; border-radius: 50%; background: #3b3450; }
+.dr-light.red i:nth-child(1) { background: #ff4d4d; box-shadow: 0 0 14px #ff4d4d; }
+.dr-light.orange i:nth-child(2) { background: #ffb020; box-shadow: 0 0 14px #ffb020; }
+.dr-light.green i:nth-child(3) { background: #3fdf8f; box-shadow: 0 0 14px #3fdf8f; }
+.dr-tv .dr-light i { width: 54px; height: 54px; }
+.dr-lanes.mat { padding-bottom: 30px; }
+.dr-lanes.mat .dr-name { max-width: 64px; overflow: hidden; text-overflow: ellipsis; font-size: .7rem; text-align: center; }
+.dr-lanes.mat.big .dr-name { max-width: 90px; font-size: .95rem; }
+.dr-lanes:not(.mat) .dr-name { left: 34px; }
+.dr-lanes.big:not(.mat) .dr-name { left: 54px; }
