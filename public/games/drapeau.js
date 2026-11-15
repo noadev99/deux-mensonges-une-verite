@@ -51,7 +51,7 @@
     return `<div class="dr-lanes ${mat ? 'mat' : ''} ${big ? 'big' : ''}">
       ${g.players.filter(P).map((id) => `<div class="dr-lane" style="--c:${colorOf(id)}">
         <span class="dr-goal">🚩</span>
-        <span class="dr-runner" data-id="${esc(id)}" style="--p:${pct(g, id)}%">${av(P(id), big ? '' : 'sm')}<i class="dr-fx"></i></span>
+        <span class="dr-runner" data-id="${esc(id)}" style="--k:${pct(g, id) / 100}">${av(P(id), big ? '' : 'sm')}<i class="dr-fx"></i></span>
         <b class="dr-name">${name(id)}</b>
       </div>`).join('')}
     </div>`;
@@ -168,7 +168,7 @@
         // les persos avancent en douceur (transition CSS) au lieu de tout redessiner
         document.querySelectorAll('.dr-runner[data-id]').forEach((el) => {
           const id = el.dataset.id;
-          el.style.setProperty('--p', `${pct(g, id)}%`);
+          el.style.setProperty('--k', pct(g, id) / 100);
           el.classList.toggle('fast', (g.rate[id] || 0) > 2.5);
           el.classList.toggle('caught', g.caught.includes(id));
           el.classList.toggle('done', g.finished.includes(id));

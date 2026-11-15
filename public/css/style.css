@@ -958,7 +958,7 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dr-lane::after { content: ''; position: absolute; right: 30px; top: 0; bottom: 0; border-right: 4px dashed #fff; }
 .dr-goal { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 1.4rem; z-index: 1; }
 .dr-name { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: .75rem; color: rgba(26,15,46,.55); pointer-events: none; }
-.dr-runner { position: absolute; top: 50%; left: calc(var(--p, 0%) * .86); transform: translateY(-50%); transition: left .26s linear, bottom .26s linear; z-index: 2; }
+.dr-runner { position: absolute; top: 50%; left: calc((100% - var(--rw, 60px)) * var(--k, 0)); transform: translateY(-50%); transition: left .26s linear, bottom .26s linear; z-index: 2; }
 .dr-runner .av { box-shadow: 0 0 0 3px var(--c); }
 .dr-runner.fast .av { animation: dr-hop .22s infinite alternate; }
 .dr-runner.caught .av { box-shadow: 0 0 0 4px var(--bad); animation: dr-shake .1s infinite; }
@@ -976,7 +976,7 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dr-lanes.mat .dr-lane { height: auto; width: 36px; flex: 0 1 46px; background: repeating-linear-gradient(#e8c48a 0 14px, #c98d4a 14px 18px); border-radius: 18px; }
 .dr-lanes.mat .dr-lane::after { right: 0; left: 0; top: 30px; bottom: auto; border-right: none; border-top: 4px dashed #fff; }
 .dr-lanes.mat .dr-goal { right: auto; left: 50%; top: -6px; transform: translateX(-30%); }
-.dr-lanes.mat .dr-runner { top: auto; left: 50%; bottom: calc(var(--p, 0%) * .82); transform: translateX(-50%); }
+.dr-lanes.mat .dr-runner { top: auto; left: 50%; bottom: calc((100% - var(--rh, 60px)) * var(--k, 0)); transform: translateX(-50%); }
 .dr-lanes.mat .dr-name { left: 50%; top: auto; bottom: -22px; transform: translateX(-50%); white-space: nowrap; color: var(--ink); }
 .dr-lanes.mat.big .dr-lane { flex-basis: 70px; }
 .dr-zone { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding: 16px 12px; background: var(--pc, var(--mint)); border: var(--line); border-radius: 22px 18px 24px 16px; box-shadow: var(--pop); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
@@ -1002,3 +1002,6 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dr-lanes.mat.big .dr-name { max-width: 90px; font-size: .95rem; }
 .dr-lanes:not(.mat) .dr-name { left: 34px; }
 .dr-lanes.big:not(.mat) .dr-name { left: 54px; }
+/* le perso s'arrête pile sur la ligne d'arrivée (pointillés à 30 px du bord) */
+.dr-lane { --rw: 59px; --rh: 60px; }
+.dr-lanes.big .dr-lane { --rw: 70px; --rh: 70px; }
