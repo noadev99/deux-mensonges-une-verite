@@ -877,3 +877,41 @@ button.im-tile { cursor: pointer; } button.im-tile:active { transform: translate
 body.tv .im-img { font-size: 4rem; } body.tv .im-l { font-size: 1rem; } body.tv .im-n { font-size: 1.1rem; }
 body.tv .im-grid { gap: 14px; }
 @media (max-width: 380px) { .im-img { font-size: 1.7rem; } .im-l { font-size: .6rem; } .im-grid { gap: 5px; } }
+
+/* ═══ ⛩️ Trombi manga ═══ */
+.tb-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tb-board.tv { grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.tb-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px 5px; min-height: 0;
+  background: color-mix(in srgb, var(--c) 40%, #fff); border: 2.5px solid var(--ink); border-radius: 12px 10px 13px 9px; box-shadow: 2px 2px 0 var(--ink);
+  font: inherit; color: var(--ink); line-height: 1.05; text-align: center; transition: transform .15s, filter .15s, opacity .15s; }
+.tb-card .tb-emo { font-size: 1.6rem; line-height: 1.2; }
+.tb-card b { font-family: var(--display); font-weight: 400; font-size: .82rem; }
+.tb-card small { font-size: .56rem; color: var(--muted); }
+button.tb-card { cursor: pointer; }
+.tb-card.out { filter: grayscale(1); opacity: .35; transform: rotate(-4deg) scale(.94); }
+.tb-card.out::after { content: '✕'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 2.4rem; color: var(--bad); font-weight: 700; }
+.tb-card.found { outline: 3px solid var(--good); }
+.tb-owner { position: absolute; top: -8px; right: -6px; }
+.tb-card.mine { box-shadow: 0 0 0 3px var(--mustard), 2px 2px 0 3px var(--ink); }
+.tb-board.guessing button.tb-card:not(.found):not(.out) { animation: bob 1.2s ease-in-out infinite; }
+.tb-card.big { --w: 1; padding: 12px 18px; display: inline-flex; } .tb-card.big .tb-emo { font-size: 3rem; } .tb-card.big b { font-size: 1.3rem; } .tb-card.big small { font-size: .8rem; }
+.tb-secret { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; margin-bottom: 14px; padding: 10px 14px; background: #fffaf0; }
+.tb-secret .tb-emo { flex: none; width: 60px; height: 60px; display: grid; place-items: center; font-size: 2.2rem; border: 2.5px solid var(--ink); border-radius: 12px; background: color-mix(in srgb, var(--c) 45%, #fff); }
+.tb-secret .tb-back { background: repeating-linear-gradient(45deg, #ff7aa8 0 6px, #ff9fc0 6px 12px); font-size: 1.6rem; }
+.tb-secret b { font-family: var(--display); font-weight: 400; font-size: 1.2rem; }
+.tb-turn .tb-q { font-family: var(--hand); font-size: 1.35rem; margin: 6px 0 10px; }
+.tb-turn.ok { background-color: #e3f7ec; } .tb-turn.ko { background-color: #ffe3ea; } .tb-turn.guess { background-color: #fff6d6; }
+.tb-yes { background: #9bf0c2; font-size: 1.3rem; } .tb-no { background: #ffb3c4; font-size: 1.3rem; }
+.tb-a { padding: 1px 8px; border-radius: 8px; border: 2px solid var(--ink); font-size: .85rem; }
+.tb-a.oui { background: #9bf0c2; } .tb-a.non { background: #ffb3c4; } .tb-a.bof { background: #fff3a0; }
+.tb-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.tb-tabinfo { margin: 6px 0 8px; font-size: .85rem; color: var(--muted); }
+.tb-log { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 2px dashed var(--paper-2); font-size: .88rem; }
+.tb-log span { flex: 1; }
+.tb-hero { margin: 6px 0; }
+.tb-reveal { display: flex; flex-direction: column; gap: 8px; }
+.tb-revrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tb-revrow .tb-card { flex-direction: row; gap: 6px; padding: 4px 10px; }
+.tb-revrow small { color: var(--muted); }
+body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 1.05rem; } body.tv .tb-card small { font-size: .75rem; }
+@media (min-width: 520px) { .tb-board:not(.tv) { grid-template-columns: repeat(6, 1fr); } }

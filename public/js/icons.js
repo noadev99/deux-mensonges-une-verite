@@ -136,6 +136,14 @@ const ICONS = (() => {
       <rect x="6" y="26" width="16" height="16" rx="3" fill="#4dabf7"/><rect x="24" y="26" width="16" height="16" rx="3" fill="#fff" stroke-dasharray="4 3"/><rect x="42" y="26" width="16" height="16" rx="3" fill="#da77f2"/>
       <path d="M29.5 31a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8" stroke-width="2.4"/><circle cx="32" cy="38.2" r=".9" fill="${INK}" stroke="none"/>
       <path d="M10 50l8 6M30 48v8M50 50l-8 6" stroke-width="2.5"/>`),
+
+    // ⛩️ un torii devant une carte de personnage avec un point d'interrogation
+    trombi: art(`
+      <rect x="30" y="18" width="26" height="36" rx="4" fill="#fff" transform="rotate(8 43 36)"/>
+      <path d="M40 30a3.4 3.4 0 1 1 4.6 3.2c-1 .5-1.4 1.1-1.4 2.3" stroke-width="2.6" transform="rotate(8 43 36)"/><circle cx="42.6" cy="41" r="1.1" fill="${INK}" stroke="none"/>
+      <path d="M6 14h34" stroke-width="5"/><path d="M6 14h34" stroke="#f0506e" stroke-width="2.5"/>
+      <path d="M9 21h28" stroke="#f0506e" stroke-width="4"/>
+      <path d="M13 14v42M33 14v42" stroke-width="6"/><path d="M13 14v42M33 14v42" stroke="#f0506e" stroke-width="3"/>`),
   };
 
   // ─── Pièces de plateau (cartes, jetons…) pour les jeux de trahison ───

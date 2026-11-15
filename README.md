@@ -30,6 +30,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🤝 Les Alliances — alliances secrètes, coffres communs… puis fidèle ou poignard | 3–10 |
 | 🧼 Le ring savonneux — action en temps réel sur la télé : les téléphones sont des manettes (joystick + A/B) | 2–6 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
+| ⛩️ Trombi manga — 24 persos d'animés, questions oui/non, devine le perso des autres (dès 2 joueurs) | 2–8 |
 
 ## Lancer en local
 ```bash

@@ -15,6 +15,7 @@ const list = [
   require('./alliances'),
   require('./ring'),
   require('./image'),
+  require('./trombi'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));
