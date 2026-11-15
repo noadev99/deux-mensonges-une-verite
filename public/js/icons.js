@@ -129,6 +129,13 @@ const ICONS = (() => {
       <path d="M22 28q6-4 14-2" stroke="#fff" stroke-width="3"/>
       <circle cx="48" cy="14" r="5" fill="#fff"/><circle cx="56" cy="24" r="3" fill="#fff"/><circle cx="12" cy="18" r="4" fill="#fff"/>
       <path d="M2 42h8M4 48h6" stroke-width="2.5"/>`),
+
+    // 🖼️ une grille d'images… dont une case vide avec un point d'interrogation
+    image: art(`
+      <rect x="6" y="8" width="16" height="16" rx="3" fill="#ffd43b"/><rect x="24" y="8" width="16" height="16" rx="3" fill="#69db7c"/><rect x="42" y="8" width="16" height="16" rx="3" fill="#ff8fb5"/>
+      <rect x="6" y="26" width="16" height="16" rx="3" fill="#4dabf7"/><rect x="24" y="26" width="16" height="16" rx="3" fill="#fff" stroke-dasharray="4 3"/><rect x="42" y="26" width="16" height="16" rx="3" fill="#da77f2"/>
+      <path d="M29.5 31a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8" stroke-width="2.4"/><circle cx="32" cy="38.2" r=".9" fill="${INK}" stroke="none"/>
+      <path d="M10 50l8 6M30 48v8M50 50l-8 6" stroke-width="2.5"/>`),
   };
 
   // ─── Pièces de plateau (cartes, jetons…) pour les jeux de trahison ───
