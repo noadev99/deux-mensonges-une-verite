@@ -264,12 +264,12 @@
       const jl = Math.hypot(jx, jy);
       if (jl > 0.3) { p.aimX = jx / jl; p.aimY = jy / jl; p.aimT = now; }
       p.dashT = Math.max(0, p.dashT - dt); p.dashCd = Math.max(0, p.dashCd - dt); p.anchorCd = Math.max(0, p.anchorCd - dt);
-      // B : l'ancre (lourd et immobile, 1,5 s max)
+      // B : l'ancre (lourd et immobile, 3 s max)
       if (b && p.anchorCd <= 0 && !p.charge) {
         if (!p.anchoring) SFX.anchor();
         p.anchoring = true; p.anchorT += dt;
-        if (p.anchorT > 1.5) { p.anchoring = false; p.anchorCd = 3; p.anchorT = 0; }
-      } else if (p.anchoring) { p.anchoring = false; p.anchorCd = 1 + p.anchorT; p.anchorT = 0; }
+        if (p.anchorT > 3) { p.anchoring = false; p.anchorCd = 3.5; p.anchorT = 0; }
+      } else if (p.anchoring) { p.anchoring = false; p.anchorCd = 1 + p.anchorT * 0.8; p.anchorT = 0; }
       // A : on charge en maintenant, on fonce en relâchant
       if (a && p.dashCd <= 0 && !p.anchoring) p.charge = Math.min(1, p.charge + dt / 0.8);
       if (!a && p.prevA && p.charge > 0.05) {
@@ -308,6 +308,22 @@
       b.x += nx * over * (ma / (ma + mb)); b.y += ny * over * (ma / (ma + mb));
       const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
       if (vn >= 0) continue;
+      // dash sur une ancre : le dasheur rebondit aussi fort qu'il a foncé, l'ancre ne bouge pas
+      const reflect = (atk, anc, sx, sy) => {
+        const pw = atk.power || 0, spd = 330 + 470 * pw;
+        atk.vx = sx * spd; atk.vy = sy * spd; atk.dashT = 0; atk.power = 0;
+        anc.vx *= 0.5; anc.vy *= 0.5;
+        atk.lastHit = { by: anc.id, t: now }; anc.lastHit = null;
+        sim.shake = Math.max(sim.shake || 0, 0.12 + pw * 0.3);
+        const k = [atk.id, anc.id].sort().join('|');
+        if (!sim.hits[k] || now - sim.hits[k] > 0.35) {
+          sim.hits[k] = now; SFX.bump(); send('hit', { a: atk.id, b: anc.id });
+          const mx = (atk.x + anc.x) / 2, my = (atk.y + anc.y) / 2;
+          for (let q = 0; q < 12; q++) sim.parts.push({ x: mx, y: my, vx: (Math.random() - 0.5) * 500, vy: (Math.random() - 0.5) * 500, life: 0.6, kind: 'star' });
+        }
+      };
+      if (b.anchoring && !a.anchoring && a.dashT > 0) { reflect(a, b, -nx, -ny); continue; }
+      if (a.anchoring && !b.anchoring && b.dashT > 0) { reflect(b, a, nx, ny); continue; }
       const jimp = (-(1 + 0.95) * vn) / (1 / ma + 1 / mb);
       // recul : plus le dash est chargé, plus la cible est projetée (jusqu'à ~3,6× à pleine charge)
       const pa = a.dashT > 0 ? a.power || 0 : 0, pb = b.dashT > 0 ? b.power || 0 : 0;
@@ -588,7 +604,7 @@
     <div class="rg-rules">
       <div><span class="rg-ico">🕹️</span><b>Joystick</b><small>on glisse sur la glace</small></div>
       <div><span class="rg-ico rg-a">A</span><b>Charge</b><small>maintiens… relâche : BOUM</small></div>
-      <div><span class="rg-ico rg-b">B</span><b>Ancre</b><small>impossible à pousser, mais immobile</small></div>
+      <div><span class="rg-ico rg-b">B</span><b>Ancre</b><small>3 s, immobile · renvoie les dashs</small></div>
       <div><span class="rg-ico">🐦</span><b>Éliminé ?</b><small>tu deviens une mouette : A = fiente glissante</small></div>
     </div>`;
 
@@ -648,7 +664,7 @@
       <ol class="rules">
         <li>Le jeu s'affiche sur la <b>télé</b>. Ton <b>téléphone est ta manette</b> (tourne-le en paysage).</li>
         <li>Tout le monde glisse sur une plateforme de glace qui <b>rétrécit</b>. <b>Pousse les autres à l'eau</b> !</li>
-        <li><b>A</b> : maintiens pour charger, relâche pour foncer. <b>B</b> : l'ancre, impossible à pousser mais immobile.</li>
+        <li><b>A</b> : maintiens pour charger, relâche pour foncer. <b>B</b> : l'ancre (jusqu'à 3 s), impossible à pousser mais immobile ; qui fonce dessus est renvoyé aussi fort que son dash.</li>
         <li>Éliminé ? Tu deviens une <b>mouette</b> : <b>A</b> lâche une fiente qui fait glisser les autres.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">5 manches, 5 arènes · 1er de la manche : <b>+5</b> · 2e : <b>+3</b> · 3e : <b>+1</b> · chaque joueur jeté à l'eau : <b>+1</b></div>`,
