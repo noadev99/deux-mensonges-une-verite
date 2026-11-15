@@ -24,6 +24,45 @@ const INDEX = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf
   .replace(/(src|href)="\/(js|games|css)\/([^"]+)"/g, `$1="/$2/$3?v=${BUILD}"`)
   .replace('<div id="app"></div>', `<div id="app"></div>\n<script>window.BUILD = '${BUILD}';</script>`);
 const sendIndex = (req, res) => { res.set('Cache-Control', 'no-store'); res.type('html').send(INDEX); };
+// ─── Code d'accès : le site est réservé aux amis ────────────────────────────
+// Le code se règle dans Render (variable d'environnement SITE_CODE), jamais dans le
+// dépôt GitHub qui est public. Sans SITE_CODE, le site reste ouvert à tous.
+// On tape le code une fois par appareil : il est retenu 1 an (cookie).
+const SITE_CODE = (process.env.SITE_CODE || '').trim();
+const ACCESS = SITE_CODE ? crypto.createHmac('sha256', SITE_CODE.toLowerCase()).update('soiree-jeux').digest('hex').slice(0, 32) : '';
+const hasAccess = (cookie = '') => !SITE_CODE || String(cookie).split(/;\s*/).includes(`sj_acces=${ACCESS}`);
+const safeNext = (u) => (typeof u === 'string' && u.startsWith('/') && !u.startsWith('//') ? u : '/');
+const loginPage = (next, wrong) => `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Soirée Jeux</title><link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#22113d;font-family:Fredoka,system-ui,sans-serif;color:#1a0f2e;padding:16px;box-sizing:border-box}
+.c{box-sizing:border-box;background:#fbf8ff;border:3px solid #1a0f2e;border-radius:24px 19px 26px 17px;box-shadow:6px 6px 0 #1a0f2e;padding:24px;max-width:360px;width:100%;text-align:center}
+h1{font-family:'Bagel Fat One',system-ui;font-weight:400;margin:0 0 4px;font-size:2rem}h1 span{color:#ff6fa3}p{margin:6px 0 16px;color:#6a5d84}
+input{width:100%;box-sizing:border-box;font:inherit;font-size:1.3rem;text-align:center;letter-spacing:.15em;padding:12px;border:3px solid #1a0f2e;border-radius:14px;margin-bottom:12px}
+button{width:100%;font:inherit;font-weight:600;font-size:1.1rem;padding:12px;border:3px solid #1a0f2e;border-radius:16px;background:#ffc23d;box-shadow:3px 3px 0 #1a0f2e;cursor:pointer}
+.e{color:#f0506e;font-weight:600}</style></head><body><form class="c" method="post" action="/entrer">
+<h1>Soirée <span>Jeux</span></h1><p>🔒 Site réservé aux amis. Entre le code :</p>${wrong ? '<p class="e">Mauvais code, réessaie 🙈</p>' : ''}
+<input name="code" autocomplete="off" autocapitalize="off" autofocus required placeholder="Code secret">
+<input type="hidden" name="suite" value="${String(next).replace(/[<>"&]/g, '')}"><button>Entrer</button></form></body></html>`;
+app.use(express.urlencoded({ extended: false, limit: '2kb' }));
+app.get('/entrer', (req, res) => (hasAccess(req.headers.cookie) ? res.redirect(safeNext(req.query.suite)) : res.type('html').send(loginPage(safeNext(req.query.suite), false))));
+app.post('/entrer', (req, res) => {
+  const next = safeNext(req.body.suite);
+  const typed = String(req.body.code || '').trim().toLowerCase();
+  const a = Buffer.from(typed.padEnd(64).slice(0, 64)), b = Buffer.from(SITE_CODE.toLowerCase().padEnd(64).slice(0, 64));
+  const ok = SITE_CODE && typed.length === SITE_CODE.length && crypto.timingSafeEqual(a, b);
+  if (!ok) return setTimeout(() => res.status(401).type('html').send(loginPage(next, true)), 700); // un peu d'attente contre les essais en rafale
+  const secure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.set('Set-Cookie', `sj_acces=${ACCESS}; Max-Age=31536000; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`);
+  res.redirect(next);
+});
+app.use((req, res, next) => {
+  if (hasAccess(req.headers.cookie) || req.path === '/api/ping') return next();
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'code' });
+  res.redirect(`/entrer?suite=${encodeURIComponent(req.originalUrl)}`);
+});
+// les connexions temps réel aussi exigent le code
+io.use((socket, next) => (hasAccess(socket.request.headers.cookie) ? next() : next(new Error('code'))));
+
 app.get(['/', '/index.html'], sendIndex);
 app.use(express.static(path.join(__dirname, 'public'), { index: false, maxAge: '7d' }));
 
