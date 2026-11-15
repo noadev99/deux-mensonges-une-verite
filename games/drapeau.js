@@ -11,15 +11,15 @@
 const { gain, applyGains, awards, active, initScores } = require('./_utils');
 
 const MODES = [
-  { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 160, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
+  { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 260, speed: 0.75, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
   { id: 'feu', name: 'Feu rouge, feu vert', emoji: '🚦', len: 140, hint: 'Secoue au vert, STOP au rouge… sinon retour au départ !' },
-  { id: 'mat', name: 'Le mât savonné', emoji: '🧗', len: 130, hint: 'Grimpe au mât… dès que tu t\'arrêtes, tu glisses !' },
+  { id: 'mat', name: 'Le mât savonné', emoji: '🧗', len: 230, hint: 'Grimpe au mât… dès que tu t\'arrêtes, tu glisses !' },
 ];
 const PLACE_PTS = [8, 5, 3, 2, 1];
 const MAX_RATE = 32;        // énergie maximale par seconde (une secousse très forte ≈ 20–30)
 const TICK = 250;           // le serveur renvoie l'état 4 fois par seconde
 const COUNTDOWN = 3500;
-const LIMIT = 45000;        // manche arrêtée au bout de 45 s
+const LIMIT = 75000;        // manche arrêtée au bout de 75 s
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['wins', 'energy', 'caught']);
@@ -105,7 +105,7 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
       if (!g.caughtAt[pid] || now - g.caughtAt[pid] > 1200) { g.caughtAt[pid] = now; g.stats[pid].caught++; ctx.buzz(pid, [250]); }
       return { quiet: true };
     }
-    g.pos[pid] = Math.min(g.mode.len, g.pos[pid] + e);
+    g.pos[pid] = Math.min(g.mode.len, g.pos[pid] + e * (g.mode.speed || 1));
     if (g.pos[pid] >= g.mode.len) {
       g.finished.push(pid);
       g.times[pid] = now - g.goAt;
