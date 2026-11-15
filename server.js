@@ -142,12 +142,13 @@ function ctx(room) {
     },
     // Minuteur serveur : exécute fn après ms, puis renvoie l'état à tous.
     // Ignoré si la partie a changé entre-temps (retour au salon, rejouer…).
-    schedule: (ms, fn) => {
+    // soft(): renvoie true si rien n'a changé d'écran (simple mise à jour des positions)
+    schedule: (ms, fn, soft) => {
       const game = room.game;
       return setTimeout(() => {
         if (room.game !== game || room.phase !== 'playing') return;
         fn();
-        broadcast(room);
+        broadcast(room, !!(soft && soft()));
       }, ms);
     },
   };
@@ -257,9 +258,11 @@ function fitGame(room) {
   if (next) room.gameId = next.id;
 }
 
-function broadcast(room) {
+function broadcast(room, soft = false) {
   fitGame(room);
-  room.v = (room.v || 0) + 1;
+  // soft : simple mise à jour en cours de manche (positions…) → l'écran ne change pas,
+  // donc le numéro anti double-clic reste le même et « Suivant / Arrêter » reste valable
+  if (!soft) room.v = (room.v || 0) + 1;
   for (const p of room.players.values()) {
     if (p.connected && p.socketId) io.to(p.socketId).emit('state', stateFor(room, p.id));
   }

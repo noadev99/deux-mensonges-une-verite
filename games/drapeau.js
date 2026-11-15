@@ -46,9 +46,10 @@ function startRound(ctx, g) {
   const tick = () => {
     if (g.stamp !== stamp || g.phase !== 'race') return;
     step(ctx, g);
-    if (g.phase === 'race') ctx.schedule(TICK, tick);
+    if (g.phase === 'race') ctx.schedule(TICK, tick, soft);
   };
-  setImmediate(() => ctx.schedule(TICK, tick));
+  const soft = () => g.phase === 'race' && g.stamp === stamp;   // manche toujours en cours : simple mise à jour
+  setImmediate(() => ctx.schedule(TICK, tick, soft));
 }
 
 function step(ctx, g) {
