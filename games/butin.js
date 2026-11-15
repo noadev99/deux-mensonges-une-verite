@@ -162,7 +162,7 @@ module.exports = {
   emoji: '💰',
   tagline: 'Partager ou tout rafler ? Fais-toi confiance… ou pas.',
   description: 'En duo devant un butin, on négocie puis on choisit en secret : partager, ou trahir pour tout prendre.',
-  minPlayers: 3,
+  minPlayers: 2,
   maxPlayers: 16,
   duration: '10–15 min',
   oral: true, // à l'oral : on négocie à voix haute, sans messages

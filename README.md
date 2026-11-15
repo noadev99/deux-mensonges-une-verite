@@ -22,11 +22,11 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🕵️ L'Intrus — tout le monde connaît le mot sauf un (ou mode Notes : même note sur 10 sauf un) | 3–12 |
 | 📖 Le Dico des menteurs — fausses définitions de vrais mots rares | 3–12 |
 | ✍️ La Chute — phrases à trou, vote pour la réponse la plus drôle | 3–16 |
-| 💣 Patate chaude — réponds vite avant que la bombe explose (l'hôte peut annuler une réponse) | 3–12 |
+| 💣 Patate chaude — réponds vite avant que la bombe explose (l'hôte peut annuler une réponse) | 2–12 |
 | 🏅 Le Classement — devine comment le juge classe la bande | 3–8 |
 | 🎨 Dessin en chaîne — dessine, devine, redessine… et regarde le message dériver | 3–10 |
-| 🎚️ Note secrète — une note sur 10 à faire deviner : en racontant une histoire, ou en répondant à un interrogatoire | 3–12 |
-| 💰 Le Butin — en duo devant un butin : partager ou trahir pour tout prendre | 3–16 |
+| 🎚️ Note secrète — une note sur 10 à faire deviner : en racontant une histoire, ou en répondant à un interrogatoire | 2–12 |
+| 💰 Le Butin — en duo devant un butin : partager ou trahir pour tout prendre | 2–16 |
 | 🗡️ Le Complot — des traîtres cachés sabotent vos missions, démasquez-les | 5–10 |
 | 🤝 Les Alliances — alliances secrètes, coffres communs… puis fidèle ou poignard | 3–10 |
 | 🧼 Le ring savonneux — action en temps réel sur la télé : les téléphones sont des manettes (joystick + A/B) | 2–6 |

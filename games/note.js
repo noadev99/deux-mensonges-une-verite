@@ -298,7 +298,7 @@ module.exports = {
   emoji: '🎚️',
   tagline: 'Raconte (ou réponds) pile à la hauteur de ta note.',
   description: 'Une note secrète de 0 à 10 : une histoire à doser, ou un interrogatoire où tu réponds selon ta note. Les autres devinent.',
-  minPlayers: 3,
+  minPlayers: 2,
   maxPlayers: 12,
   duration: '15–25 min',
   oral: true, // version « on raconte à voix haute »

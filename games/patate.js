@@ -160,7 +160,7 @@ module.exports = {
   emoji: '💣',
   tagline: 'Réponds vite et passe la bombe avant qu\'elle explose.',
   description: 'Une catégorie, une bombe qui passe de main en main, une explosion au hasard.',
-  minPlayers: 3,
+  minPlayers: 2,
   maxPlayers: 12,
   duration: '10 min',
   oral: true,
