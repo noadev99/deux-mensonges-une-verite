@@ -161,6 +161,22 @@ const ICONS = (() => {
       <rect x="11" y="28" width="12" height="18" rx="2" fill="#9fdcff" transform="rotate(-12 17 39)"/>
       <path d="M4 22l-3-3M30 20l3-4M2 50l-2 3M32 52l3 3" stroke-width="2.5"/>`),
 
+    // 🔔 un gros buzzer rouge sur son socle, qui sonne
+    buzzer: art(`
+      <path d="M10 46h44v8a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3z" fill="#3b3450"/>
+      <path d="M16 46c0-12 7-20 16-20s16 8 16 20z" fill="#ff5d5d"/>
+      <path d="M24 36q3-5 8-6" stroke="#fff" stroke-width="2.5"/>
+      <path d="M32 18v-8M18 21l-4-6M46 21l4-6M10 30l-6-2M54 30l6-2" stroke="#ffc23d" stroke-width="3"/>`),
+
+    // 🎭 un mime en marinière qui fait deviner, avec des bulles « ? »
+    mime: art(`
+      <circle cx="26" cy="20" r="10" fill="#fff"/>
+      <path d="M22 19h0M30 19h0" stroke-width="3.5"/><path d="M22 25q4 3 8 0"/>
+      <path d="M14 58c0-14 5-24 12-24s12 10 12 24z" fill="#fff"/>
+      <path d="M17 44h18M16 50h20M15 56h22" stroke="#4d8bff" stroke-width="3"/>
+      <path d="M36 38l10-10" stroke-width="3.5"/><circle cx="48" cy="26" r="3" fill="#fff"/>
+      <path d="M48 8a5 5 0 1 1 6 5c-1.5.7-2 1.6-2 3" stroke="#c86bff" stroke-width="2.8"/><circle cx="52" cy="20" r="1.2" fill="#c86bff" stroke="none"/>`),
+
     // 🏎️ un petit bolide vu de profil qui file, avec un drapeau à damier
     bolides: art(`
       <path d="M44 6v20" stroke-width="2.5"/><rect x="44" y="6" width="14" height="10" fill="#fff"/>

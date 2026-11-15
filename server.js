@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const { Server } = require('socket.io');
 const GAMES = require('./games');
 const { shuffle } = require('./games/_utils');
+const TUEUR = require('./games/tueur'); // 🗡️ jeu de fond de la soirée (hors liste des jeux)
 
 const app = express();
 const server = http.createServer(app);
@@ -88,7 +89,7 @@ function purgeGone(room) {
 const EST = {
   'deux-mensonges': [12, 0], 'qui-de-nous': [1, 1], intrus: [1, 2.5], dico: [1, 2.5], chute: [1, 2.5], patate: [1, 1.5],
   classement: [1, 2.5], dessin: [12, 0], note: [3, 2], butin: [1, 1.5], complot: [22, 0], alliances: [14, 0],
-  ring: [2, 1.2], image: [1, 2.5], trombi: [2, 3], bolides: [2, 2.5], drapeau: [1, 1.2], demineur: [2, 5],
+  ring: [2, 1.2], image: [1, 2.5], trombi: [2, 3], bolides: [2, 2.5], drapeau: [1, 1.2], demineur: [2, 5], buzzer: [2, 0.6], mime: [3, 6],
 };
 const estMinutes = (id, rounds) => { const [f, r] = EST[id] || [10, 0]; return Math.round(f + r * rounds); };
 const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv, keyboard }) =>
@@ -237,6 +238,7 @@ function stateFor(room, pid) {
     })),
   };
   if (room.phase === 'playing' && room.game) s.game = GAMES[room.gameId].stateFor(ctx(room), room.game, pid);
+  s.tueur = TUEUR.stateFor(room, pid); // jeu de fond de la soirée
   return s;
 }
 
@@ -260,6 +262,7 @@ function fitGame(room) {
 
 function broadcast(room, soft = false) {
   fitGame(room);
+  TUEUR.tick(room);
   // soft : simple mise à jour en cours de manche (positions…) → l'écran ne change pas,
   // donc le numéro anti double-clic reste le même et « Suivant / Arrêter » reste valable
   if (!soft) room.v = (room.v || 0) + 1;
@@ -393,6 +396,17 @@ io.on('connection', (socket) => {
   });
 
   // L'hôte change une option du jeu choisi (ex. thème)
+  // 🗡️ Le Tueur silencieux : jeu de fond, jouable dans le salon ET pendant les autres jeux
+  socket.on('tueur', (type) => {
+    if (!room || !player) return;
+    const r = room;
+    const res = TUEUR.action(r, player.id, String(type || ''), isHost(), (ms, fn) => setTimeout(() => { fn(); broadcast(r); }, ms)) || {};
+    if (res.error) return err(res.error);
+    if (res.buzz) { const p = r.players.get(res.buzz.to); if (p?.connected && p.socketId) io.to(p.socketId).emit('buzz', res.buzz.pattern); }
+    if (res.toast) { const p = r.players.get(res.toast.to); if (p?.connected && p.socketId) io.to(p.socketId).emit('errorMsg', res.toast.msg); }
+    broadcast(r, r.phase === 'playing'); // en pleine partie : ne pas périmer le bouton « Suivant » de l'hôte
+  });
+
   socket.on('setOption', ({ key, value } = {}) => {
     if (!isHost() || room.phase !== 'lobby') return;
     const def = (GAMES[room.gameId]?.options || []).find((o) => o.key === key);

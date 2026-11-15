@@ -1089,3 +1089,67 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dm-trio { margin: -4px 0 10px; padding: 6px 10px; background: #c9e8ff; border: 2px solid var(--ink); border-radius: 10px; font-size: .88rem; }
 .dm-owner { margin-left: auto; font-size: .8rem; background: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 0 8px; }
 .dm-mod:has(button:disabled.dm-validate) { }
+
+/* ─── 🔔 Le Buzzer ─── */
+.bz-q { font-family: var(--display); font-size: 1.45rem; line-height: 1.2; margin-top: 6px; }
+.bz-ch { cursor: default; }
+.bz-ch.false { opacity: .45; text-decoration: line-through; }
+.bz-zone { margin: 4px 0 16px; }
+.bz-btn { width: min(52vw, 210px); aspect-ratio: 1; border-radius: 50%; font-family: var(--display); font-size: 2.6rem; color: #fff;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #e0283c 60%, #a3122a); border: 5px solid var(--ink); box-shadow: 0 10px 0 var(--ink); }
+.bz-btn:active, .bz-btn.hit { transform: translateY(8px); box-shadow: 0 2px 0 var(--ink); }
+.bz-mine { border-color: var(--mustard); }
+.bz-pick { width: 100%; text-align: left; font-size: 1.15rem; }
+.bz-who { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bz-who h2 { margin: 0; }
+.bz-sv { margin-bottom: 12px; }
+.bz-sv .row { margin-top: 6px; gap: 8px; }
+.bz-sv .row button { flex: 1; }
+#bz-est { flex: 1; min-width: 0; font-size: 1.3rem; }
+.bz-estrow { gap: 8px; }
+.bz-estrow button { flex: 0 0 auto; width: auto; padding-left: 22px; padding-right: 22px; }
+
+/* ─── 🎭 Fais deviner ─── */
+.mi-team { font-weight: 700; color: var(--t); }
+.mi-scores { display: flex; gap: 10px; margin: 0 0 14px; }
+.mi-sc { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border: var(--line); border-radius: 16px;
+  background: var(--paper); box-shadow: var(--pop-sm); border-left: 10px solid var(--t); font-weight: 600; }
+.mi-sc b { font-family: var(--display); font-weight: 400; font-size: 1.8rem; }
+.mi-sc.on { outline: 4px solid var(--mustard); }
+.mi-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mi-col h3 { margin: 0 0 8px; color: var(--t); }
+.mi-col .player { margin-bottom: 6px; }
+.mi-mname { font-family: var(--display); font-size: 1.7rem; }
+.mi-word { font-family: var(--display); font-size: clamp(2rem, 11vw, 3.2rem); line-height: 1.1; margin: 8px 0 16px; word-break: break-word; }
+.mi-word.sm { font-size: 1.8rem; margin-bottom: 10px; }
+.mi-word-card .row { gap: 10px; }
+.mi-word-card .row button { flex: 1; font-size: 1.2rem; padding: 16px 8px; }
+.mi-cheat { width: 100%; background: var(--bad); color: #fff; font-size: 1.3rem; padding: 16px; }
+.mi-found { font-weight: 700; font-size: 1.1rem; }
+.mi-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
+.mi-chips span { background: var(--game-soft); border: 2px solid var(--ink); border-radius: 99px; padding: 2px 10px; font-size: .95rem; }
+.bad-txt { color: var(--bad); }
+@media (max-width: 380px) { .mi-cols { grid-template-columns: 1fr; } }
+
+/* ─── 🗡️ Le Tueur silencieux ─── */
+.tu-fab { position: fixed; right: 0; top: 42%; z-index: 20; }
+.tu-fabbtn { width: 44px; height: 48px; border-radius: 16px 0 0 16px; border-right: 0 !important; padding: 0 0 0 4px; font-size: 1.35rem; background: var(--ink); border: 3px solid var(--mustard); box-shadow: var(--pop-sm); }
+.tu-fabbtn.dead { opacity: .6; }
+.tu-fabbtn.alert { background: var(--bad); animation: bob .6s ease-in-out infinite; }
+.tu-layer { position: fixed; inset: 0; z-index: 40; background: rgba(20, 8, 40, .72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.tu-layer[hidden], .tu-fab[hidden] { display: none; }
+.tu-panel { position: relative; width: 100%; max-width: 440px; max-height: 88vh; overflow: auto; margin: 0; }
+.tu-panel h2 { margin-top: 0; padding-right: 30px; }
+.tu-x { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%; background: var(--paper-2); color: var(--ink); }
+.tu-target { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; font-size: 1.4rem; }
+.tu-mission { width: 100%; min-height: 70px; margin: 6px 0 14px; background: var(--paper-2); color: var(--muted); font-size: 1rem; }
+.tu-mission.on { background: #fff3cf; color: var(--ink); font-size: 1.2rem; font-weight: 700; }
+.tu-wait { background: var(--paper-2); border-radius: 12px; padding: 10px; text-align: center; }
+.tu-claim { border-color: var(--bad); }
+.tu-claim .row { gap: 8px; }
+.tu-claim .row button { flex: 1; }
+.tu-feed { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.tu-f small { display: block; color: var(--muted); }
+.tu-rules { font-size: .95rem; }
+body.tv .tu-fab, body.tv .tu-layer { display: none; }
+@media (prefers-reduced-motion: reduce) { .tu-fabbtn.alert { animation: none; } }

@@ -297,6 +297,7 @@ const UI = (() => {
   // ─── Accueil ──────────────────────────────────────────────────────────────
   function renderHome() {
     lastKey = 'home';
+    window.TUEUR_UI?.sync();
     $app.className = '';
     document.body.style.removeProperty('--game');
     const code = new URLSearchParams(location.search).get('salon') || '';
@@ -395,6 +396,7 @@ const UI = (() => {
       </div>
 
       ${marathonCard(n, nFor)}
+      <div data-live="tueur"></div>
       ${isHost() ? `<div class="card">
         <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
         <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
@@ -480,6 +482,7 @@ const UI = (() => {
             ${GAMES[S.gameId]?.rules ? `<div class="tv-rules">${GAMES[S.gameId].rules()}</div>` : `<p>${esc(g.tagline)}</p>`}
           </div>
           ${soireeCard()}
+          <div data-live="tueur"></div>
           <p class="center white">${P(S.hostId) ? `${name(S.hostId)} ${crown} lance la partie depuis son téléphone` : `En attente des joueurs… <b>le premier à rejoindre sera l'hôte</b> ${crown}`}</p>
         </div>
       </div>`;
@@ -499,6 +502,7 @@ const UI = (() => {
   }
 
   const LIVE = {
+    tueur: () => (window.TUEUR_UI ? TUEUR_UI.card() : ''), // 🗡️ jeu de fond (public/js/tueur.js)
     lobbyPlayers: () => {
       const g = gameInfo();
       const n = S.players.filter((p) => p.connected).length;
@@ -556,6 +560,7 @@ const UI = (() => {
       const fn = LIVE[el.dataset.live] || mod?.live?.[el.dataset.live];
       if (fn) el.innerHTML = fn(S, S.game);
     });
+    window.TUEUR_UI?.sync(); // bouton 🗡️ flottant, visible aussi pendant les autres jeux
   }
 
   // Téléphone en mode manette : les cartes sans action (textes, résultats, classements) sont sur la télé.

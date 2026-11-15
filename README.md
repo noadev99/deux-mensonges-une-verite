@@ -33,8 +33,12 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🏎️ Les Bolides — course de petites voitures sur la télé : drifts qui chargent un turbo, départ canon, aspiration, objets (piment, savon, bouchon, klaxon, mouette), 4 circuits | 2–6 |
 | 🚩 La Course au drapeau — on secoue son téléphone pour courir : sprint, feu rouge / feu vert, mât savonné (pas de capteur ? on tape vite à l'écran) | 2–12 |
 | 💣 Le Démineur — coopératif contre la montre : bombe qui grossit avec le nombre de joueurs (3 à 8 modules), 7 types de modules et 19 variantes tirées au hasard dont des modules très durs 💀 (câbles multiples, code, interrupteurs binaires, flèches), pièges (fiches tournantes, chrono masqué, court-circuit), règles spéciales à 3 joueurs (chacun ses modules, relais, capitaine, muet, fiches anonymes), manuel découpé entre les joueurs, mode Expert | 2–10 |
+| 🔔 Le Buzzer — quiz de rapidité : le premier qui buzze sur son téléphone répond (+100 / −50 et main aux autres), estimations (le plus proche gagne), questions « sur nous » (deviner ce qu'un ami a répondu en début de partie), 3 dernières questions à double mise | 2–12 |
+| 🎭 Fais deviner — deux équipes, un paquet de mots qui revient sur 3 manches : parler librement, un seul mot, puis mime ; l'équipe adverse voit le mot et peut signaler la triche | 4–16 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
+
+**🗡️ Le Tueur silencieux** (jeu de fond, lancé depuis le salon) : chacun reçoit en secret une cible et une mission (« fais-lui dire “exactement” »…). Il se joue pendant toute la soirée, en même temps que les autres jeux, grâce au bouton 🗡️ en bas du téléphone. Mission réussie → la cible confirme, elle est éliminée et on hérite de sa cible et de sa mission. +2 points de soirée par élimination, +4 au dernier survivant (4 joueurs minimum).
 
 ## Lancer en local
 ```bash
