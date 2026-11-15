@@ -25,13 +25,22 @@
         <span class="dm-piles" title="Piles">${b.piles ? '🔋'.repeat(b.piles) : '<i>aucune pile</i>'}</span>
         <span class="dm-lamp" title="Lampe"><i style="background:${LAMP[b.lamp]}"></i>lampe ${esc(b.lamp)}</span>
       </div>
-    </div>${b.twist ? `<div class="dm-twist">${b.twist.emoji} <b>Piège : ${esc(b.twist.name)}</b> — ${esc(b.twist.desc)}</div>` : ''}`;
+    </div>${b.trio ? `<div class="dm-trio">${b.trio.emoji} <b>Règle à 3 : ${esc(b.trio.name)}</b> — ${esc(b.trio.desc)}${b.trio.captain ? `<br>🧑‍✈️ Capitaine : <b>${name(b.trio.captain)}</b>` : ''}${b.trio.mute ? `<br>🤐 Muet : <b>${name(b.trio.mute)}</b>` : ''}</div>` : ''}${b.twist ? `<div class="dm-twist">${b.twist.emoji} <b>Piège : ${esc(b.twist.name)}</b> — ${esc(b.twist.desc)}</div>` : ''}`;
   }
 
   // ═══ Modules ═══
+  // règles à 3 : qui a le droit de toucher ce module ?
+  function canTouch(m) {
+    const t = cur?.bomb?.trio, you = UI.state?.you;
+    if (!t) return true;
+    if (t.id === 'capitaine') return you === t.captain;
+    if (t.id === 'proprio') return !m.owner || m.owner === you;
+    if (t.id === 'relais') return cur.bomb.modules.find((x) => !x.solved)?.label === m.label;
+    return true;
+  }
   function moduleHtml(m, live) {
-    const dis = live ? '' : 'disabled';
-    const lab = `<div class="dm-mhead"><b>${m.label}</b><span>${esc(m.name)}</span></div>`;
+    const dis = live && canTouch(m) ? '' : 'disabled';
+    const lab = `<div class="dm-mhead"><b>${m.label}</b><span>${esc(m.name)}</span>${m.owner && P(m.owner) ? `<span class="dm-owner">🔒 ${name(m.owner)}</span>` : ''}</div>`;
     const cls = m.hard ? 'dm-mod hard' : 'dm-mod';
     if (m.solved) return `<div class="dm-mod solved">${lab}<div class="dm-ok">✅ Désamorcé${m.by && P(m.by) ? ` par ${name(m.by)}` : ''}</div></div>`;
     let body = '';
@@ -80,7 +89,7 @@
 
   const bombHtml = (g, live, big) => `<div class="dm-bomb ${big ? 'big' : ''}">${bombHead(g.bomb, big)}<div class="dm-mods">${g.bomb.modules.map((m) => moduleHtml(m, live)).join('')}</div></div>`;
 
-  const handHtml = (g) => `<div class="dm-hand">${g.hand.map((c) => `<div class="dm-card"><div class="dm-ctitle">${esc(c.title)}</div><ul>${c.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')}
+  const handHtml = (g) => (!g.hand.length ? '<div class="card center"><p>🧑‍✈️ Tu es le capitaine : aucune fiche ! Écoute les autres et agis.</p></div>' : '') + `<div class="dm-hand">${g.hand.map((c) => `<div class="dm-card"><div class="dm-ctitle">${esc(c.title)}</div><ul>${c.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')}
     <p class="muted center" style="font-size:.85rem">Les autres ont les autres fiches : lisez-les à voix haute !</p></div>`;
 
   const logHtml = (g) => (g.log.length ? `<div class="dm-log">${g.log.map((e) => `<span class="${e.ok ? 'ok' : 'ko'}">${e.pid ? `${e.ok ? '✅' : '💥'} ${name(e.pid)} · ` : ''}${esc(e.what)}</span>`).join('')}</div>` : '');
@@ -158,12 +167,13 @@
         <li>Modules : 🔌 câbles, 🎛️ cadran, 🔣 symboles, 🌡️ thermostat, 🎚️ interrupteurs, 🔴 gros bouton, ⬆️ flèches. Chacun a plusieurs façons de se désamorcer : c'est la fiche qui le dit !</li>
         <li>Chaque module a plusieurs <b>variantes</b> tirées au hasard, dont des versions <b>très dures 💀</b> (câbles multiples, code à 4 chiffres, interrupteurs binaires, flèches).</li>
         <li>La bombe <b>grossit avec le nombre de joueurs</b> (jusqu'à 8 modules) et peut cacher un <b>piège</b> : 🔀 fiches tournantes, 🙈 chrono masqué, ⚡ court-circuit.</li>
+        <li><b>À 3 joueurs</b>, chaque bombe tire une règle spéciale : 🔒 chacun ses modules, 🏃 relais, 🧑‍✈️ le capitaine, 🤐 le muet, 🃏 fiches anonymes.</li>
         <li>Chaque <b>erreur</b> fait perdre du temps et <b>accélère le chrono</b>. Trop d'erreurs ou plus de temps : BOUM.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">Bombe désamorcée : <b>+60</b> et +1 par 2 s restantes pour toute l'équipe · module désamorcé par toi : <b>+15</b> · erreur : <b>−8</b></div>`,
 
     key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me, tab, armed, modKey(g), (g.log || []).length, (g.hand || []).map((c) => c.title).join(',')].join('|'),
-    screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
+    screen: (S, g) => { cur = g; return (screens[g.phase] || screens.intro)(S, g); },
     tv: (S, g) => (screens[g.phase] || screens.intro)(S, g),
 
     onState: (S, g) => {

@@ -19,6 +19,14 @@ const LEVELS = {
   normal: { modules: [3, 4, 5], perMod: [80, 75, 70], hardBonus: 45, strikes: 3, penalty: 20000, speedUp: 1.2, hardP: [0.15, 0.3, 0.45], twistP: [0, 0.5, 0.8] },
   expert: { modules: [4, 5, 6], perMod: [65, 60, 55], hardBonus: 35, strikes: 2, penalty: 30000, speedUp: 1.3, hardP: [0.4, 0.55, 0.7], twistP: [0.5, 0.8, 1] },
 };
+// ═══ Règles à 3 joueurs : une règle tirée au hasard à chaque bombe ═══
+const TRIO = {
+  proprio: { emoji: '🔒', name: 'Chacun ses modules', desc: 'chaque module n\'a qu\'un seul démineur… et ce n\'est jamais lui qui a ses fiches' },
+  relais: { emoji: '🏃', name: 'Relais', desc: 'les modules se désamorcent dans l\'ordre (A, B, C…) et jamais deux de suite par la même personne' },
+  capitaine: { emoji: '🧑‍✈️', name: 'Le capitaine', desc: 'un seul joueur peut toucher la bombe, et il n\'a aucune fiche : les deux autres le guident' },
+  muet: { emoji: '🤐', name: 'Le muet', desc: 'un joueur n\'a pas le droit de parler : gestes et mimes uniquement !' },
+  anonyme: { emoji: '🃏', name: 'Fiches anonymes', desc: 'les fiches ne disent plus à quel module elles servent : à vous de deviner' },
+};
 const MAX_SCALE = 8;      // au-delà de 8 joueurs, la bombe ne grossit plus
 const TWISTS = {
   tournant: { emoji: '🔀', name: 'Fiches tournantes', desc: 'toutes les 60 s, chacun passe ses fiches au joueur suivant' },
@@ -459,8 +467,9 @@ const MAKERS = { wires, dial, symbols, thermo, switches };
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['solved', 'errors', 'defused']);
   const level = ctx.option('level') === 'expert' ? 'expert' : 'normal';
+  const trioOn = ctx.option('trio') !== 'off';
   const n = ctx.rounds(3);
-  return { scores, stats, level, round: 0, totalRounds: Math.min(3, n), phase: 'intro', stamp: 0, result: null };
+  return { scores, stats, level, trioOn, round: 0, totalRounds: Math.min(3, n), phase: 'intro', stamp: 0, result: null };
 }
 
 function startRound(ctx, g) {
@@ -492,12 +501,29 @@ function startRound(ctx, g) {
     m.cards = m.cards.map((c) => ({ ...c, title: `${label} · ${c.title}` }));
     return { ...m, label, solved: false, by: null };
   });
+  // règle à 3 joueurs (tirée au hasard ; les fiches anonymes seulement à partir de la 2e bombe)
+  g.trio = null; g.captain = null; g.mute = null; g.lastSolver = null;
+  if (g.trioOn && g.players.length === 3) {
+    g.trio = pick(Object.keys(TRIO).filter((k) => k !== 'anonyme' || g.round > 1));
+    if (g.trio === 'capitaine') g.captain = pick(g.players);
+    if (g.trio === 'muet') g.mute = pick(g.players);
+    if (g.trio === 'proprio') { const o = shuffle(g.players); g.modules.forEach((m, k) => { m.owner = o[k % 3]; }); }
+  }
   // fiches du manuel, mélangées puis distribuées : personne n'a tout
-  const cards = shuffle(g.modules.flatMap((m) => m.cards.map((c) => ({ ...c, mod: m.label }))));
+  let cards = shuffle(g.modules.flatMap((m) => m.cards.map((c) => ({ ...c, mod: m.label, owner: m.owner }))));
+  if (g.trio === 'anonyme') cards = cards.map((c, k) => ({ ...c, title: `🃏 Fiche mystère n°${k + 1}`, mod: '?' }));
   g.hands = Object.fromEntries(g.players.map((id) => [id, []]));
-  const ids = shuffle(g.players);
-  cards.forEach((c, k) => g.hands[ids[k % ids.length]].push(c));
+  const readers = g.captain ? g.players.filter((id) => id !== g.captain) : g.players;
+  const ids = shuffle(readers);
+  if (g.trio === 'proprio') {
+    // jamais les fiches de son propre module : on les donne au moins chargé des deux autres
+    for (const c of cards) {
+      const others = ids.filter((id) => id !== c.owner).sort((a, b) => g.hands[a].length - g.hands[b].length);
+      g.hands[others[0]].push(c);
+    }
+  } else cards.forEach((c, k) => g.hands[ids[k % ids.length]].push(c));
   ids.forEach((id) => { if (!g.hands[id].length) g.hands[id].push(pick(cards)); });
+  for (const id of g.players) g.hands[id] = g.hands[id].map(({ owner, ...c }) => c);
   g.order = ids;
   g.strikes = 0;
   g.maxStrikes = L.strikes + (g.level === 'normal' && nP >= 6 ? 1 : 0);
@@ -557,7 +583,7 @@ function strike(ctx, g, pid, what) {
 }
 
 function solved(ctx, g, m, pid) {
-  m.solved = true; m.by = pid;
+  m.solved = true; m.by = pid; g.lastSolver = pid;
   g.stats[pid].solved++;
   g.log.unshift({ t: Date.now(), pid, ok: true, what: `${m.label} · ${m.name}` });
   ctx.buzz(pid, [40, 40, 40]);
@@ -601,6 +627,15 @@ function onAction(ctx, g, pid, type, p, { isHost }) {
   if (g.phase !== 'bomb' || !g.players.includes(pid)) return;
   const m = g.modules.find((x) => x.label === p?.m);
   if (!m || m.solved) return;
+  // règles à 3 (si le joueur concerné est parti, la règle saute pour ne pas bloquer la bombe)
+  const here = (id) => ctx.connected().some((x) => x.id === id);
+  if (g.trio === 'capitaine' && pid !== g.captain && here(g.captain)) return { error: `🧑‍✈️ Seul le capitaine (${ctx.player(g.captain)?.name || '?'}) touche la bombe : guide-le !` };
+  if (g.trio === 'proprio' && m.owner && pid !== m.owner && here(m.owner)) return { error: `🔒 Le module ${m.label} est à ${ctx.player(m.owner)?.name || '?'} : guide-le !` };
+  if (g.trio === 'relais') {
+    const first = g.modules.find((x) => !x.solved);
+    if (first && first.label !== m.label) return { error: `🏃 Relais : d'abord le module ${first.label} !` };
+    if (g.lastSolver && pid === g.lastSolver && here(g.lastSolver) && g.players.filter(here).length > 1) return { error: '🏃 Relais : tu viens de désamorcer, passe la main !' };
+  }
   const i = Math.floor(Number(p.i));
   if (m.type === 'wires' && type === 'cut') {
     const w = m.pub.list[i];
@@ -682,7 +717,8 @@ function stateFor(ctx, g, pid) {
     s.bomb = {
       ...g.props, strikes: g.strikes, maxStrikes: g.maxStrikes, rem: remaining(g), rate: g.rate,
       twist: g.twist ? { id: g.twist, ...TWISTS[g.twist] } : null,
-      modules: g.modules.map((m) => ({ label: m.label, type: m.type, name: m.name, hard: !!m.hard, solved: m.solved, by: m.by, pub: m.pub })),
+      trio: g.trio ? { id: g.trio, ...TRIO[g.trio], captain: g.captain, mute: g.mute, last: g.lastSolver } : null,
+      modules: g.modules.map((m) => ({ label: m.label, type: m.type, name: m.name, hard: !!m.hard, owner: m.owner || null, solved: m.solved, by: m.by, pub: m.pub })),
     };
     s.hand = pid && g.hands ? g.hands[pid] || [] : [];
     s.handCount = g.hands ? Object.fromEntries(Object.entries(g.hands).map(([k, v]) => [k, v.length])) : {};
@@ -716,6 +752,10 @@ module.exports = {
   maxPlayers: 10,
   duration: '15–20 min',
   options: [
+    { key: 'trio', label: 'Règles spéciales à 3 joueurs', default: 'on', choices: [
+      { value: 'on', label: 'Oui 🎲', hint: 'À 3 joueurs, chaque bombe tire une règle : chacun ses modules, relais, capitaine, muet, fiches anonymes' },
+      { value: 'off', label: 'Non', hint: 'Règles normales même à 3' },
+    ] },
     { key: 'level', label: 'Difficulté', default: 'normal', choices: [
       { value: 'normal', label: 'Normal', hint: '3 erreurs permises, 3 à 5 modules' },
       { value: 'expert', label: 'Expert 💀', hint: '2 erreurs, moins de temps, pièges en plus, chrono plus rapide' },
@@ -724,5 +764,5 @@ module.exports = {
   create,
   onAction,
   stateFor,
-  _test: { MAKERS, VARIANTS, makeProps, serialInfo, GLYPHS, LEVELS, ARROWS },
+  _test: { TRIO, MAKERS, VARIANTS, makeProps, serialInfo, GLYPHS, LEVELS, ARROWS },
 };

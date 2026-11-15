@@ -1086,3 +1086,6 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 .dm-row2 .dm-validate { margin-top: 0; }
 .dm-arrows { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 6px; }
 .dm-arrows button { font-size: 1.6rem; padding: 6px 0; }
+.dm-trio { margin: -4px 0 10px; padding: 6px 10px; background: #c9e8ff; border: 2px solid var(--ink); border-radius: 10px; font-size: .88rem; }
+.dm-owner { margin-left: auto; font-size: .8rem; background: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 0 8px; }
+.dm-mod:has(button:disabled.dm-validate) { }
