@@ -18,6 +18,7 @@ const list = [
   require('./trombi'),
   require('./bolides'),
   require('./drapeau'),
+  require('./demineur'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));

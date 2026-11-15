@@ -1005,3 +1005,66 @@ body.tv .tb-card .tb-emo { font-size: 2.4rem; } body.tv .tb-card b { font-size: 
 /* le perso s'arrête pile sur la ligne d'arrivée (pointillés à 30 px du bord) */
 .dr-lane { --rw: 59px; --rh: 60px; }
 .dr-lanes.big .dr-lane { --rw: 70px; --rh: 70px; }
+
+/* ─── 💣 Le Démineur ─── */
+.dm-tabs { display: flex; gap: 6px; margin: 4px 0 8px; }
+.dm-tabs button { flex: 1; padding: 8px 6px; font-size: .95rem; background: #fff; box-shadow: var(--pop-sm); }
+.dm-tabs button.on { background: var(--mustard); }
+.dm-bomb { background: #4a4560; border: var(--line); border-radius: 22px 18px 24px 16px; box-shadow: var(--pop); padding: 10px; }
+.dm-head { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px; background: #2a2540; border: 2px solid var(--ink); border-radius: 14px; padding: 6px 10px; margin-bottom: 10px; color: #fff; }
+.dm-timer { font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.9rem; color: #ff5d5d; background: #120a1f; padding: 0 10px; border-radius: 8px; letter-spacing: 2px; }
+.dm-timer.fast { color: #ffb020; }
+.dm-timer.danger { animation: dm-blink .5s infinite alternate; }
+@keyframes dm-blink { to { color: #fff; } }
+.dm-strikes span { font-size: 1.3rem; color: #5a5470; margin-right: 2px; }
+.dm-strikes span.on { color: #ff4d4d; text-shadow: 0 0 8px #ff4d4d; }
+.dm-props { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: flex-end; font-size: .85rem; }
+.dm-serial { font-family: 'Courier New', monospace; font-weight: 700; background: #fff; color: var(--ink); padding: 0 6px; border-radius: 5px; letter-spacing: 1px; }
+.dm-piles i, .dm-lamp { font-style: normal; }
+.dm-lamp i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; margin-right: 4px; vertical-align: -1px; }
+.dm-mods { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.dm-mod { position: relative; background: #d8d4e3; border: 2.5px solid var(--ink); border-radius: 14px 11px 15px 10px; padding: 8px; box-shadow: 3px 3px 0 var(--ink); }
+.dm-mod.solved { background: #c6f2d9; }
+.dm-mhead { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; }
+.dm-mhead b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: #fff; font-family: var(--display); font-weight: 400; }
+.dm-ok { text-align: center; font-weight: 700; color: var(--good); padding: 14px 0; }
+.dm-wires { display: flex; flex-direction: column; gap: 5px; }
+.dm-wire { display: grid; grid-template-columns: 22px 1fr 78px; align-items: center; gap: 6px; padding: 4px 6px; background: #f2f0f7; box-shadow: none; border-width: 2px; border-radius: 9px; font-size: .85rem; }
+.dm-wire.armed { background: #ffd2d2; border-color: var(--bad); }
+.dm-wn { font-weight: 700; }
+.dm-wl { height: 12px; border-radius: 6px; background: var(--w); border: 2px solid var(--ink); }
+.dm-wl.striped { background: repeating-linear-gradient(45deg, var(--w) 0 7px, #fff 7px 11px); }
+.dm-wire.cut .dm-wl { background: linear-gradient(90deg, var(--w) 0 42%, transparent 42% 58%, var(--w) 58%); border-style: dashed; }
+.dm-wire.cut .dm-wl.striped { background: linear-gradient(90deg, transparent 42%, #f2f0f7 42% 58%, transparent 58%), repeating-linear-gradient(45deg, var(--w) 0 7px, #fff 7px 11px); }
+.dm-wc { font-weight: 700; text-align: right; }
+.dm-dial { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0; }
+.dm-dial button { width: 52px; padding: 8px 0; }
+.dm-digit { font-family: 'Courier New', monospace; font-weight: 700; font-size: 2.6rem; width: 64px; text-align: center; background: #120a1f; color: #3fdf8f; border-radius: 10px; border: 2px solid var(--ink); }
+.dm-validate { width: 100%; margin-top: 6px; padding: 8px; background: var(--mint); }
+.dm-syms { display: grid; grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); gap: 6px; }
+.dm-sym { position: relative; font-size: 1.9rem; padding: 8px 0; background: #fffbe8; font-family: 'Segoe UI Symbol', 'Apple Symbols', system-ui; }
+.dm-sym.done { background: #c6f2d9; }
+.dm-sym small { position: absolute; top: 2px; right: 6px; font-size: .75rem; font-family: var(--body); font-weight: 700; }
+.dm-thermo { display: flex; align-items: baseline; justify-content: center; gap: 8px; background: var(--t); border: 2.5px solid var(--ink); border-radius: 12px; padding: 6px; }
+.dm-tlabel { font-weight: 700; font-size: .8rem; align-self: center; }
+.dm-temp { font-family: 'Courier New', monospace; font-weight: 700; font-size: 2.6rem; background: #120a1f; color: #fff; padding: 0 10px; border-radius: 8px; min-width: 72px; text-align: center; }
+.dm-unit { font-weight: 700; font-size: 1.4rem; }
+.dm-sws { display: flex; justify-content: space-between; gap: 4px; }
+.dm-sw { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; background: #f2f0f7; box-shadow: none; border-width: 2px; }
+.dm-sw i { width: 16px; height: 40px; border-radius: 8px; background: #3b3450; position: relative; border: 2px solid var(--ink); }
+.dm-sw i::after { content: ''; position: absolute; left: -4px; width: 20px; height: 18px; border-radius: 6px; background: #ff7a1a; border: 2px solid var(--ink); bottom: -2px; transition: bottom .12s; }
+.dm-sw.up i::after { bottom: 20px; background: #3fdf8f; }
+.dm-sw small { font-weight: 700; font-size: .75rem; }
+.dm-hand { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.dm-card { background: #fffbe8; border: 2.5px solid var(--ink); border-radius: 12px 10px 13px 9px; padding: 8px 12px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(-.4deg); }
+.dm-card:nth-child(even) { transform: rotate(.5deg); }
+.dm-ctitle { font-family: var(--display); font-size: 1.05rem; margin-bottom: 4px; }
+.dm-card ul { margin: 0; padding-left: 18px; }
+.dm-card li { margin: 2px 0; }
+.dm-log { display: flex; flex-direction: column; gap: 3px; margin: 10px 0; font-size: .85rem; }
+.dm-log span { background: rgba(255,255,255,.85); border: 2px solid var(--ink); border-radius: 8px; padding: 2px 8px; }
+.dm-log .ko { background: #ffd2d2; }
+.dm-tv .dm-hands { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-bomb.big .dm-timer { font-size: 3rem; }
+.dm-bomb.big .dm-mods { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.dm-bomb.big .dm-props { font-size: 1.1rem; }

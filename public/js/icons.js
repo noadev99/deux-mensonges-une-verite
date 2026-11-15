@@ -145,6 +145,15 @@ const ICONS = (() => {
       <path d="M9 21h28" stroke="#f0506e" stroke-width="4"/>
       <path d="M13 14v42M33 14v42" stroke-width="6"/><path d="M13 14v42M33 14v42" stroke="#f0506e" stroke-width="3"/>`),
 
+    // 💣 une bombe ronde avec sa mèche et un écran de chrono
+    demineur: art(`
+      <circle cx="30" cy="38" r="20" fill="#3b3450"/>
+      <rect x="18" y="32" width="24" height="11" rx="2" fill="#1a0f2e" stroke-width="2"/>
+      <path d="M22 37.5h3M28 37.5h3M34 37.5h3" stroke="#ff5d5d" stroke-width="2.5"/>
+      <path d="M40 20l5-5" stroke-width="5"/><path d="M45 15c3-4 7-4 9-2" stroke-width="2.5"/>
+      <path d="M56 8l2-3M58 14h3M53 6l-1-3" stroke="#ffc23d" stroke-width="2.5"/>
+      <path d="M22 26q4-4 9-4" stroke="#fff" stroke-width="2.5"/>`),
+
     // 🚩 un drapeau planté au bout de la piste, et un téléphone qui tremble
     drapeau: art(`
       <path d="M40 58V8" stroke-width="3.5"/><path d="M40 8l18 7-18 7z" fill="#ff5d5d"/>

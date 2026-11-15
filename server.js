@@ -88,7 +88,7 @@ function purgeGone(room) {
 const EST = {
   'deux-mensonges': [12, 0], 'qui-de-nous': [1, 1], intrus: [1, 2.5], dico: [1, 2.5], chute: [1, 2.5], patate: [1, 1.5],
   classement: [1, 2.5], dessin: [12, 0], note: [3, 2], butin: [1, 1.5], complot: [22, 0], alliances: [14, 0],
-  ring: [2, 1.2], image: [1, 2.5], trombi: [2, 3], bolides: [2, 2.5], drapeau: [1, 1.2],
+  ring: [2, 1.2], image: [1, 2.5], trombi: [2, 3], bolides: [2, 2.5], drapeau: [1, 1.2], demineur: [2, 5],
 };
 const estMinutes = (id, rounds) => { const [f, r] = EST[id] || [10, 0]; return Math.round(f + r * rounds); };
 const catalog = Object.values(GAMES).map(({ id, name, emoji, color, tagline, description, minPlayers, maxPlayers, duration, oral, options, requiresTv, keyboard }) =>

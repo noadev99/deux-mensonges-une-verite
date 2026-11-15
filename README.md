@@ -32,6 +32,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🧼 Le ring savonneux — action en temps réel sur la télé : les téléphones sont des manettes (joystick + A/B) | 2–6 |
 | 🏎️ Les Bolides — course de petites voitures sur la télé : drifts qui chargent un turbo, départ canon, aspiration, objets (piment, savon, bouchon, klaxon, mouette), 4 circuits | 2–6 |
 | 🚩 La Course au drapeau — on secoue son téléphone pour courir : sprint, feu rouge / feu vert, mât savonné (pas de capteur ? on tape vite à l'écran) | 2–12 |
+| 💣 Le Démineur — coopératif contre la montre : la bombe a plusieurs modules (câbles, cadran, symboles, thermostat, interrupteurs), le manuel est découpé entre les joueurs, règles tirées au hasard à chaque bombe, mode Expert | 2–8 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
 
