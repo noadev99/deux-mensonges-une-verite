@@ -6,7 +6,7 @@
 // La télé prévient le serveur des événements : chute, choc, fin de manche.
 // Ici on garde seulement l'état de la partie : manches, éliminés, points.
 // ─────────────────────────────────────────────────────────────────────────────
-const { gain, applyGains, awards, active, initScores } = require('./_utils');
+const { gain, applyGains, awards, active, initScores, practiceReady, allReady } = require('./_utils');
 
 const ARENAS = [
   { id: 'rond', name: 'La patinoire' },
@@ -27,7 +27,23 @@ function create(ctx) {
   return g;
 }
 
+// entraînement : arène qui ne rétrécit pas, on réapparaît quand on tombe, rien ne compte
+function startPractice(ctx, g) {
+  g.practice = true;
+  g.ready = [];
+  g.arena = { id: 'rond', name: 'Entraînement' };
+  g.players = active(ctx, g).map((p) => p.id);
+  g.alive = [...g.players];
+  g.out = [];
+  g.ejections = {};
+  g.seed = Math.floor(Math.random() * 1e9);
+  g.startedAt = Date.now();
+  g.phase = 'play';
+}
+
 function startRound(ctx, g) {
+  g.practice = false;
+  g.ready = [];
   g.round++;
   g.arena = g.arenas[g.round - 1];
   g.players = active(ctx, g).map((p) => p.id);   // joueurs présents au début de la manche
@@ -65,6 +81,11 @@ function finishRound(ctx, g) {
 // Événements envoyés par la télé (seul le premier écran fait foi)
 function onScreenEvent(ctx, g, type, p = {}) {
   if (g.phase !== 'play') return false;
+  if (g.practice) {                           // entraînement : juste les vibrations
+    if (type === 'hit') for (const id of [p.a, p.b]) if (g.players.includes(id)) ctx.buzz(id, [45]);
+    if (type === 'fall' && g.players.includes(p.pid)) ctx.buzz(p.pid, [300, 90, 300]);
+    return false;
+  }
   if (type === 'hit') {                       // deux joueurs se sont rentrés dedans
     for (const id of [p.a, p.b]) if (g.alive.includes(id)) ctx.buzz(id, [45]);
     return false;
@@ -89,8 +110,10 @@ function onScreenEvent(ctx, g, type, p = {}) {
 
 function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
+  if (type === 'ready') { if (practiceReady(ctx, g, pid)) startRound(ctx, g); return; }
   if (type === 'next' && isHost) {
-    if (g.phase === 'intro') startRound(ctx, g);
+    if (g.phase === 'intro') startPractice(ctx, g);
+    else if (g.phase === 'play' && g.practice) startRound(ctx, g);
     else if (g.phase === 'play') finishRound(ctx, g);           // forcer la fin (télé débranchée…)
     else if (g.phase === 'roundEnd') {
       if (g.round >= g.totalRounds) {
@@ -112,7 +135,7 @@ function stateFor(ctx, g, pid) {
     participants: Object.keys(g.scores),
     arena: g.arena || null, arenas: ARENAS,
     players: g.players || [], alive: g.alive || [], out: g.out || [],
-    seed: g.seed, startedAt: g.startedAt,
+    seed: g.seed, startedAt: g.startedAt, practice: !!g.practice, ready: g.ready || [],
     me: pid && g.players ? (g.players.includes(pid) ? (g.alive.includes(pid) ? 'alive' : 'out') : 'wait') : null,
   };
   if (g.phase === 'roundEnd') s.result = g.result;
@@ -136,5 +159,7 @@ module.exports = {
   create,
   onAction,
   onScreenEvent,
+  // quelqu'un part pendant l'entraînement : les autres sont peut-être tous prêts
+  onPlayersChanged(ctx, g) { if (g.practice && g.phase === 'play' && allReady(ctx, g)) startRound(ctx, g); },
   stateFor,
 };

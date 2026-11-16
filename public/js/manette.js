@@ -217,7 +217,18 @@
     };
   }
 
+  // ═══ Entraînement (avant la 1re manche) ═══
+  // Bouton « Prêt » sur la manette, bandeau et liste des joueurs prêts sur la télé.
+  const isReady = (g, id) => (g.ready || []).includes(id);
+  const readyBtn = (S, g) => (g.practice && (g.players || []).includes(S.you)
+    ? `<button class="pr-ready ${isReady(g, S.you) ? 'on' : ''}" data-ready>${isReady(g, S.you) ? '✅ Prêt ! (toucher pour annuler)' : 'Je suis prêt ✅'}</button>` : '');
+  const readyChips = (g) => (g.players || []).filter(UI.P).map((id) => `<span class="pr-chip ${isReady(g, id) ? 'on' : ''}">${UI.av(UI.P(id), 'sm')}${UI.name(id)} ${isReady(g, id) ? '✅' : '⏳'}</span>`).join('');
+  const practiceBanner = (tip) => `<div class="pr-banner"><div><b>🎯 ENTRAÎNEMENT</b> · rien ne compte, essayez les commandes !<small>${tip}</small></div>
+      <div class="pr-chips" data-live="ready"></div></div>`;
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-ready]')) { navigator.vibrate?.(30); UI.send('ready'); } });
+
   window.MANETTE = {
+    readyBtn, readyChips, practiceBanner, isReady,
     audio, tone, noise, inputs, faceImg, colorOf,
     startPad, stopPad, keyboard, kbResume,
     kbName: () => kb?.name || null,

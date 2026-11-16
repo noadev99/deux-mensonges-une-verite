@@ -8,7 +8,7 @@
 //   🚦 Feu rouge     — on ne secoue qu'au vert ; secouer au rouge renvoie au départ
 //   🧗 Le mât        — on grimpe au mât… et on glisse dès qu'on s'arrête
 // ─────────────────────────────────────────────────────────────────────────────
-const { gain, applyGains, awards, active, initScores } = require('./_utils');
+const { gain, applyGains, awards, active, initScores, practiceReady, allReady } = require('./_utils');
 
 const MODES = [
   { id: 'sprint', name: 'Le sprint', emoji: '🏃', len: 420, speed: 0.75, hint: 'Secoue comme un fou jusqu\'au drapeau !' },
@@ -27,9 +27,24 @@ function create(ctx) {
   return { scores, stats, round: 0, totalRounds: n, modes: MODES.slice(0, n), phase: 'intro', stamp: 0 };
 }
 
+// entraînement : une petite piste qui recommence à chaque drapeau, rien ne compte
+const PRACTICE = { id: 'sprint', name: 'Entraînement', emoji: '🎯', len: 150, speed: 0.75, hint: 'Secoue pour essayer ! Ton perso repart au début à chaque drapeau.' };
+function startPractice(ctx, g) {
+  g.practice = true;
+  g.ready = [];
+  g.laps = {};
+  setupRace(ctx, g, PRACTICE);
+}
+
 function startRound(ctx, g) {
+  g.practice = false;
+  g.ready = [];
   g.round++;
-  g.mode = g.modes[g.round - 1];
+  setupRace(ctx, g, g.modes[g.round - 1]);
+}
+
+function setupRace(ctx, g, mode) {
+  g.mode = mode;
   g.players = active(ctx, g).map((p) => p.id);
   g.pos = Object.fromEntries(g.players.map((id) => [id, 0]));
   g.budget = {};           // anti-triche : énergie encore autorisée pour chaque joueur
@@ -72,6 +87,7 @@ function step(ctx, g) {
     g.lightAt = now;
   }
   for (const id of g.players) g.rate[id] = (g.rate[id] || 0) * 0.5;   // la jauge retombe si on arrête
+  if (g.practice) return;
   const need = Math.min(3, Math.max(1, g.players.length - 1));
   if (g.finished.length >= need || g.finished.length >= active(ctx, g).filter((p) => g.players.includes(p.id)).length || now - g.goAt > LIMIT) finishRound(ctx, g);
 }
@@ -114,6 +130,12 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
       return { quiet: true };
     }
     g.pos[pid] = Math.min(g.mode.len, g.pos[pid] + e * (g.mode.speed || 1));
+    if (g.practice && g.pos[pid] >= g.mode.len) {          // entraînement : on repart au début
+      g.pos[pid] = 0;
+      g.laps[pid] = (g.laps[pid] || 0) + 1;
+      ctx.buzz(pid, [80, 50, 80]);
+      return {};
+    }
     if (g.pos[pid] >= g.mode.len) {
       g.finished.push(pid);
       g.times[pid] = now - g.goAt;
@@ -121,8 +143,10 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
     }
     return { quiet: true };
   }
+  if (type === 'ready') { if (practiceReady(ctx, g, pid)) startRound(ctx, g); return; }
   if (type === 'next' && isHost) {
-    if (g.phase === 'intro') startRound(ctx, g);
+    if (g.phase === 'intro') startPractice(ctx, g);
+    else if (g.phase === 'race' && g.practice) startRound(ctx, g);
     else if (g.phase === 'race') finishRound(ctx, g);
     else if (g.phase === 'roundEnd') {
       if (g.round >= g.totalRounds) {
@@ -150,6 +174,7 @@ function stateFor(ctx, g, pid) {
     light: g.mode?.id === 'feu' ? g.light : null,
     caught: g.caughtAt ? Object.keys(g.caughtAt).filter((id) => now - g.caughtAt[id] < 1200) : [],
     me: pid && g.players ? (g.players.includes(pid) ? (g.finished.includes(pid) ? 'done' : 'race') : 'wait') : null,
+    practice: !!g.practice, ready: g.ready || [], laps: g.practice ? g.laps : {},
   };
   if (g.phase === 'roundEnd') s.result = g.result;
   if (g.phase === 'end') s.awards = g.awards;
@@ -168,6 +193,7 @@ module.exports = {
   duration: '5 min',
   create,
   onAction,
+  onPlayersChanged(ctx, g) { if (g.practice && g.phase === 'race' && allReady(ctx, g)) startRound(ctx, g); },
   stateFor,
   _test: { MODES, MAX_RATE },
 };

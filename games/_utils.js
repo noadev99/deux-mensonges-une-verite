@@ -60,4 +60,17 @@ const packOption = (classiqueHint, animeHint) => ({
 // choisit la liste de contenu selon le thème choisi par l'hôte
 const byPack = (ctx, classique, anime) => (ctx.option('pack') === 'anime' ? anime : classique);
 
-module.exports = { packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores };
+// ─── Entraînement des jeux manette ───
+// Avant la 1re manche, chacun essaie les commandes sans enjeu, puis appuie sur « Prêt ».
+// Renvoie true quand tous les joueurs présents sont prêts (la vraie partie peut démarrer).
+function practiceReady(ctx, g, pid) {
+  if (!g.practice || !g.players.includes(pid)) return false;
+  g.ready = g.ready.includes(pid) ? g.ready.filter((x) => x !== pid) : [...g.ready, pid];
+  return allReady(ctx, g);
+}
+function allReady(ctx, g) {
+  const need = active(ctx, g).filter((p) => g.players.includes(p.id));
+  return need.length > 0 && need.every((p) => g.ready.includes(p.id));
+}
+
+module.exports = { practiceReady, allReady, packOption, byPack, shuffle, sample, normalize, gain, applyGains, awards, active, initScores };

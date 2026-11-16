@@ -239,7 +239,7 @@
       };
     });
     sim = {
-      key: `${g.round}|${g.startedAt}`, canvas, ctx: canvas.getContext('2d'), T, karts, rand,
+      key: `${g.round}|${g.startedAt}`, canvas, ctx: canvas.getContext('2d'), T, karts, rand, practice: !!g.practice,
       soaps: [], corks: [], waves: [], gulls: [], puddles: [], parts: [], banners: [], hits: {},
       bg: null, t0: performance.now(), last: performance.now(), acc: 0, count: 4, raf: 0,
       firstFinish: 0, ended: false, bestLap: null, finalLapShown: false, order: ids.slice(),
@@ -505,7 +505,7 @@
     // ── classement en direct
     sim.order = sim.karts.slice().sort((a, b) => (a.done && b.done ? a.finishMs - b.finishMs : a.done ? -1 : b.done ? 1 : b.progress - a.progress)).map((k) => k.id);
     // ── fin de course : 20 s après le premier arrivé, ou au bout de 4 min
-    if (!sim.ended && ((sim.firstFinish && now - sim.firstFinish > 20) || now > 240)) {
+    if (!sim.ended && !sim.practice && ((sim.firstFinish && now - sim.firstFinish > 20) || now > 240)) {
       sim.ended = true;
       send('raceEnd', { order: sim.order, best: sim.bestLap ? { pid: sim.bestLap.pid, ms: Math.round(sim.bestLap.s * 1000) } : null });
     }
@@ -630,7 +630,7 @@
       const nm = (P(k.id)?.name || '?').slice(0, 11);
       c.fillText(nm, 66, y + 5);
       c.textAlign = 'right'; c.fillStyle = k.done ? '#3fbf8f' : '#ffd27a';
-      c.fillText(k.done ? '🏁' : `${Math.min(T.laps, k.lapsDone + 1)}/${T.laps}`, 192, y + 5);
+      c.fillText(k.done ? '🏁' : sim.practice ? `tour ${k.lapsDone + 1}` : `${Math.min(T.laps, k.lapsDone + 1)}/${T.laps}`, 192, y + 5);
     });
     c.restore();
     // chrono à droite
@@ -693,7 +693,7 @@
 
   const itemTxt = (it) => (it ? `${ITEM[it.id]?.emoji || ''}${it.id === 'triple' ? `×${it.left}` : ''}` : '—');
   const statusLabel = (g) => g.me === 'done' ? `🏁 Arrivé${g.myPlace ? ` ${g.myPlace === 1 ? '1er' : g.myPlace + 'ᵉ'}` : ''} !`
-    : g.me === 'race' ? `🏎️ Tour ${g.myLap}/${g.track.laps}` : '⏳ Prochaine course';
+    : g.practice ? `🎯 Entraînement · tour ${g.myLap}` : g.me === 'race' ? `🏎️ Tour ${g.myLap}/${g.track.laps}` : '⏳ Prochaine course';
 
   const screens = {
     intro(S, g) {
@@ -706,13 +706,15 @@
       return `<div class="phase"><div class="step">${g.totalRounds} courses</div><div class="t">Les Bolides 🏎️</div></div>
         <div class="card center keep"><p style="margin-top:0"><b>📱 Ton téléphone devient une manette.</b><br>Tourne-le en <b>paysage</b> et regarde la télé !</p>${RULES}
         <p class="muted" style="margin-bottom:0">Objets : 🌶️ turbo · 🧼 savon à poser · 🍾 bouchon tout droit · 📯 klaxon qui fait déraper autour · 🐦 mouette sur le premier</p></div>
-        ${UI.hostButton('Moteurs ! 🏎️')}`;
+        <p class="center muted">On commence par un <b>tour d'essai</b> pour prendre en main les commandes.</p>
+        ${UI.hostButton('Tour d\'essai 🎯')}`;
     },
 
     play(S, g) {
       if (S.spectator) {
         return `<div class="rg-stage">
-            <div class="rg-hud"><span class="rg-round">Course ${g.round}/${g.totalRounds} · ${esc(g.track.name)} · ${g.track.laps} tours</span></div>
+            ${g.practice ? MANETTE.practiceBanner('Ça accélère tout seul : le joystick tourne · A en tournant : drift puis turbo · B : objet des caisses ?. Appuyez sur « Je suis prêt » sur votre téléphone.')
+              : `<div class="rg-hud"><span class="rg-round">Course ${g.round}/${g.totalRounds} · ${esc(g.track.name)} · ${g.track.laps} tours</span></div>`}
             <canvas class="rg-canvas"></canvas>
             ${kbName() ? `<div class="rg-kbhelp">⌨️ ${esc(kbName())} : ${KB_HELP}</div>` : ''}
             <button class="rg-sound" data-sound>🔊</button>
@@ -720,7 +722,7 @@
       }
       const me = P(S.you);
       return `<div class="pad bl ${g.me === 'race' ? 'alive' : g.me === 'done' ? 'out' : 'wait'}" style="--pc:${colorOf(S.you)}">
-          <div class="pad-top">${av(me, 'sm')}<b>${esc(me?.name || '')}</b><span class="pad-status" data-live="status"></span><button class="pad-fs" data-fs aria-label="Plein écran">⛶</button></div>
+          <div class="pad-top">${av(me, 'sm')}<b>${esc(me?.name || '')}</b><span class="pad-status" data-live="status"></span>${MANETTE.readyBtn(S, g)}<button class="pad-fs" data-fs aria-label="Plein écran">⛶</button></div>
           <div class="pad-left"><div class="pad-base"><div class="pad-knob"></div></div><span class="pad-hint">Volant : glisse ton pouce<br><small>vers le bas = frein</small></span></div>
           <div class="pad-right">
             <button class="pad-btn pad-b" data-btn="b">B<small data-live="item"></small></button>
@@ -728,7 +730,7 @@
           </div>
           <div class="pad-rotate">📱↔️<br>Tourne ton téléphone</div>
         </div>
-        ${UI.isHost() ? '<div class="pad-host"><a class="link" data-host-action="next">Arrêter la course</a></div>' : ''}`;
+        ${UI.isHost() ? `<div class="pad-host"><a class="link" data-host-action="next">${g.practice ? 'Passer l\'entraînement' : 'Arrêter la course'}</a></div>` : ''}`;
     },
 
     roundEnd(S, g) {
@@ -759,7 +761,7 @@
       </ol>
       <div class="muted" style="font-size:.92rem">4 circuits (3 ou 4 tours) · points : 10, 7, 5, 3, 2, 1 · meilleur tour : <b>+2</b> · les derniers vont un tout petit peu plus vite</div>`,
 
-    key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me].join('|'),
+    key: (S, g) => [g.phase, g.round, g.practice, S.spectator ? '' : g.me, S.spectator ? '' : MANETTE.isReady(g, S.you)].join('|'),
     screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
     tv: (S, g) => (screens[g.phase] || screens.intro)(S, g),
 
@@ -770,6 +772,7 @@
 
     live: {
       status: (S, g) => statusLabel(g),
+      ready: (S, g) => MANETTE.readyChips(g),
       item: (S, g) => (g.me === 'race' ? itemTxt(g.myItem) : '—'),
     },
 

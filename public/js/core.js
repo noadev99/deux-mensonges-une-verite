@@ -3,6 +3,25 @@
 // Chaque jeu s'enregistre avec UI.registerGame(id, { key, screen, live, bind, rules }).
 // ─────────────────────────────────────────────────────────────────────────────
 const UI = (() => {
+
+  // ─── familles de jeux (pour s'y retrouver dans la liste) ───
+  const CATS = [
+    ['🤥 Bluff et déduction', ['deux-mensonges', 'intrus', 'image', 'dico', 'complot', 'alliances', 'butin']],
+    ['😂 Pour rigoler', ['chute', 'qui-de-nous', 'classement', 'dessin', 'note', 'patate']],
+    ['🧠 Quiz et devinettes', ['buzzer', 'mime', 'trombi']],
+    ['🤝 En équipe', ['demineur']],
+    ['🎮 Action : le téléphone devient une manette', ['ring', 'bolides', 'drapeau']],
+  ];
+  // +100 / −50 (jamais « +-50 »)
+  const signed = (n) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
+  const GAME_CATS = (games) => {
+    const used = new Set();
+    const out = CATS.map(([t, ids]) => [t, ids.map((id) => games.find((g) => g.id === id)).filter(Boolean)]).filter(([, l]) => l.length);
+    out.forEach(([, l]) => l.forEach((g) => used.add(g.id)));
+    const rest = games.filter((g) => !used.has(g.id));
+    if (rest.length) out.push(['✨ Autres', rest]);
+    return out;
+  };
   // reconnexion rapide et sans fin (un téléphone peut rester en veille longtemps)
   const socket = io({ reconnectionDelay: 500, reconnectionDelayMax: 2000, timeout: 8000 });
   const $app = document.getElementById('app');
@@ -112,7 +131,7 @@ const UI = (() => {
   function scoreboard(scores, deltas = {}) {
     return Object.keys(scores).filter(P).sort((a, b) => scores[b] - scores[a]).map((id, i) => `
       <div class="score"><b>${i + 1}</b>${av(P(id))}<span class="n">${name(id)}${id === S.you ? ' (toi)' : ''}</span>
-      ${deltas[id] ? `<span class="plus">+${deltas[id]}</span>` : ''}<span class="p">${scores[id]}</span></div>`).join('');
+      ${deltas[id] ? `<span class="plus ${deltas[id] < 0 ? 'minus' : ''}">${signed(deltas[id])}</span>` : ''}<span class="p">${scores[id]}</span></div>`).join('');
   }
 
   function podium(scores) {
@@ -151,10 +170,10 @@ const UI = (() => {
     if (!ids.length) return '<div class="muted gains-none">Personne ne marque de points cette fois.</div>';
     const mine = gains[S.you]?.total;
     return `<details class="gains-d" ${gainsOpen || S.spectator ? 'open' : ''}>
-      <summary><span class="gains-title">Détail des points</span>${mine ? `<span class="gains-me">toi : +${mine}</span>` : ''}</summary>
+      <summary><span class="gains-title">Détail des points</span>${mine ? `<span class="gains-me ${mine < 0 ? 'minus' : ''}">toi : ${signed(mine)}</span>` : ''}</summary>
       <div class="gains">${ids.map((id) => `
-        <div class="g"><div class="gl">${av(P(id), 'sm')}<span class="gn">${name(id)}</span><span class="plus">+${gains[id].total}</span></div>
-        <ul>${gains[id].reasons.map((r) => `<li>+${r.pts} ${esc(r.label)}</li>`).join('')}</ul></div>`).join('')}</div>
+        <div class="g"><div class="gl">${av(P(id), 'sm')}<span class="gn">${name(id)}</span><span class="plus ${gains[id].total < 0 ? 'minus' : ''}">${signed(gains[id].total)}</span></div>
+        <ul>${gains[id].reasons.map((r) => `<li>${signed(r.pts)} ${esc(r.label)}</li>`).join('')}</ul></div>`).join('')}</div>
     </details>`;
   }
   const gainTotals = (gains) => Object.fromEntries(Object.entries(gains || {}).map(([id, x]) => [id, x.total]));
@@ -399,8 +418,8 @@ const UI = (() => {
       <div data-live="tueur"></div>
       ${isHost() ? `<div class="card">
         <div class="cardhead"><h2>Changer de jeu</h2>${fits.length ? '<button class="chipbtn" data-random-game>🎲 Au hasard</button>' : ''}</div>
-        <div class="gtiles">${S.games.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
-          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${nFor(x) < x.minPlayers ? `<small>🔒 ${x.minPlayers} joueurs min.</small>` : nFor(x) > x.maxPlayers ? `<small>🔒 ${x.maxPlayers} max.</small>` : ''}</button>`).join('')}</div>
+        ${GAME_CATS(S.games).map(([title, list]) => `<div class="gt-cat">${title}</div><div class="gtiles">${list.map((x) => `<button class="gtile ${x.id === S.gameId ? 'sel' : ''} ${nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers ? 'few' : ''}" data-game="${x.id}" style="--c:${x.color}" ${(nFor(x) < x.minPlayers || nFor(x) > x.maxPlayers) && x.id !== S.gameId ? 'disabled' : ''}>
+          <span class="gt-art">${ICONS.game(x.id)}</span><span class="gt-name">${esc(x.name)}</span>${nFor(x) < x.minPlayers ? `<small>🔒 ${x.minPlayers} joueurs min.</small>` : nFor(x) > x.maxPlayers ? `<small>🔒 ${x.maxPlayers} max.</small>` : `<small>${x.minPlayers}–${x.maxPlayers} joueurs</small>`}</button>`).join('')}</div>`).join('')}
       </div>` : ''}
       ${soireeCard()}
       <p class="center"><a class="link" data-leave>Quitter le salon</a></p>

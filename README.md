@@ -13,6 +13,8 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 - Un salon (code à 4 lettres) pour toute la soirée : l'hôte choisit un jeu, on joue, on revient au salon, on enchaîne.
 - **Classement de la soirée** : à chaque partie, le 1er gagne autant de points qu'il y a de joueurs, le dernier 1 point.
 - Reconnexion automatique si on recharge la page ou perd le réseau.
+- **Entraînement avant les jeux manette** (ring, bolides, drapeau) : on essaie les commandes sans enjeu, chacun appuie sur « Je suis prêt », et la 1re manche démarre quand tout le monde l'est (l'hôte peut passer).
+- Dans le salon, les jeux sont rangés par familles (bluff, pour rigoler, quiz, équipe, action).
 
 ## Jeux
 | Jeu | Joueurs |
@@ -34,7 +36,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🚩 La Course au drapeau — on secoue son téléphone pour courir : sprint, feu rouge / feu vert, mât savonné (pas de capteur ? on tape vite à l'écran) | 2–12 |
 | 💣 Le Démineur — coopératif contre la montre : bombe qui grossit avec le nombre de joueurs (3 à 8 modules), 7 types de modules et 19 variantes tirées au hasard dont des modules très durs 💀 (câbles multiples, code, interrupteurs binaires, flèches), pièges (fiches tournantes, chrono masqué, court-circuit), règles spéciales à 3 joueurs (chacun ses modules, relais, capitaine, muet, fiches anonymes), manuel découpé entre les joueurs, mode Expert | 2–10 |
 | 🔔 Le Buzzer — quiz de rapidité : le premier qui buzze sur son téléphone répond (+100 / −50 et main aux autres), estimations (le plus proche gagne), questions « sur nous » (deviner ce qu'un ami a répondu en début de partie), 3 dernières questions à double mise | 2–12 |
-| 🎭 Fais deviner — deux équipes, un paquet de mots qui revient sur 3 manches : parler librement, un seul mot, puis mime ; l'équipe adverse voit le mot et peut signaler la triche | 4–16 |
+| 🎭 Fais deviner — un paquet de mots qui revient sur 3 manches : parler librement, un seul mot, puis mime. En équipes dès 4 (l'équipe adverse voit le mot et signale la triche) ; à 2 ou 3, chacun pour soi (un joueur fait deviner, les autres devinent). Paquet : mots du jeu, célébrités, ou « nos mots » écrits par les joueurs | 2–16 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
 

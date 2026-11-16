@@ -82,13 +82,14 @@
       }
       return `<div class="phase"><div class="step">${g.totalRounds} manches</div><div class="t">La Course au drapeau 🚩</div></div>
         <div class="card center keep">${RULES}<div class="dr-modes">${list}</div>${sensorCard()}</div>
-        ${UI.hostButton('À vos marques ! 🚩')}`;
+        <p class="center muted">On commence par un <b>entraînement</b> pour essayer de secouer.</p>
+        ${UI.hostButton('Entraînement 🎯')}`;
     },
 
     race(S, g) {
-      const head = `<div class="dr-head"><span class="dr-mtitle">${g.mode.emoji} ${esc(g.mode.name)}</span><span class="muted">Manche ${g.round}/${g.totalRounds}</span></div>`;
+      const head = `<div class="dr-head"><span class="dr-mtitle">${g.mode.emoji} ${esc(g.mode.name)}</span><span class="muted">${g.practice ? 'rien ne compte' : `Manche ${g.round}/${g.totalRounds}`}</span></div>`;
       if (S.spectator) {
-        return `<div class="dr-tv">${head.replace('muted', 'white')}<p class="white center">${esc(g.mode.hint)}</p>
+        return `<div class="dr-tv">${g.practice ? MANETTE.practiceBanner('Secouez vos téléphones pour courir (ou tapez vite sur l\'écran). Appuyez sur « Je suis prêt » quand vous avez compris.') : head.replace('muted', 'white')}<p class="white center">${esc(g.mode.hint)}</p>
           <div class="dr-stage">${lightHtml(g)}${lanes(g, true)}<div class="dr-count" data-count></div></div></div>`;
       }
       if (g.me === 'wait') return `${head}<div class="card center"><p>⏳ Tu courras à la prochaine manche !</p></div>${lanes(g)}`;
@@ -96,6 +97,7 @@
       return `<div class="dr-phone ${g.me}" style="--pc:${colorOf(S.you)}">
           ${head}
           <p class="center" style="margin:4px 0 8px">${esc(g.mode.hint)}</p>
+          ${g.practice ? `<div class="center" style="margin-bottom:8px">${MANETTE.readyBtn(S, g)}</div>` : ''}
           <div class="dr-stage">${lightHtml(g)}<div class="dr-count" data-count></div>
           ${needsPermission() ? '<button class="big dr-perm" data-perm>📳 Activer le capteur</button>' : ''}
           <button class="dr-zone ${tap ? 'tap' : ''}" data-tap>
@@ -106,7 +108,7 @@
           </button></div>
           ${lanes(g)}
         </div>
-        ${UI.isHost() ? '<div class="center"><a class="link" data-host-action="next">Arrêter la manche</a></div>' : ''}`;
+        ${UI.isHost() ? `<div class="center"><a class="link" data-host-action="next">${g.practice ? 'Passer l\'entraînement' : 'Arrêter la manche'}</a></div>` : ''}`;
     },
 
     roundEnd(S, g) {
@@ -154,7 +156,7 @@
       </ol>
       <div class="muted" style="font-size:.92rem">Points par manche : 8, 5, 3, 2, 1 selon l'ordre d'arrivée (puis selon l'avancée) · manche arrêtée au bout de 2 min</div>`,
 
-    key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me, needsPermission(), motion.denied, hasSensor()].join('|'),
+    key: (S, g) => [g.phase, g.round, g.practice, S.spectator ? '' : g.me, S.spectator ? '' : MANETTE.isReady(g, S.you), needsPermission(), motion.denied, hasSensor()].join('|'),
     screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
     tv: (S, g) => (screens[g.phase] || screens.intro)(S, g),
 
@@ -179,6 +181,7 @@
     },
 
     live: {
+      ready: (S, g) => MANETTE.readyChips(g),
       sensor: () => (hasSensor() ? '✅' : '(secoue pour tester)'),
       cta: (S, g) => (g.me === 'done' ? `🚩 Arrivé ${g.finished.indexOf(S.you) + 1 === 1 ? '1er' : `${g.finished.indexOf(S.you) + 1}ᵉ`} !`
         : g.caught.includes(S.you) ? '🚨 Pris au rouge : retour au départ !' : g.light === 'red' ? '✋ STOP !' : 'SECOUE !'),

@@ -188,7 +188,7 @@
         anchoring: false, anchorT: 0, anchorCd: 0, lastHit: null, state: 'alive', fallT: 0 };
     });
     sim = {
-      key: `${g.round}|${g.startedAt}`, canvas, ctx: canvas.getContext('2d'), arena, players,
+      key: `${g.round}|${g.startedAt}`, canvas, ctx: canvas.getContext('2d'), arena, players, practice: !!g.practice, rot,
       gulls: {}, splats: [], drops: [], parts: [], hits: {},
       t0: performance.now(), last: performance.now(), acc: 0, count: 3, sentTime: false, raf: 0,
     };
@@ -212,6 +212,7 @@
 
   function step(dt, t) {
     const A = sim.arena, now = performance.now() / 1000;
+    const ta = sim.practice ? 0 : t;    // entraînement : l'arène ne rétrécit pas
     const live = sim.players.filter((p) => p.state === 'alive');
     for (const p of live) {
       const inp = inputs[p.id] || {};
@@ -312,7 +313,7 @@
     }
     // chutes
     for (const p of live) {
-      if (A.inside(p.x, p.y, t)) continue;
+      if (A.inside(p.x, p.y, ta)) continue;
       p.state = 'falling'; p.fallT = 0;
       const by = p.lastHit && now - p.lastHit.t < 3 ? p.lastHit.by : null;
       send('fall', { pid: p.id, by });
@@ -322,6 +323,11 @@
     for (const p of sim.players) {
       if (p.state !== 'falling') continue;
       p.fallT += dt; p.vx *= 0.9; p.vy *= 0.9; p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.fallT > 0.7 && sim.practice) {   // entraînement : on réapparaît au milieu
+        const i = sim.players.indexOf(p), [x, y] = A.spawn(i, sim.players.length, sim.rot, 0);
+        Object.assign(p, { state: 'alive', fallT: 0, x, y, vx: 0, vy: 0, charge: 0, lastHit: null });
+        continue;
+      }
       if (p.fallT > 0.7) { p.state = 'out'; sim.gulls[p.id] = { id: p.id, x: p.x, y: p.y - 40, cd: 1, prevA: false }; SFX.squawk(); }
     }
     // mouettes (joueurs éliminés) : elles volent et lâchent des fientes glissantes
@@ -354,7 +360,7 @@
     const sh = sim.shake > 0 ? sim.shake * 22 : 0;
     c.setTransform(sim.scale, 0, 0, sim.scale, (Math.random() - 0.5) * sh * sim.scale, (Math.random() - 0.5) * sh * sim.scale);
     water(c, now);
-    sim.arena.draw(c, Math.max(0, t));
+    sim.arena.draw(c, sim.practice ? 0 : Math.max(0, t));
     for (const s of sim.splats) drawSplat(c, s);
     const order = sim.players.filter((p) => p.state !== 'out').sort((a, b) => a.y - b.y);
     for (const p of order) drawPlayer(c, p, now);
@@ -368,10 +374,10 @@
     for (const gl of Object.values(sim.gulls)) drawGull(c, gl, colorOf(gl.id), now);
     // chrono et compte à rebours
     c.font = '400 30px "Bagel Fat One", system-ui'; c.textAlign = 'right'; c.lineWidth = 5; c.strokeStyle = INK; c.fillStyle = '#fff';
-    if (t > 0) { const s = `${Math.floor(t)} s`; c.strokeText(s, W - 24, 46); c.fillText(s, W - 24, 46); }
+    if (t > 0 && !sim.practice) { const s = `${Math.floor(t)} s`; c.strokeText(s, W - 24, 46); c.fillText(s, W - 24, 46); }
     if (t < 0.9) {
       const n = Math.ceil(-t);
-      const label = n > 0 ? String(n) : 'POUSSEZ !';
+      const label = n > 0 ? String(n) : sim.practice ? 'ESSAYEZ !' : 'POUSSEZ !';
       const k = n > 0 ? 1 + (Math.ceil(-t) + t) * 0.6 : 1 + t * 0.6;
       c.save(); c.translate(CX, CY); c.scale(k, k); c.textAlign = 'center';
       c.font = `400 ${n > 0 ? 150 : 96}px "Bagel Fat One", system-ui`;
@@ -392,7 +398,7 @@
     const DT = 1 / 60;
     while (sim.acc >= DT) { step(DT, t); sim.acc -= DT; }
     render(t, ts / 1000);
-    if (t > 95 && !sim.sentTime) { sim.sentTime = true; send('timeUp'); }
+    if (t > 95 && !sim.sentTime && !sim.practice) { sim.sentTime = true; send('timeUp'); }
     sim.raf = requestAnimationFrame(loop);
   }
 
@@ -411,7 +417,7 @@
       <div><span class="rg-ico">🐦</span><b>Éliminé ?</b><small>tu deviens une mouette : A = fiente glissante</small></div>
     </div>`;
 
-  const statusLabel = (me) => me === 'alive' ? '🟢 En jeu' : me === 'out' ? '💦 Éliminé : tu es une mouette !' : '⏳ En attente de la prochaine manche';
+  const statusLabel = (me, g) => g?.practice ? '🎯 Entraînement' : me === 'alive' ? '🟢 En jeu' : me === 'out' ? '💦 Éliminé : tu es une mouette !' : '⏳ En attente de la prochaine manche';
 
   const screens = {
     intro(S, g) {
@@ -423,13 +429,15 @@
       }
       return `<div class="phase"><div class="step">${g.totalRounds} manches</div><div class="t">Le ring savonneux 🧼</div></div>
         <div class="card center keep"><p style="margin-top:0"><b>📱 Ton téléphone devient une manette.</b><br>Tourne-le en <b>paysage</b> et regarde la télé !</p>${RULES}</div>
-        ${UI.hostButton('C\'est parti ! 🧼')}`;
+        <p class="center muted">On commence par un <b>entraînement</b> pour essayer les commandes.</p>
+        ${UI.hostButton('Entraînement 🎯')}`;
     },
 
     play(S, g) {
       if (S.spectator) {
         return `<div class="rg-stage">
-            <div class="rg-hud"><span class="rg-round">Manche ${g.round}/${g.totalRounds} · ${esc(g.arena.name)}</span><span data-live="alive"></span></div>
+            ${g.practice ? MANETTE.practiceBanner('Joystick : glisser · maintiens A puis relâche : foncer · B : l\'ancre. Tombé à l\'eau ? Tu reviens. Appuyez sur « Je suis prêt » sur votre téléphone.')
+              : `<div class="rg-hud"><span class="rg-round">Manche ${g.round}/${g.totalRounds} · ${esc(g.arena.name)}</span><span data-live="alive"></span></div>`}
             <canvas class="rg-canvas"></canvas>
             ${kbName() ? `<div class="rg-kbhelp">⌨️ ${esc(kbName())} : ${KB_HELP}</div>` : ''}
             <button class="rg-sound" data-sound>🔊</button>
@@ -437,15 +445,15 @@
       }
       const me = P(S.you);
       return `<div class="pad ${g.me}" style="--pc:${colorOf(S.you)}">
-          <div class="pad-top">${av(me, 'sm')}<b>${esc(me?.name || '')}</b><span class="pad-status" data-live="status"></span><button class="pad-fs" data-fs aria-label="Plein écran">⛶</button></div>
-          <div class="pad-left"><div class="pad-base"><div class="pad-knob"></div></div><span class="pad-hint">Glisse ton pouce ici</span></div>
+          <div class="pad-top">${av(me, 'sm')}<b>${esc(me?.name || '')}</b><span class="pad-status" data-live="status"></span>${MANETTE.readyBtn(S, g)}<button class="pad-fs" data-fs aria-label="Plein écran">⛶</button></div>
+          <div class="pad-left"><div class="pad-base"><div class="pad-knob"></div></div><span class="pad-hint">Glisse ton pouce ici${g.practice ? '<br><small>Essaie : glisse, charge avec A, ancre avec B</small>' : ''}</span></div>
           <div class="pad-right">
             <button class="pad-btn pad-b" data-btn="b">B<small>${g.me === 'out' ? '—' : 'Ancre'}</small></button>
             <button class="pad-btn pad-a" data-btn="a">A<small>${g.me === 'out' ? 'Fiente' : 'Charge'}</small></button>
           </div>
           <div class="pad-rotate">📱↔️<br>Tourne ton téléphone</div>
         </div>
-        ${UI.isHost() ? '<div class="pad-host"><a class="link" data-host-action="next">Arrêter la manche</a></div>' : ''}`;
+        ${UI.isHost() ? `<div class="pad-host"><a class="link" data-host-action="next">${g.practice ? 'Passer l\'entraînement' : 'Arrêter la manche'}</a></div>` : ''}`;
     },
 
     roundEnd(S, g) {
@@ -473,7 +481,7 @@
       <div class="muted" style="font-size:.92rem">5 manches, 5 arènes · 1er de la manche : <b>+5</b> · 2e : <b>+3</b> · 3e : <b>+1</b> · chaque joueur jeté à l'eau : <b>+1</b></div>`,
 
     // la télé ne se redessine pas pendant la manche (le canvas tourne tout seul)
-    key: (S, g) => [g.phase, g.round, S.spectator ? '' : g.me].join('|'),
+    key: (S, g) => [g.phase, g.round, g.practice, S.spectator ? '' : g.me, S.spectator ? '' : MANETTE.isReady(g, S.you)].join('|'),
 
     screen: (S, g) => (screens[g.phase] || screens.intro)(S, g),
     tv: (S, g) => (screens[g.phase] || screens.intro)(S, g),
@@ -485,7 +493,8 @@
 
     live: {
       alive: (S, g) => g.players.filter(P).map((id) => `<span class="rg-chip ${g.alive.includes(id) ? '' : 'out'}" style="--c:${colorOf(id)}">${av(P(id), 'sm')}${name(id)}</span>`).join(''),
-      status: (S, g) => statusLabel(g.me),
+      status: (S, g) => statusLabel(g.me, g),
+      ready: (S, g) => MANETTE.readyChips(g),
     },
 
     bind: (S, g, root) => {

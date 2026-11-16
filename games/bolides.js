@@ -5,7 +5,7 @@
 // importants (tour bouclé, objet ramassé, arrivée, fin de course).
 // Ici on garde l'état de la partie : courses, tours, objets, points.
 // ─────────────────────────────────────────────────────────────────────────────
-const { gain, applyGains, awards, active, initScores } = require('./_utils');
+const { gain, applyGains, awards, active, initScores, practiceReady, allReady } = require('./_utils');
 
 const TRACKS = [
   { id: 'parc', name: 'La boucle du parc', laps: 4 },
@@ -25,7 +25,25 @@ function create(ctx) {
   return { scores, stats, round: 0, totalRounds: n, tracks, phase: 'intro', result: null };
 }
 
+// entraînement : tours illimités sur le premier circuit, rien ne compte
+function startPractice(ctx, g) {
+  g.practice = true;
+  g.ready = [];
+  g.track = { id: TRACKS[0].id, name: 'Tour d\'essai', laps: 99 };
+  g.players = active(ctx, g).map((p) => p.id);
+  g.lap = Object.fromEntries(g.players.map((id) => [id, 1]));
+  g.items = {};
+  g.finished = [];
+  g.times = {};
+  g.result = null;
+  g.seed = Math.floor(Math.random() * 1e9);
+  g.startedAt = Date.now();
+  g.phase = 'play';
+}
+
 function startRound(ctx, g) {
+  g.practice = false;
+  g.ready = [];
   g.round++;
   g.track = g.tracks[g.round - 1];
   g.players = active(ctx, g).map((p) => p.id);
@@ -92,6 +110,7 @@ function onScreenEvent(ctx, g, type, p = {}) {
     return false;
   }
   if (type === 'finish') {
+    if (g.practice) return false;
     if (!known || g.finished.includes(pid)) return false;
     g.finished.push(pid);
     g.times[pid] = Math.max(0, Math.floor(Number(p.ms) || 0));
@@ -100,7 +119,8 @@ function onScreenEvent(ctx, g, type, p = {}) {
     if (g.finished.length >= active(ctx, g).filter((x) => g.players.includes(x.id)).length) finishRound(ctx, g, [], cleanBest(g, p.best));
     return true;
   }
-  if (type === 'raceEnd') {                    // fin de course (tout le monde est arrivé, ou temps écoulé)
+  if (type === 'raceEnd') {
+    if (g.practice) return false;                    // fin de course (tout le monde est arrivé, ou temps écoulé)
     const order = Array.isArray(p.order) ? p.order.filter((id) => g.players.includes(id)) : [];
     finishRound(ctx, g, order, cleanBest(g, p.best));
     return true;
@@ -111,8 +131,10 @@ const cleanBest = (g, b) => (b && g.players.includes(b.pid) && Number(b.ms) > 0 
 
 function onAction(ctx, g, pid, type, payload, { isHost }) {
   if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
+  if (type === 'ready') { if (practiceReady(ctx, g, pid)) startRound(ctx, g); return; }
   if (type === 'next' && isHost) {
-    if (g.phase === 'intro') startRound(ctx, g);
+    if (g.phase === 'intro') startPractice(ctx, g);
+    else if (g.phase === 'play' && g.practice) startRound(ctx, g);
     else if (g.phase === 'play') finishRound(ctx, g);           // forcer la fin (télé débranchée…)
     else if (g.phase === 'roundEnd') {
       if (g.round >= g.totalRounds) {
@@ -134,7 +156,7 @@ function stateFor(ctx, g, pid) {
     phase: g.phase, round: g.round, totalRounds: g.totalRounds, scores: g.scores,
     participants: Object.keys(g.scores),
     track: g.track || null, tracks: g.tracks,
-    players: g.players || [], seed: g.seed, startedAt: g.startedAt,
+    players: g.players || [], seed: g.seed, startedAt: g.startedAt, practice: !!g.practice, ready: g.ready || [],
     lap: g.lap || {}, finished: g.finished || [],
     me: pid && g.players ? (g.players.includes(pid) ? (g.finished.includes(pid) ? 'done' : 'race') : 'wait') : null,
     myLap: pid && g.lap ? g.lap[pid] || 1 : 1,
@@ -162,6 +184,7 @@ module.exports = {
   create,
   onAction,
   onScreenEvent,
+  onPlayersChanged(ctx, g) { if (g.practice && g.phase === 'play' && allReady(ctx, g)) startRound(ctx, g); },
   stateFor,
   _test: { TRACKS, ITEMS },
 };
