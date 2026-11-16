@@ -2,7 +2,8 @@
 // 🎙️ L'Imitateur — à tour de rôle, un joueur reçoit en secret un PERSONNAGE
 // (film, dessin animé, personnalité…) et une SITUATION (« commande au fast-food »).
 // Il joue la situation en imitant le personnage : voix, gestes, tics.
-// Les autres choisissent sur leur téléphone qui il imite parmi 6 noms.
+// Les autres crient leurs réponses à voix haute ; le premier qui trouve gagne :
+// l'imitateur touche son nom sur son téléphone.
 // Trop dur ? Il peut lâcher la PHRASE CULTE du personnage, mais les points baissent.
 // ─────────────────────────────────────────────────────────────────────────────
 const { shuffle, gain, applyGains, awards, active, initScores } = require('./_utils');
@@ -77,9 +78,8 @@ const SITUATIONS = [
   'fait le GPS de la voiture', 'raconte ses vacances', 'rate son gâteau', 'gagne au loto', 'donne un cours de sport',
   'arrive en retard au travail', 'fait la queue à la boulangerie', 'présente le journal de 20 h', 'chante joyeux anniversaire', 'cherche ses clés',
 ];
-const N_CHOICES = 6;
-const TURN_MS = 75000;
-const PTS = { FAST: 150, HINT: 75, ACTOR_FAST: 40, ACTOR_HINT: 20 };
+const TURN_MS = 90000;
+const PTS = { FAST: 150, HINT: 75, ACTOR_FAST: 100, ACTOR_HINT: 50 };
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['found', 'imitated']);
@@ -106,13 +106,7 @@ function startRound(ctx, g) {
     const id = g.order[(g.round - 1 + k) % g.order.length];
     if (on.has(id)) { actor = id; break; }
   }
-  const ch = pick(g.pool, g.usedChars);
-  // les leurres : de la même famille de préférence
-  const same = g.pool.filter((c) => c !== ch && c[1] === ch[1]);
-  const other = g.pool.filter((c) => c !== ch && c[1] !== ch[1]);
-  const decoys = [...shuffle(same), ...shuffle(other)].slice(0, N_CHOICES - 1);
-  const choices = shuffle([ch, ...decoys]);
-  g.cur = { actor, char: ch, situation: pick(SITUATIONS, g.usedSit), choices: choices.map((c) => c[0]), good: choices.indexOf(ch), hint: false, votes: {} };
+  g.cur = { actor, char: pick(g.pool, g.usedChars), situation: pick(SITUATIONS, g.usedSit), hint: false, winner: null };
   g.phase = 'ready';
 }
 
@@ -129,17 +123,13 @@ function reveal(ctx, g) {
   if (g.phase !== 'play') return;
   g.tok++;
   const c = g.cur, gains = {};
-  let fast = 0, slow = 0;
-  for (const [id, v] of Object.entries(c.votes)) {
-    if (v.i !== c.good) continue;
-    g.stats[id].found++;
-    if (v.hint) { slow++; gain(gains, id, PTS.HINT, 'Trouvé après la phrase culte'); }
-    else { fast++; gain(gains, id, PTS.FAST, 'Trouvé sans la phrase culte 🎯'); }
-  }
-  if (c.actor in g.scores) {
-    if (fast) gain(gains, c.actor, PTS.ACTOR_FAST * fast, `${fast} joueur${fast > 1 ? 's' : ''} t'${fast > 1 ? 'ont' : 'a'} reconnu sans la phrase 🎙️`);
-    if (slow) gain(gains, c.actor, PTS.ACTOR_HINT * slow, `${slow} joueur${slow > 1 ? 's' : ''} t'${slow > 1 ? 'ont' : 'a'} reconnu avec la phrase`);
-    g.stats[c.actor].imitated += fast + slow;
+  if (c.winner) {
+    g.stats[c.winner].found++;
+    gain(gains, c.winner, c.hint ? PTS.HINT : PTS.FAST, c.hint ? 'Trouvé après la phrase culte' : 'Trouvé sans la phrase culte 🎯');
+    if (c.actor in g.scores) {
+      gain(gains, c.actor, c.hint ? PTS.ACTOR_HINT : PTS.ACTOR_FAST, c.hint ? 'Reconnu grâce à la phrase culte' : 'Reconnu sans la phrase culte 🎙️');
+      g.stats[c.actor].imitated++;
+    }
   }
   applyGains(g.scores, gains);
   c.gains = gains;
@@ -151,14 +141,12 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
   const c = g.cur;
   if (type === 'go' && g.phase === 'ready' && (pid === c.actor || isHost)) return startPlay(ctx, g);
   if (type === 'hint' && g.phase === 'play' && pid === c.actor) { c.hint = true; return; }
-  if (type === 'vote' && g.phase === 'play') {
-    if (pid === c.actor) return { quiet: true };
-    if (c.votes[pid]) return { error: 'Tu as déjà répondu' };
-    const i = Number(payload);
-    if (!(i >= 0 && i < c.choices.length)) return { quiet: true };
-    c.votes[pid] = { i, hint: c.hint, at: Date.now() };
-    if (guessers(ctx, g).every((id) => c.votes[id])) reveal(ctx, g);
-    return;
+  // l'imitateur (ou l'hôte) désigne celui qui a trouvé
+  if (type === 'found' && g.phase === 'play' && (pid === c.actor || isHost)) {
+    if (!guessers(ctx, g).includes(payload)) return { quiet: true };
+    c.winner = payload;
+    ctx.buzz(payload, [60, 40, 60]);
+    return reveal(ctx, g);
   }
   if (type === 'next' && isHost) {
     if (g.phase === 'intro') return startRound(ctx, g);
@@ -168,19 +156,12 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
       if (g.round < g.total) return startRound(ctx, g);
       g.phase = 'end';
       g.awards = awards(g.stats, [
-        ['imitated', 'Roi de l\'imitation', '🎙️', 'a été reconnu par le plus de joueurs'],
+        ['imitated', 'Roi de l\'imitation', '🎙️', 'a été reconnu le plus souvent'],
         ['found', 'Oreille d\'or', '👂', 'a reconnu le plus de personnages'],
       ]);
       ctx.endGame(g.scores);
     }
   }
-}
-
-// l'imitateur s'en va pendant son tour, ou tout le monde a répondu
-function onPlayersChanged(ctx, g) {
-  if (g.phase !== 'play') return;
-  const gs = guessers(ctx, g);
-  if (gs.length && gs.every((id) => g.cur.votes[id])) reveal(ctx, g);
 }
 
 function stateFor(ctx, g, pid) {
@@ -190,15 +171,10 @@ function stateFor(ctx, g, pid) {
     left: g.until ? Math.max(0, g.until - Date.now()) : 0,
   };
   if (!c) return s;
-  s.cur = { actor: c.actor, situation: c.situation, choices: c.choices, hint: c.hint, voted: Object.keys(c.votes) };
+  s.cur = { actor: c.actor, situation: c.situation, hint: c.hint };
   if (pid === c.actor && g.phase !== 'reveal') s.card = { name: c.char[0], phrase: c.char[2] };
-  if (pid && c.votes[pid]) s.cur.mine = c.votes[pid].i;
-  if (g.phase === 'reveal') {
-    s.cur.good = c.good;
-    s.cur.phrase = c.char[2];
-    s.cur.votes = Object.fromEntries(Object.entries(c.votes).map(([id, v]) => [id, { i: v.i, hint: v.hint }]));
-    s.cur.gains = c.gains;
-  }
+  if (g.phase === 'play') s.cur.guessers = guessers(ctx, g);
+  if (g.phase === 'reveal') Object.assign(s.cur, { name: c.char[0], phrase: c.char[2], winner: c.winner, gains: c.gains });
   if (g.phase === 'end') s.awards = g.awards;
   return s;
 }
@@ -209,7 +185,7 @@ module.exports = {
   name: 'L\'Imitateur',
   emoji: '🎙️',
   tagline: 'Imite un personnage dans une situation absurde : les autres doivent te reconnaître !',
-  description: 'À tour de rôle, imite un personnage culte (Dark Vador, Shrek, Nabilla…) dans une situation tirée au sort. Les autres devinent qui c\'est.',
+  description: 'À tour de rôle, imite un personnage culte (Dark Vador, Shrek, Nabilla…) dans une situation tirée au sort. Les autres crient leurs réponses pour le reconnaître.',
   minPlayers: 2,
   maxPlayers: 16,
   duration: '10–15 min',
@@ -222,7 +198,6 @@ module.exports = {
   ],
   create,
   onAction,
-  onPlayersChanged,
   stateFor,
   _test: { CHARS, SITUATIONS },
 };
