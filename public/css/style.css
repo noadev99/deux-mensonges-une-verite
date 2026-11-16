@@ -1223,3 +1223,13 @@ body.tv .pr-chip { font-size: 1.15rem; }
 .im2-by small { font-weight: 600; margin-right: 4px; }
 .im2-tvch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .im2-tvch .anec { margin: 0; }
+.im2-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; margin-bottom: 8px; text-align: left; background: #fff; }
+.im2-pick b { font-family: var(--display); font-weight: 400; font-size: 1.3rem; }
+.im2-pick small { font-weight: 500; color: var(--muted); }
+.im2-notes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.im2-n { padding: 12px 0; font-family: var(--display); font-weight: 400; font-size: 1.3rem; background: #fff; border-bottom: 5px solid var(--nc); }
+.im2-n.sel { background: var(--nc); transform: scale(1.08); }
+.im2-scale { display: flex; justify-content: space-between; margin-top: 6px; font-size: .9rem; color: var(--muted); }
+.im2-avg { display: inline-block; font-family: var(--display); font-size: 3.4rem; line-height: 1; padding: 8px 20px; margin-top: 6px; border: var(--line); border-radius: 20px; background: var(--nc); box-shadow: var(--pop-sm); }
+.im2-avg small { font-size: 1.3rem; }
+.im2-chip { font-family: var(--display); padding: 2px 10px; border: 2px solid var(--ink); border-radius: 99px; background: var(--nc); }
