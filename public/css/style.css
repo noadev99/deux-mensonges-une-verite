@@ -1205,3 +1205,21 @@ body.tv .pr-chip { font-size: 1.15rem; }
 .plus, .gains-me { color: #0b7a55; }
 .plus.minus, .gains-me.minus { color: #c42347; }
 .timer.hurry { background: #d93158; }
+
+/* ─── L'Imitateur ─── */
+.im2-sittxt { font-family: var(--display); font-size: 1.45rem; line-height: 1.15; margin: 4px 0; }
+.im2-secret { width: 100%; min-height: 70px; margin: 6px 0 12px; font-size: 1.05rem; background: var(--paper-2); }
+.im2-secret.on { background: #ff8fb1; }
+.im2-secret b { font-family: var(--display); font-weight: 400; font-size: 1.8rem; }
+.im2-name { font-family: var(--display); font-size: clamp(1.8rem, 9vw, 2.6rem); line-height: 1.1; margin: 2px 0 6px; }
+.im2-phrase { font-size: 1.15rem; font-weight: 700; background: #fff2a8; border: 2px solid var(--ink); border-radius: 14px; padding: 10px; margin: 12px 0 6px; }
+.im2-ch { width: 100%; text-align: left; }
+.im2-ch.sel { background: #ff8fb1; }
+.im2-ch:disabled:not(.sel) { opacity: .55; }
+.im2-good { color: color-mix(in srgb, #ff8fb1 45%, var(--ink)); }
+.im2-res { display: flex; align-items: center; gap: 8px; }
+.im2-res .t { flex: 1; }
+.im2-by { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.im2-by small { font-weight: 600; margin-right: 4px; }
+.im2-tvch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.im2-tvch .anec { margin: 0; }

@@ -177,6 +177,15 @@ const ICONS = (() => {
       <path d="M36 38l10-10" stroke-width="3.5"/><circle cx="48" cy="26" r="3" fill="#fff"/>
       <path d="M48 8a5 5 0 1 1 6 5c-1.5.7-2 1.6-2 3" stroke="#c86bff" stroke-width="2.8"/><circle cx="52" cy="20" r="1.2" fill="#c86bff" stroke="none"/>`),
 
+    // 🎙️ un micro de scène, avec des notes de voix qui s'envolent
+    imitateur: art(`
+      <rect x="20" y="6" width="18" height="28" rx="9" fill="#ff8fb1"/>
+      <path d="M24 14h10M24 20h10M24 26h10" stroke-width="2"/>
+      <path d="M14 26c0 10 7 16 15 16s15-6 15-16" stroke-width="3"/>
+      <path d="M29 42v10M19 56h20" stroke-width="3.5"/>
+      <path d="M48 10q5 2 4 8M52 6q8 4 6 14" stroke="#c86bff" stroke-width="2.5"/>
+      <path d="M8 10q-4 3-2 8" stroke="#c86bff" stroke-width="2.5"/>`),
+
     // 🏎️ un petit bolide vu de profil qui file, avec un drapeau à damier
     bolides: art(`
       <path d="M44 6v20" stroke-width="2.5"/><rect x="44" y="6" width="14" height="10" fill="#fff"/>

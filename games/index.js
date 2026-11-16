@@ -21,6 +21,7 @@ const list = [
   require('./demineur'),
   require('./buzzer'),
   require('./mime'),
+  require('./imitateur'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));

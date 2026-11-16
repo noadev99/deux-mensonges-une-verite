@@ -8,7 +8,7 @@ const UI = (() => {
   const CATS = [
     ['🤥 Bluff et déduction', ['deux-mensonges', 'intrus', 'image', 'dico', 'complot', 'alliances', 'butin']],
     ['😂 Pour rigoler', ['chute', 'qui-de-nous', 'classement', 'dessin', 'note', 'patate']],
-    ['🧠 Quiz et devinettes', ['buzzer', 'mime', 'trombi']],
+    ['🧠 Quiz et devinettes', ['buzzer', 'mime', 'imitateur', 'trombi']],
     ['🤝 En équipe', ['demineur']],
     ['🎮 Action : le téléphone devient une manette', ['ring', 'bolides', 'drapeau']],
   ];
