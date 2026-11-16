@@ -1,10 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔔 Le Buzzer — quiz de rapidité.
-// Une question et 4 réponses s'affichent. Le premier qui buzze sur son téléphone
-// a quelques secondes pour choisir : bonne réponse = points, mauvaise = points en
-// moins et il ne peut plus buzzer sur cette question (les autres reprennent la main).
+// Une question s'affiche, SANS propositions. Le premier qui buzze dit sa réponse à voix
+// haute (ou l'écrit) et le maître du jeu (l'hôte) valide ✅ ou refuse ❌ :
+// bonne réponse = points, mauvaise = points en moins et il ne peut plus buzzer sur
+// cette question (les autres reprennent la main).
+// Maître du jeu : par défaut l'hôte anime sans jouer (il voit les réponses) ; en mode
+// « l'hôte joue aussi », il ne voit la réponse qu'une fois que quelqu'un a buzzé
+// (et ne peut alors plus buzzer sur cette question).
 // Types de questions :
-//   🧠 culture générale (4 choix)
+//   🧠 culture générale (la bonne réponse est en 2ᵉ position, les autres ne servent plus)
 //   📏 estimation : tout le monde tape un nombre, le plus proche gagne
 //   🙋 « sur nous » : au début, chacun répond en secret à 3 petits « plutôt ceci ou cela ? »,
 //      puis il faut deviner ce qu'a répondu un ami (lui ne peut pas buzzer)
@@ -40,7 +44,7 @@ const QCM = [
   ['Quel pays a offert la statue de la Liberté aux États-Unis ?', 'La France', 'Le Royaume-Uni', 'L\'Espagne', 'L\'Italie'],
   ['Quel est l\'animal national de l\'Écosse ?', 'La licorne', 'Le lion', 'Le cerf', 'L\'aigle'],
   ['Combien de cœurs a une pieuvre ?', '3', '1', '2', '8'],
-  ['Dans quel sport utilise-t-on un volant ?', 'Le badminton', 'Le tennis', 'Le squash', 'Le ping-pong'],
+  ['Dans quel sport frappe-t-on un volant avec une raquette ?', 'Le badminton', 'Le tennis', 'Le squash', 'Le ping-pong'],
   ['Quelle est la monnaie du Japon ?', 'Le yen', 'Le yuan', 'Le won', 'La roupie'],
   ['Quel métal est liquide à température ambiante ?', 'Le mercure', 'Le plomb', 'L\'étain', 'L\'aluminium'],
   ['Combien d\'os compte le squelette d\'un adulte ?', '206', '186', '226', '306'],
@@ -70,7 +74,7 @@ const QCM = [
   ['Combien d\'étoiles y a-t-il sur le drapeau européen ?', '12', '15', '27', '10'],
   ['Quelle est la plus grande planète du système solaire ?', 'Jupiter', 'Saturne', 'Neptune', 'Uranus'],
   ['Quelle est la date de la fête nationale française ?', 'Le 14 juillet', 'Le 8 mai', 'Le 11 novembre', 'Le 1er mai'],
-  ['Que fait le corbeau ?', 'Il croasse', 'Il hulule', 'Il jacasse', 'Il roucoule'],
+  ['Quel verbe désigne le cri du corbeau ?', 'Croasser', 'Il hulule', 'Il jacasse', 'Il roucoule'],
   ['Combien de notes différentes compte la gamme do, ré, mi… ?', '7', '8', '6', '12'],
   ['Quel est le pays le plus peuplé du monde depuis 2023 ?', 'L\'Inde', 'La Chine', 'Les États-Unis', 'L\'Indonésie'],
   ['Combien de jours compte une année bissextile ?', '366', '365', '364', '367'],
@@ -156,8 +160,8 @@ const QCM_HARD = [
   ['Quelle planète a le plus de lunes connues ?', 'Saturne', 'Jupiter', 'Uranus', 'Neptune'],
   ['Quelle est la planète la plus chaude du système solaire ?', 'Vénus', 'Mercure', 'Mars', 'Jupiter'],
   ['Quel gaz est le plus abondant dans l\'air que l\'on respire ?', 'L\'azote', 'L\'oxygène', 'Le dioxyde de carbone', 'L\'argon'],
-  ['Quel est le meilleur conducteur d\'électricité parmi ces métaux ?', 'L\'argent', 'Le cuivre', 'L\'or', 'L\'aluminium'],
-  ['Environ quelle est la vitesse de la lumière ?', '300 000 km/s', '30 000 km/s', '3 000 000 km/s', '150 000 km/s'],
+  ['Quel métal conduit le mieux l\'électricité ?', 'L\'argent', 'Le cuivre', 'L\'or', 'L\'aluminium'],
+  ['Quelle est, environ, la vitesse de la lumière ?', '300 000 km/s', '30 000 km/s', '3 000 000 km/s', '150 000 km/s'],
   ['Combien de zéros compte un milliard ?', '9', '6', '12', '10'],
   ['Combien font 17 × 13 ?', '221', '211', '231', '207'],
   ['Combien de prix Nobel Marie Curie a-t-elle reçus ?', '2', '1', '3', '4'],
@@ -240,18 +244,21 @@ const SURVEY = [
 const N_Q = 12;
 const OPEN = 20000;      // temps pour buzzer
 const REOPEN = 9000;     // temps laissé aux autres après une mauvaise réponse
-const ANSWER = 7000;     // temps pour répondre après avoir buzzé
 const EST_TIME = 25000;  // temps pour taper une estimation
 const PTS = { OK: 100, KO: 50, EST1: 100, EST2: 50, EXACT: 50 };
 
 function create(ctx) {
   const { scores, stats } = initScores(ctx, ['good', 'bad', 'buzz', 'est']);
   const n = ctx.rounds(N_Q);
+  // l'hôte est maître du jeu (et ne joue pas), sauf option contraire ou s'il n'y a pas assez de monde
+  const hostId = ctx.room?.hostId;
+  const mj = ctx.option('mj') !== 'tous' && ctx.players().length >= 3 && hostId in scores ? hostId : null;
+  if (mj) { delete scores[mj]; delete stats[mj]; }
   const perso = ctx.option('perso') !== 'off' && Object.keys(scores).length >= 3;
   const level = ['normal', 'dur'].includes(ctx.option('niveau')) ? ctx.option('niveau') : 'mix';
   // une file de questions faciles et une de difficiles ; on pioche selon le niveau
   const deck = (easy, hard) => ({ easy: level === 'dur' ? [] : ctx.fresh(easy, n), hard: level === 'normal' ? [] : ctx.fresh(hard, n) });
-  const g = { scores, stats, n, perso, level, round: 0, tok: 0, survey: {}, plan: [], qcm: deck(QCM, QCM_HARD), est: deck(ESTIM, ESTIM_HARD) };
+  const g = { scores, stats, n, perso, level, mj, round: 0, tok: 0, survey: {}, plan: [], qcm: deck(QCM, QCM_HARD), est: deck(ESTIM, ESTIM_HARD) };
   if (perso) {
     g.surveyQ = {};
     for (const id of Object.keys(scores)) g.surveyQ[id] = sample(SURVEY.map((_, i) => i), 3);
@@ -286,14 +293,13 @@ function nextQuestion(ctx, g) {
   if (!g.plan.length) g.plan = buildPlan(g);
   g.round++;
   const item = g.plan[g.round - 1];
-  g.cur = { kind: item.kind, hard: !!item.hard, locked: [], wrong: [], buzzer: null, picked: null, answers: {} };
+  g.cur = { kind: item.kind, hard: !!item.hard, locked: [], wrong: [], tries: [], buzzer: null, said: null, answers: {} };
   if (item.kind === 'qcm') {
-    const [q, ok, ...bad] = item.q;
-    const choices = shuffle([ok, ...bad]);
-    Object.assign(g.cur, { q, choices, good: choices.indexOf(ok) });
+    const [q, ok] = item.q;
+    Object.assign(g.cur, { q, answer: ok });
   } else if (item.kind === 'about') {
     const [q, A, B] = SURVEY[item.qi];
-    Object.assign(g.cur, { q, about: item.id, choices: [A, B], good: item.a, locked: [item.id] });
+    Object.assign(g.cur, { q, about: item.id, answer: [A, B][item.a], locked: [item.id] });
   } else {
     const [q, value, unit] = item.q;
     Object.assign(g.cur, { q, value, unit });
@@ -340,29 +346,35 @@ function canStillBuzz(ctx, g) {
   return active(ctx, g).some((p) => !g.cur.locked.includes(p.id) && !g.cur.wrong.includes(p.id));
 }
 
-function answer(ctx, g, pid, idx) {
-  const c = g.cur;
+// le maître du jeu a tranché sur la réponse du joueur qui a buzzé
+function judge(ctx, g, ok) {
+  const c = g.cur, pid = c.buzzer;
   const mul = isDouble(g) ? 2 : 1;
   c.gains = c.gains || {};
   c.buzzer = null;
-  if (idx === c.good) {
+  c.tries.push({ id: pid, said: c.said, ok });
+  c.said = null;
+  if (ok) {
     gain(c.gains, pid, PTS.OK * mul, mul > 1 ? 'Bonne réponse (double mise) 💰' : 'Bonne réponse au buzzer 🔔');
     g.stats[pid].good++;
     c.winner = pid;
-    c.picked = idx;
     return reveal(ctx, g);
   }
-  gain(c.gains, pid, -PTS.KO * mul, idx == null ? 'Buzzé sans répondre ⌛' : 'Mauvaise réponse ❌');
+  gain(c.gains, pid, -PTS.KO * mul, 'Mauvaise réponse ❌');
   g.stats[pid].bad++;
   c.wrong.push(pid);
-  if (idx != null) c.tried = [...(c.tried || []), idx];
-  // plus personne ne peut buzzer, ou il ne reste qu'une réponse possible (question à 2 choix) : on révèle
-  if (!canStillBuzz(ctx, g) || c.choices.length - (c.tried || []).length <= 1) return reveal(ctx, g);
+  if (!canStillBuzz(ctx, g)) return reveal(ctx, g);
   openFor(ctx, g, REOPEN, () => reveal(ctx, g));
 }
 
+// a le droit de voir la bonne réponse pendant la question ?
+// (l'hôte qui joue et a buzzé lui-même ne la voit qu'après avoir donné sa réponse : action « peek »)
+const seesAnswer = (ctx, g, pid) => pid === ctx.room?.hostId
+  && (g.mj || (g.cur.buzzer ? g.cur.buzzer !== pid || g.cur.peek : g.cur.tries.length));
+
 function onAction(ctx, g, pid, type, payload, { isHost }) {
-  if (!(pid in g.scores)) return { error: 'Tu ne participes pas à cette partie' };
+  // le maître du jeu ne joue pas : il peut seulement animer (question suivante, valider)
+  if (!(pid in g.scores) && !(isHost && ['next', 'judge'].includes(type))) return { error: pid === g.mj ? 'Tu es le maître du jeu : tu ne joues pas' : 'Tu ne participes pas à cette partie' };
   if (type === 'survey' && g.phase === 'survey') {
     const ans = payload && typeof payload === 'object' ? payload : {};
     const mine = {};
@@ -376,16 +388,29 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
     const c = g.cur;
     if (c.buzzer || c.locked.includes(pid) || c.wrong.includes(pid)) return { quiet: true };
     c.buzzer = pid;
+    c.said = null;
+    c.peek = false;
     g.stats[pid].buzz++;
     ctx.buzz(pid, [120]);
-    openFor(ctx, g, ANSWER, () => { if (g.cur.buzzer === pid) answer(ctx, g, pid, null); });
+    g.tok++; g.until = 0; // le chrono s'arrête : on attend la réponse et la décision du maître du jeu
+    // l'hôte qui joue va voir la réponse pour juger : il ne peut plus buzzer sur cette question
+    const host = ctx.room?.hostId;
+    if (!g.mj && host && host !== pid && !c.locked.includes(host)) c.locked.push(host);
     return;
   }
-  if (type === 'pick' && g.phase === 'q') {
-    if (g.cur.buzzer !== pid) return { error: 'Trop tard !' };
-    const idx = Number(payload);
-    if (!(idx >= 0 && idx < g.cur.choices.length) || (g.cur.tried || []).includes(idx)) return;
-    return answer(ctx, g, pid, idx);
+  if (type === 'say' && g.phase === 'q') {
+    if (g.cur.buzzer !== pid) return { quiet: true };
+    g.cur.said = String(payload ?? '').trim().slice(0, 60) || null;
+    return;
+  }
+  if (type === 'peek' && g.phase === 'q') {
+    if (g.cur.buzzer === pid && isHost) g.cur.peek = true;
+    return;
+  }
+  if (type === 'judge' && g.phase === 'q') {
+    if (!isHost) return { error: 'Seul le maître du jeu valide les réponses' };
+    if (!g.cur.buzzer || (g.cur.buzzer === pid && !g.mj && !g.cur.peek)) return { quiet: true };
+    return judge(ctx, g, !!payload);
   }
   if (type === 'estimate' && g.phase === 'est') {
     const v = Math.round(Number(String(payload).replace(/\s/g, '').replace(',', '.')));
@@ -420,6 +445,12 @@ function onAction(ctx, g, pid, type, payload, { isHost }) {
 
 // un joueur part : s'il avait buzzé, la main repasse aux autres ; tout le monde a répondu → suite
 function onPlayersChanged(ctx, g) {
+  // celui qui avait buzzé est parti : la main repasse aux autres
+  if (g.phase === 'q' && g.cur.buzzer && !active(ctx, g).some((p) => p.id === g.cur.buzzer)) {
+    g.cur.buzzer = null; g.cur.said = null;
+    if (canStillBuzz(ctx, g)) openFor(ctx, g, REOPEN, () => reveal(ctx, g)); else reveal(ctx, g);
+    return;
+  }
   if (g.phase === 'survey' && Object.keys(g.survey).length && active(ctx, g).every((p) => p.id in g.survey)) nextQuestion(ctx, g);
   else if (g.phase === 'est' && Object.keys(g.cur.answers).length && active(ctx, g).every((p) => p.id in g.cur.answers)) revealEst(ctx, g);
 }
@@ -428,7 +459,7 @@ function stateFor(ctx, g, pid) {
   const now = Date.now();
   const s = {
     phase: g.phase, round: g.round, totalRounds: g.n, scores: g.scores, participants: Object.keys(g.scores),
-    perso: g.perso, double: isDouble(g), left: g.until ? Math.max(0, g.until - now) : 0,
+    perso: g.perso, mj: g.mj, double: isDouble(g), left: g.until ? Math.max(0, g.until - now) : 0,
     nextDouble: g.n >= 6 && g.round === g.n - 3,
   };
   if (g.phase === 'survey') {
@@ -439,9 +470,10 @@ function stateFor(ctx, g, pid) {
   }
   if (g.cur && ['q', 'est', 'reveal'].includes(g.phase)) {
     const c = g.cur;
-    s.cur = { kind: c.kind, hard: c.hard, q: c.q, choices: c.choices, about: c.about, unit: c.unit, buzzer: c.buzzer, wrong: c.wrong, tried: c.tried || [], locked: c.locked };
-    if (c.kind === 'est') { s.cur.done = Object.keys(c.answers); s.cur.mine = c.answers[pid] ?? null; }
-    if (g.phase === 'reveal') Object.assign(s.cur, { good: c.good, winner: c.winner, value: c.value, ranking: c.ranking, gains: c.gains || {} });
+    s.cur = { kind: c.kind, hard: c.hard, q: c.q, about: c.about, unit: c.unit, buzzer: c.buzzer, said: c.said, wrong: c.wrong, tries: c.tries || [], locked: c.locked };
+    if (g.phase === 'q' && seesAnswer(ctx, g, pid)) s.cur.answer = c.answer;
+    if (c.kind === 'est') { s.cur.done = Object.keys(c.answers); s.cur.mine = c.answers[pid] ?? null; if (pid === g.mj) s.cur.value = c.value; }
+    if (g.phase === 'reveal') Object.assign(s.cur, { answer: c.answer, winner: c.winner, value: c.value, ranking: c.ranking, gains: c.gains || {} });
   }
   if (g.phase === 'end') s.awards = g.awards;
   return s;
@@ -452,12 +484,16 @@ module.exports = {
   color: '#ff8a3d',
   name: 'Le Buzzer',
   emoji: '🔔',
-  tagline: 'Le premier qui buzze répond… mais gare aux mauvaises réponses !',
-  description: 'Quiz de rapidité : culture générale, estimations et questions sur vous. Les 3 dernières valent double.',
+  tagline: 'Le premier qui buzze répond à voix haute… le maître du jeu tranche !',
+  description: 'Quiz de rapidité sans propositions : on buzze, on répond à voix haute, le maître du jeu valide. Estimations et questions sur vous. Les 3 dernières valent double.',
   minPlayers: 2,
   maxPlayers: 12,
   duration: '10 min',
   options: [
+    { key: 'mj', label: 'Maître du jeu', default: 'hote', choices: [
+      { value: 'hote', label: 'L\'hôte anime 🎤', hint: 'L\'hôte voit les réponses et valide, mais ne joue pas (à partir de 3 joueurs)' },
+      { value: 'tous', label: 'L\'hôte joue aussi', hint: 'L\'hôte voit la réponse seulement quand quelqu\'un buzze, et ne peut alors plus buzzer sur cette question' },
+    ] },
     { key: 'niveau', label: 'Difficulté', default: 'mix', choices: [
       { value: 'mix', label: 'De plus en plus dur 📈', hint: 'Questions faciles au début, difficiles 🔥 sur la 2ᵉ moitié' },
       { value: 'normal', label: 'Classique', hint: 'Seulement des questions accessibles' },
