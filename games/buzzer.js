@@ -117,6 +117,100 @@ const ESTIM = [
   ['Combien de kilomètres mesure la Seine ?', 777, 'km'],
 ];
 
+// 🔥 Questions difficiles [question, bonne réponse, 3 mauvaises]
+const QCM_HARD = [
+  ['Quelle est la capitale de l\'Islande ?', 'Reykjavik', 'Oslo', 'Helsinki', 'Nuuk'],
+  ['Quelle est la capitale du Vietnam ?', 'Hanoï', 'Hô Chi Minh-Ville', 'Phnom Penh', 'Vientiane'],
+  ['Quel est l\'élément le plus abondant dans l\'univers ?', 'L\'hydrogène', 'L\'hélium', 'L\'oxygène', 'Le carbone'],
+  ['Quel est le symbole chimique de l\'argent ?', 'Ag', 'Ar', 'Au', 'Si'],
+  ['Qui a écrit « Le Comte de Monte-Cristo » ?', 'Alexandre Dumas', 'Victor Hugo', 'Jules Verne', 'Honoré de Balzac'],
+  ['Qui a sculpté « Le Penseur » ?', 'Auguste Rodin', 'Camille Claudel', 'Michel-Ange', 'Auguste Bartholdi'],
+  ['Qui a peint « Guernica » ?', 'Pablo Picasso', 'Salvador Dalí', 'Joan Miró', 'Francisco de Goya'],
+  ['Dans quel pays se trouve Tombouctou ?', 'Le Mali', 'Le Niger', 'Le Sénégal', 'La Mauritanie'],
+  ['Combien de pays le Danube traverse-t-il ?', '10', '6', '8', '12'],
+  ['Quelle est la planète la plus éloignée du Soleil ?', 'Neptune', 'Uranus', 'Saturne', 'Pluton'],
+  ['Quel traité a mis fin à la Première Guerre mondiale avec l\'Allemagne ?', 'Le traité de Versailles', 'Le traité de Rome', 'Le traité de Vienne', 'Le traité de Paris'],
+  ['En quelle année les billets et pièces en euros sont-ils arrivés en France ?', '2002', '1999', '2000', '2001'],
+  ['Quelle est la capitale de la Nouvelle-Zélande ?', 'Wellington', 'Auckland', 'Christchurch', 'Hamilton'],
+  ['Quelle est la capitale du Kazakhstan ?', 'Astana', 'Almaty', 'Tachkent', 'Bichkek'],
+  ['Quelle est la capitale de la Birmanie (Myanmar) ?', 'Naypyidaw', 'Rangoun', 'Mandalay', 'Bangkok'],
+  ['Quelle est la capitale de l\'Écosse ?', 'Édimbourg', 'Glasgow', 'Aberdeen', 'Dundee'],
+  ['Quel élément chimique a pour symbole K ?', 'Le potassium', 'Le krypton', 'Le calcium', 'Le carbone'],
+  ['Quel est le symbole chimique du sodium ?', 'Na', 'So', 'Sd', 'S'],
+  ['Quel est le numéro atomique du carbone ?', '6', '12', '8', '4'],
+  ['Quel est le plus long fleuve d\'Europe ?', 'La Volga', 'Le Danube', 'Le Rhin', 'Le Dniepr'],
+  ['Quel est le plus petit os du corps humain ?', 'L\'étrier (oreille)', 'L\'enclume', 'Le coccyx', 'La phalange du petit orteil'],
+  ['Quel organe produit l\'insuline ?', 'Le pancréas', 'Le foie', 'Les reins', 'La rate'],
+  ['Combien de chromosomes possède un être humain ?', '46', '23', '48', '44'],
+  ['Quel groupe sanguin est « donneur universel » ?', 'O négatif', 'AB positif', 'A négatif', 'O positif'],
+  ['Quel est le seul mammifère capable de vraiment voler ?', 'La chauve-souris', 'L\'écureuil volant', 'Le colugo', 'Le phalanger volant'],
+  ['Qui a écrit « Germinal » ?', 'Émile Zola', 'Victor Hugo', 'Guy de Maupassant', 'Gustave Flaubert'],
+  ['Qui a écrit « 1984 » ?', 'George Orwell', 'Aldous Huxley', 'Ray Bradbury', 'H. G. Wells'],
+  ['Qui a composé « Les Quatre Saisons » ?', 'Vivaldi', 'Mozart', 'Bach', 'Beethoven'],
+  ['Qui a composé le « Boléro » ?', 'Maurice Ravel', 'Claude Debussy', 'Erik Satie', 'Georges Bizet'],
+  ['Dans quelle ville est né Mozart ?', 'Salzbourg', 'Vienne', 'Munich', 'Prague'],
+  ['Combien de symphonies Beethoven a-t-il composées ?', '9', '7', '12', '5'],
+  ['Combien de cordes a un violon ?', '4', '5', '6', '3'],
+  ['Qui a peint « La Nuit étoilée » ?', 'Van Gogh', 'Monet', 'Gauguin', 'Cézanne'],
+  ['Qui a peint « Le Cri » ?', 'Edvard Munch', 'Gustav Klimt', 'Salvador Dalí', 'Vassily Kandinsky'],
+  ['Quelle planète a le plus de lunes connues ?', 'Saturne', 'Jupiter', 'Uranus', 'Neptune'],
+  ['Quelle est la planète la plus chaude du système solaire ?', 'Vénus', 'Mercure', 'Mars', 'Jupiter'],
+  ['Quel gaz est le plus abondant dans l\'air que l\'on respire ?', 'L\'azote', 'L\'oxygène', 'Le dioxyde de carbone', 'L\'argon'],
+  ['Quel est le meilleur conducteur d\'électricité parmi ces métaux ?', 'L\'argent', 'Le cuivre', 'L\'or', 'L\'aluminium'],
+  ['Environ quelle est la vitesse de la lumière ?', '300 000 km/s', '30 000 km/s', '3 000 000 km/s', '150 000 km/s'],
+  ['Combien de zéros compte un milliard ?', '9', '6', '12', '10'],
+  ['Combien font 17 × 13 ?', '221', '211', '231', '207'],
+  ['Combien de prix Nobel Marie Curie a-t-elle reçus ?', '2', '1', '3', '4'],
+  ['En quelle année Christophe Colomb a-t-il atteint l\'Amérique ?', '1492', '1498', '1488', '1515'],
+  ['En quelle année a eu lieu la bataille de Marignan ?', '1515', '1492', '1610', '1453'],
+  ['En quelle année Constantinople est-elle tombée aux mains des Ottomans ?', '1453', '1492', '1204', '1517'],
+  ['Qui fut le premier empereur romain ?', 'Auguste', 'Jules César', 'Néron', 'Caligula'],
+  ['Qui fut le premier président de la Ve République ?', 'Charles de Gaulle', 'Georges Pompidou', 'René Coty', 'Vincent Auriol'],
+  ['En quelle année les Françaises ont-elles voté pour la première fois ?', '1945', '1936', '1958', '1920'],
+  ['Quelle est la langue officielle de l\'Iran ?', 'Le persan', 'L\'arabe', 'Le turc', 'L\'ourdou'],
+  ['Quel est le pays le plus peuplé d\'Afrique ?', 'Le Nigeria', 'L\'Égypte', 'L\'Éthiopie', 'L\'Afrique du Sud'],
+  ['Quel est le plus petit océan du monde ?', 'L\'Arctique', 'L\'océan Indien', 'L\'océan Austral', 'L\'Atlantique'],
+  ['Quel est le plus haut sommet d\'Afrique ?', 'Le Kilimandjaro', 'Le mont Kenya', 'Le Toubkal', 'Le Ras Dashen'],
+  ['Quelle chaîne de montagnes sépare traditionnellement l\'Europe de l\'Asie ?', 'L\'Oural', 'Le Caucase', 'Les Carpates', 'L\'Altaï'],
+  ['Quelle mer borde la ville d\'Odessa ?', 'La mer Noire', 'La mer Caspienne', 'La mer Baltique', 'La mer Méditerranée'],
+  ['Dans quelle ville se trouve la Sagrada Família ?', 'Barcelone', 'Madrid', 'Séville', 'Valence'],
+  ['Combien d\'étoiles compte le drapeau des États-Unis ?', '50', '51', '48', '52'],
+  ['Quel pays a remporté la toute première Coupe du monde de football (1930) ?', 'L\'Uruguay', 'Le Brésil', 'L\'Argentine', 'L\'Italie'],
+  ['Quel pays a gagné le plus de Coupes du monde de football ?', 'Le Brésil', 'L\'Allemagne', 'L\'Italie', 'L\'Argentine'],
+  ['Combien de joueurs une équipe de volley a-t-elle sur le terrain ?', '6', '5', '7', '8'],
+  ['Combien de temps dure un match de handball (sans prolongation) ?', '60 minutes', '90 minutes', '40 minutes', '80 minutes'],
+  ['Quel pays compte le plus d\'îles au monde ?', 'La Suède', 'La Norvège', 'L\'Indonésie', 'Les Philippines'],
+  ['À combien de kelvins l\'eau gèle-t-elle ?', '273,15 K', '0 K', '100 K', '373,15 K'],
+];
+
+// [question, réponse, unité]
+const ESTIM_HARD = [
+  ['Combien de pays compte l\'Afrique ?', 54, 'pays'],
+  ['Combien d\'habitants compte la Terre (en milliards) ?', 8, 'milliards'],
+  ['Quelle est la hauteur du Burj Khalifa, la plus haute tour du monde ?', 828, 'mètres'],
+  ['Quelle est la vitesse du son dans l\'air (à 20 °C) ?', 343, 'm/s'],
+  ['Combien mesure le tour de la Terre à l\'équateur ?', 40075, 'km'],
+  ['En quelle année Louis XVI a-t-il été guillotiné ?', 1793, ''],
+  ['Quelle est la longueur du tunnel sous la Manche ?', 50, 'km'],
+  ['Combien de litres de sang y a-t-il dans le corps d\'un adulte ?', 5, 'litres'],
+  ['En quelle année Google a-t-il été créé ?', 1998, ''],
+  ['Combien d\'habitants compte Paris intra-muros (en milliers) ?', 2100, 'milliers'],
+  ['Quelle est la température à la surface du Soleil ?', 5500, '°C'],
+  ['Combien mesure la Grande Muraille de Chine (toutes sections) ?', 21196, 'km'],
+  ['Quelle est l\'altitude de l\'Everest ?', 8849, 'mètres'],
+  ['En quelle année est né Victor Hugo ?', 1802, ''],
+  ['Combien de langues parle-t-on dans le monde (environ) ?', 7000, 'langues'],
+  ['Combien de marches faut-il monter pour atteindre le sommet de la tour Eiffel ?', 1665, 'marches'],
+  ['Quelle est la superficie de la France métropolitaine ?', 551695, 'km²'],
+  ['Combien de pièces compte le château de Versailles (environ) ?', 2300, 'pièces'],
+  ['Quelle est la profondeur moyenne des océans ?', 3700, 'mètres'],
+  ['Combien d\'éléments compte le tableau périodique ?', 118, 'éléments'],
+  ['En quelle année le Titanic a-t-il coulé ?', 1912, ''],
+  ['À quelle vitesse un faucon pèlerin peut-il plonger en piqué ?', 390, 'km/h'],
+  ['En quelle année Gutenberg a-t-il mis au point son imprimerie (environ) ?', 1450, ''],
+  ['Combien de cheveux a-t-on sur la tête, en moyenne ?', 100000, 'cheveux'],
+];
+
 // « Plutôt ceci ou cela ? » : chacun y répond au début, il faudra deviner ce qu'a dit un ami
 const SURVEY = [
   ['Plutôt chat ou chien ?', 'Chat', 'Chien'],
@@ -154,7 +248,10 @@ function create(ctx) {
   const { scores, stats } = initScores(ctx, ['good', 'bad', 'buzz', 'est']);
   const n = ctx.rounds(N_Q);
   const perso = ctx.option('perso') !== 'off' && Object.keys(scores).length >= 3;
-  const g = { scores, stats, n, perso, round: 0, tok: 0, survey: {}, plan: [], qcm: ctx.fresh(QCM, n), est: ctx.fresh(ESTIM, n) };
+  const level = ['normal', 'dur'].includes(ctx.option('niveau')) ? ctx.option('niveau') : 'mix';
+  // une file de questions faciles et une de difficiles ; on pioche selon le niveau
+  const deck = (easy, hard) => ({ easy: level === 'dur' ? [] : ctx.fresh(easy, n), hard: level === 'normal' ? [] : ctx.fresh(hard, n) });
+  const g = { scores, stats, n, perso, level, round: 0, tok: 0, survey: {}, plan: [], qcm: deck(QCM, QCM_HARD), est: deck(ESTIM, ESTIM_HARD) };
   if (perso) {
     g.surveyQ = {};
     for (const id of Object.keys(scores)) g.surveyQ[id] = sample(SURVEY.map((_, i) => i), 3);
@@ -169,11 +266,16 @@ function buildPlan(g) {
   for (const [id, ans] of Object.entries(g.survey)) for (const [qi, a] of Object.entries(ans)) about.push({ id, qi: Number(qi), a });
   const aboutPick = shuffle(about);
   const plan = [];
-  let qc = 0, ec = 0;
+  // en « mélange » : faciles au début, difficiles sur la 2ᵉ moitié (donc sur la double mise)
+  const pick = (d, i) => {
+    const hard = g.level === 'dur' || (g.level === 'mix' && i >= g.n / 2);
+    const list = hard && d.hard.length ? d.hard : d.easy.length ? d.easy : d.hard;
+    return { q: list.shift(), hard: list === d.hard };
+  };
   for (let i = 0; i < g.n; i++) {
-    if (i % 4 === 2) plan.push({ kind: 'est', q: g.est[ec++] });
+    if (i % 4 === 2) plan.push({ kind: 'est', ...pick(g.est, i) });
     else if (aboutPick.length && i % 3 === 1) plan.push({ kind: 'about', ...aboutPick.pop() });
-    else plan.push({ kind: 'qcm', q: g.qcm[qc++] });
+    else plan.push({ kind: 'qcm', ...pick(g.qcm, i) });
   }
   return plan;
 }
@@ -184,7 +286,7 @@ function nextQuestion(ctx, g) {
   if (!g.plan.length) g.plan = buildPlan(g);
   g.round++;
   const item = g.plan[g.round - 1];
-  g.cur = { kind: item.kind, locked: [], wrong: [], buzzer: null, picked: null, answers: {} };
+  g.cur = { kind: item.kind, hard: !!item.hard, locked: [], wrong: [], buzzer: null, picked: null, answers: {} };
   if (item.kind === 'qcm') {
     const [q, ok, ...bad] = item.q;
     const choices = shuffle([ok, ...bad]);
@@ -337,7 +439,7 @@ function stateFor(ctx, g, pid) {
   }
   if (g.cur && ['q', 'est', 'reveal'].includes(g.phase)) {
     const c = g.cur;
-    s.cur = { kind: c.kind, q: c.q, choices: c.choices, about: c.about, unit: c.unit, buzzer: c.buzzer, wrong: c.wrong, tried: c.tried || [], locked: c.locked };
+    s.cur = { kind: c.kind, hard: c.hard, q: c.q, choices: c.choices, about: c.about, unit: c.unit, buzzer: c.buzzer, wrong: c.wrong, tried: c.tried || [], locked: c.locked };
     if (c.kind === 'est') { s.cur.done = Object.keys(c.answers); s.cur.mine = c.answers[pid] ?? null; }
     if (g.phase === 'reveal') Object.assign(s.cur, { good: c.good, winner: c.winner, value: c.value, ranking: c.ranking, gains: c.gains || {} });
   }
@@ -356,6 +458,11 @@ module.exports = {
   maxPlayers: 12,
   duration: '10 min',
   options: [
+    { key: 'niveau', label: 'Difficulté', default: 'mix', choices: [
+      { value: 'mix', label: 'De plus en plus dur 📈', hint: 'Questions faciles au début, difficiles 🔥 sur la 2ᵉ moitié' },
+      { value: 'normal', label: 'Classique', hint: 'Seulement des questions accessibles' },
+      { value: 'dur', label: 'Difficile 🔥', hint: 'Que des questions dures, pour les cerveaux' },
+    ] },
     { key: 'perso', label: 'Questions sur nous', default: 'on', choices: [
       { value: 'on', label: 'Oui 🙋', hint: 'Au début, chacun répond à 3 « plutôt ceci ou cela ? » : il faudra deviner ce qu\'ont dit les autres' },
       { value: 'off', label: 'Non', hint: 'Seulement de la culture générale et des estimations' },
@@ -365,5 +472,5 @@ module.exports = {
   onAction,
   onPlayersChanged,
   stateFor,
-  _test: { QCM, ESTIM, SURVEY },
+  _test: { QCM, ESTIM, SURVEY, QCM_HARD, ESTIM_HARD },
 };

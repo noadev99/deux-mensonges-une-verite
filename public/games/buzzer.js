@@ -10,7 +10,7 @@
   const qTitle = (c) => (c.kind === 'about' ? `${name(c.about)} : ${esc(c.q)}` : esc(c.q));
 
   const qCard = (g, big) => `<div class="card center reveal ${big ? '' : 'keep'}">
-      <div class="muted">${kindLabel(g.cur)}${g.double ? ' · <b>💰 points doublés</b>' : ''}</div>
+      <div class="muted">${kindLabel(g.cur)}${g.cur.hard ? ' · <b class="bz-hard">🔥 difficile</b>' : ''}${g.double ? ' · <b>💰 points doublés</b>' : ''}</div>
       <div class="bz-q ${big ? 'tv-big' : ''}">${qTitle(g.cur)}</div>
       ${g.cur.kind === 'about' ? `<div class="muted">${name(g.cur.about)} ne peut pas buzzer sur sa propre question 😉</div>` : ''}
     </div>`;

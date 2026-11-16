@@ -1233,3 +1233,4 @@ body.tv .pr-chip { font-size: 1.15rem; }
 .im2-avg { display: inline-block; font-family: var(--display); font-size: 3.4rem; line-height: 1; padding: 8px 20px; margin-top: 6px; border: var(--line); border-radius: 20px; background: var(--nc); box-shadow: var(--pop-sm); }
 .im2-avg small { font-size: 1.3rem; }
 .im2-chip { font-family: var(--display); padding: 2px 10px; border: 2px solid var(--ink); border-radius: 99px; background: var(--nc); }
+.bz-hard { color: #ff8a3d; }
