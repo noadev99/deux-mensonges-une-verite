@@ -23,14 +23,19 @@
   const finger = { on: false, x: 0, y: 0 };
 
   // ═══ Vent : rafales identiques pour tous (graine + temps) ═══
+  // Réglages mesurés avec un joueur simulé (temps de réaction ~0,25 s) :
+  // survie médiane ≈ 40 s (brise), 22 s (vent fort), 14 s (tempête) ; personne ne tient les 90 s.
+  const TUNE = { a0: 0.45, al: 0.3, grow: 18, gustFreq: 0.55, gust: 2.4, damp: 0.5, rMin: 0.5, shrink0: 0.005, shrinkL: 0.003 };
   function wind(seed, t, level) {
     const s = (k) => Math.sin(seed * 0.0001 * (k + 1) + k * 1.7);
-    const amp = (0.35 + level * 0.25) * (1 + t / 25);     // de plus en plus fort
+    const amp = (TUNE.a0 + level * TUNE.al) * (1 + t / TUNE.grow);     // de plus en plus fort
     const wx = Math.sin(t * (0.7 + 0.2 * s(1)) + 6 * s(2)) * 0.6 + Math.sin(t * (1.9 + 0.3 * s(3)) + 6 * s(4)) * 0.4;
     const wy = Math.sin(t * (0.9 + 0.2 * s(5)) + 6 * s(6)) * 0.6 + Math.sin(t * (2.3 + 0.3 * s(7)) + 6 * s(8)) * 0.4;
-    const gust = Math.max(0, Math.sin(t * 0.45 + 6 * s(9))) ** 6 * 2.2;   // grosse rafale de temps en temps
-    return [(wx + gust * Math.sign(s(10) || 1)) * amp, (wy + gust * 0.5) * amp];
+    const gust = Math.max(0, Math.sin(t * TUNE.gustFreq + 6 * s(9))) ** 4 * TUNE.gust;   // grosses rafales régulières
+    return [(wx + gust * Math.sign(s(10) || 1)) * amp, (wy + gust * 0.5 * Math.sign(s(11) || 1)) * amp];
   }
+  // le plateau rétrécit avec le temps (jusqu'à la moitié de sa taille)
+  const radius = (t, level) => Math.max(TUNE.rMin, 1 - Math.max(0, t) * (TUNE.shrink0 + level * TUNE.shrinkL));
 
   // ═══ Simulation locale ═══
   const sim = { x: 0, y: 0, vx: 0, vy: 0, out: false, last: 0, round: -1, practice: false, goAt: 0, seed: 1, level: 0, sentFall: false, falls: 0 };
@@ -53,11 +58,12 @@
         ay = Math.sin(((tilt.beta - tilt.b0) * Math.PI) / 180) * 9;
       }
       const [wx, wy] = wind(sim.seed, t, sim.level);
-      sim.vx = (sim.vx + (ax + wx) * dt) * 0.985;
-      sim.vy = (sim.vy + (ay + wy) * dt) * 0.985;
+      const damp = Math.pow(TUNE.damp, dt);        // frottement réglé par seconde (pareil à 60 ou 120 images/s)
+      sim.vx = (sim.vx + (ax + wx) * dt) * damp;
+      sim.vy = (sim.vy + (ay + wy) * dt) * damp;
       sim.x += sim.vx * dt * 0.55;
       sim.y += sim.vy * dt * 0.55;
-      if (Math.hypot(sim.x, sim.y) > 1) {
+      if (Math.hypot(sim.x, sim.y) > radius(t, sim.level)) {
         sim.out = true;
         if (!sim.sentFall) { sim.sentFall = true; UI.send('fall'); navigator.vibrate?.(250); MANETTE.tone(300, 0.4, 'sawtooth', 0.12, -200); }
         if (sim.practice) { sim.falls++; setTimeout(() => { reset(); }, 700); }
@@ -73,7 +79,9 @@
       const c = cv.getContext('2d'), R = Math.min(W, H) * 0.42, cx = W / 2, cy = H / 2;
       c.clearRect(0, 0, W, H);
       c.fillStyle = '#2a1a4a'; c.beginPath(); c.arc(cx, cy, R * 1.08, 0, 7); c.fill();
-      c.fillStyle = '#f6efe2'; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
+      const rr = R * radius(t, sim.level);
+      c.fillStyle = '#e0365a'; c.globalAlpha = 0.25; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill(); c.globalAlpha = 1;   // le vide qui avance
+      c.fillStyle = '#f6efe2'; c.beginPath(); c.arc(cx, cy, rr, 0, 7); c.fill();
       c.strokeStyle = '#ffc23d'; c.lineWidth = 4 * devicePixelRatio; c.setLineDash([8, 8]); c.beginPath(); c.arc(cx, cy, R * 0.25, 0, 7); c.stroke(); c.setLineDash([]);
       // flèche du vent
       if (t > 0) {
@@ -131,7 +139,7 @@
   const GAME = {
     rules: () => `<ol class="rules">
         <li>Une <b>bille</b> est posée sur ton écran. Tiens ton téléphone <b>à plat</b>.</li>
-        <li>Penche-le doucement pour la garder au centre : le <b>vent</b> souffle de plus en plus fort !</li>
+        <li>Penche-le doucement pour la garder au centre : le <b>vent</b> souffle de plus en plus fort, et le <b>plateau rétrécit</b> !</li>
         <li>Si la bille sort du plateau, tu es éliminé. Le <b>dernier debout</b> gagne la manche.</li>
       </ol>
       <div class="muted" style="font-size:.92rem">3 manches : brise, vent fort, tempête · dernier debout : <b>+100</b>, puis 60, 40, 20, 10</div>`,
