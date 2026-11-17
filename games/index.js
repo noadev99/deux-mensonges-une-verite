@@ -22,6 +22,14 @@ const list = [
   require('./buzzer'),
   require('./mime'),
   require('./imitateur'),
+  require('./sondage'),
+  require('./etiquette'),
+  require('./curseur'),
+  require('./petitbac'),
+  require('./valise'),
+  require('./fredonnette'),
+  require('./duel'),
+  require('./funambule'),
 ];
 
 module.exports = Object.fromEntries(list.map((g) => [g.id, g]));

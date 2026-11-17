@@ -38,6 +38,14 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🔔 Le Buzzer — quiz de rapidité sans propositions : le premier qui buzze répond à voix haute (ou l'écrit), le maître du jeu (l'hôte, qui voit la réponse) valide (+100 / −50 et main aux autres) ; l'hôte peut aussi jouer, estimations (le plus proche gagne), questions « sur nous » (deviner ce qu'un ami a répondu en début de partie), 3 dernières questions à double mise ; difficulté au choix : classique, difficile 🔥 ou de plus en plus dur (par défaut) | 2–12 |
 | 🎭 Fais deviner — un paquet de mots qui revient sur 3 manches : parler librement, un seul mot, puis mime. En équipes dès 4 (l'équipe adverse voit le mot et signale la triche) ; à 2 ou 3, chacun pour soi (un joueur fait deviner, les autres devinent). Paquet : mots du jeu, célébrités, ou « nos mots » écrits par les joueurs | 2–16 |
 | 🎙️ L'Imitateur — chacun son tour, on choisit un personnage parmi 3 (Gollum, Scooby-Doo, Dark Vador…) et on l'imite devant tout le monde avec sa phrase culte ; les autres notent la prestation sur 10 (moyenne × 10 points, bonus au juge proche de la moyenne) | 2–16 |
+| 📊 Le Sondage — « Combien d'entre nous ont déjà… ? » : chacun répond oui/non en secret puis parie sur le total (exact +100, à 1 près +50) | 3–16 |
+| 🏷️ L'Étiquette — devinez le prix (ticket de métro, amendes, records d'enchères…) : le plus proche sans dépasser gagne | 2–16 |
+| 🎚️ Le Curseur — un donneur voit une cible secrète entre deux extrêmes (Froid ↔ Chaud…) et donne un seul indice ; les autres placent le curseur | 2–12 |
+| 🔤 Le Petit Bac express — une lettre, 5 catégories, 75 s ; STOP laisse 10 s aux autres ; réponses contestables, uniques 10 pts / partagées 5 pts | 2–12 |
+| 🧳 La Valise — « Dans ma valise, je mets… » : réciter la liste à voix haute et ajouter un objet ; le joueur suivant arbitre (lui seul voit la liste), 2 cœurs | 2–12 |
+| 🎶 La Fredonnette — fredonner une chanson sans les paroles (tubes, comptines, musiques de films), le fredonneur désigne qui a trouvé | 2–16 |
+| 🤠 Le Duel de cowboys (manette) — téléphone baissé, au signal « FEU ! » le premier qui le lève gagne ; faux départ = duel perdu ; les spectateurs parient | 2–12 |
+| 🎪 Le Funambule (manette) — garder une bille au centre en penchant le téléphone malgré le vent ; dernier debout gagne (3 manches) | 1–16 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
 

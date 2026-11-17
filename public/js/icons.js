@@ -186,6 +186,63 @@ const ICONS = (() => {
       <path d="M48 10q5 2 4 8M52 6q8 4 6 14" stroke="#c86bff" stroke-width="2.5"/>
       <path d="M8 10q-4 3-2 8" stroke="#c86bff" stroke-width="2.5"/>`),
 
+    // 📊 un camembert de sondage avec une part qui se détache
+    sondage: art(`
+      <path d="M30 34V10a24 24 0 1 0 22 32z" fill="#4fc3f7"/>
+      <path d="M36 28V4a24 24 0 0 1 22 32z" fill="#ffc23d"/>
+      <path d="M14 40l6-6 5 5 8-10" stroke="#fff" stroke-width="3"/>`),
+
+    // 🏷️ une étiquette de prix accrochée par une ficelle
+    etiquette: art(`
+      <path d="M8 8c6 2 10 6 12 12" stroke-width="2.5"/>
+      <path d="M22 18h22l14 14-22 22-14-14z" fill="#ffb84d"/>
+      <circle cx="28" cy="24" r="3.5" fill="#fff"/>
+      <path d="M33 40l10-10M38 44l6-6" stroke-width="2.5"/>`),
+
+    // 🎚️ une réglette avec un curseur et une cible
+    curseur: art(`
+      <rect x="6" y="26" width="52" height="12" rx="6" fill="#fff"/>
+      <rect x="6" y="26" width="30" height="12" rx="6" fill="#7c9cff"/>
+      <rect x="31" y="18" width="10" height="28" rx="4" fill="#ffc23d"/>
+      <circle cx="50" cy="12" r="6" fill="#ff6fa3"/><circle cx="50" cy="12" r="2" fill="#fff"/>
+      <path d="M12 52h4M24 52h4M36 52h4M48 52h4" stroke-width="2.5"/>`),
+
+    // 🔤 une feuille de petit bac avec une grosse lettre et un crayon
+    petitbac: art(`
+      <rect x="8" y="8" width="36" height="48" rx="4" fill="#fff"/>
+      <path d="M14 30h24M14 38h24M14 46h16" stroke-width="2.5"/>
+      <path d="M17 24l5-12 5 12M19 20h6" stroke="#5ed39a" stroke-width="3.5"/>
+      <path d="M46 52l12-24 4 2-12 24-5 2z" fill="#ffc23d"/>`),
+
+    // 🧳 une valise avec des étiquettes de voyage
+    valise: art(`
+      <path d="M24 16v-6h16v6" stroke-width="3"/>
+      <rect x="8" y="16" width="48" height="38" rx="6" fill="#c99a6b"/>
+      <path d="M8 30h48" stroke-width="2.5"/>
+      <rect x="28" y="26" width="8" height="8" rx="2" fill="#ffc23d"/>
+      <circle cx="18" cy="44" r="4" fill="#ff6fa3"/><rect x="38" y="40" width="12" height="8" rx="2" fill="#4fc3f7"/>`),
+
+    // 🎶 un visage qui fredonne, bouche fermée, avec des notes
+    fredonnette: art(`
+      <circle cx="26" cy="34" r="18" fill="#ffe0b8"/>
+      <path d="M18 30q2-2 4 0M30 30q2-2 4 0" stroke-width="2.5"/>
+      <path d="M21 41q5 3 10 0" stroke-width="3"/>
+      <path d="M46 26V8l10-3v18" stroke-width="3"/><circle cx="43" cy="26" r="4" fill="#ff7eb6"/><circle cx="53" cy="23" r="4" fill="#ff7eb6"/>`),
+
+    // 🤠 un chapeau de cowboy et un éclair (réflexe)
+    duel: art(`
+      <path d="M6 40c10 6 42 6 52 0-4 8-48 8-52 0z" fill="#d98a3a"/>
+      <path d="M18 40c0-14 4-26 14-26s14 12 14 26" fill="#d98a3a"/>
+      <path d="M18 34q14 4 28 0" stroke="#fff" stroke-width="3"/>
+      <path d="M50 6l-6 10h6l-6 10" stroke="#ffc23d" stroke-width="3.5"/>`),
+
+    // 🎪 un plateau rond avec une bille et du vent
+    funambule: art(`
+      <ellipse cx="32" cy="40" rx="26" ry="10" fill="#9c6bff"/>
+      <ellipse cx="32" cy="38" rx="26" ry="10" fill="#f6efe2"/>
+      <circle cx="38" cy="34" r="6" fill="#ff6fa3"/>
+      <path d="M4 14q8-4 16 0t16 0M10 22q6-3 12 0" stroke="#4fc3f7" stroke-width="3"/>`),
+
     // 🏎️ un petit bolide vu de profil qui file, avec un drapeau à damier
     bolides: art(`
       <path d="M44 6v20" stroke-width="2.5"/><rect x="44" y="6" width="14" height="10" fill="#fff"/>

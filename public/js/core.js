@@ -7,10 +7,10 @@ const UI = (() => {
   // ─── familles de jeux (pour s'y retrouver dans la liste) ───
   const CATS = [
     ['🤥 Bluff et déduction', ['deux-mensonges', 'intrus', 'image', 'dico', 'complot', 'alliances', 'butin']],
-    ['😂 Pour rigoler', ['chute', 'qui-de-nous', 'classement', 'dessin', 'note', 'patate']],
-    ['🧠 Quiz et devinettes', ['buzzer', 'mime', 'imitateur', 'trombi']],
+    ['😂 Pour rigoler', ['chute', 'qui-de-nous', 'sondage', 'classement', 'dessin', 'note', 'patate', 'valise']],
+    ['🧠 Quiz et devinettes', ['buzzer', 'mime', 'imitateur', 'fredonnette', 'trombi', 'petitbac', 'curseur', 'etiquette']],
     ['🤝 En équipe', ['demineur']],
-    ['🎮 Action : le téléphone devient une manette', ['ring', 'bolides', 'drapeau']],
+    ['🎮 Action : le téléphone devient une manette', ['ring', 'bolides', 'drapeau', 'duel', 'funambule']],
   ];
   // +100 / −50 (jamais « +-50 »)
   const signed = (n) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);

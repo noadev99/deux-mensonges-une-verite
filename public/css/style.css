@@ -1239,3 +1239,85 @@ body.tv .pr-chip { font-size: 1.15rem; }
 .bz-ok, .bz-ko { flex: 1; font-size: 1.15rem; }
 .bz-ok { background: #19b37a; color: #fff; }
 .bz-ko { background: #e0365a; color: #fff; }
+
+/* ─── 📊 Le Sondage ─── */
+.so-q { font-family: var(--display); font-size: 1.45rem; line-height: 1.2; margin-top: 6px; }
+.so-nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.so-n { padding: 10px 0; font-size: 1.15rem; background: var(--paper); color: var(--ink); }
+.so-n.sel { background: var(--game); }
+.so-big { font-family: var(--display); font-size: 4rem; line-height: 1; margin: 8px 0; }
+.so-big small { font-size: 1.6rem; opacity: .6; }
+.so-bar { height: 16px; border-radius: 99px; background: var(--paper-2); border: 2px solid var(--ink); overflow: hidden; }
+.so-bar i { display: block; height: 100%; background: var(--game); }
+
+/* ─── 🏷️ L'Étiquette ─── */
+.et-emoji { font-size: 3rem; line-height: 1.1; }
+.et-label { font-family: var(--display); font-size: 1.35rem; line-height: 1.2; margin: 4px 0; }
+.et-unit { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--game-soft); font-weight: 700; }
+.et-price { font-family: var(--display); font-size: 2.6rem; margin: 6px 0; }
+.score.et-over { opacity: .65; }
+.score.et-over small { color: #c42347; font-weight: 700; }
+
+/* ─── 🎚️ Le Curseur ─── */
+.cu-ends { display: flex; justify-content: space-between; font-weight: 800; margin-bottom: 8px; gap: 8px; }
+.cu-ends span:last-child { text-align: right; }
+.cu-bar { position: relative; height: 34px; border-radius: 99px; border: var(--line); background: linear-gradient(90deg, #7c9cff, #f6efe2 50%, #ff8a3d); margin: 18px 6px 26px; }
+.cu-zone { position: absolute; top: 0; bottom: 0; }
+.cu-zone.z3 { background: rgba(255, 194, 61, .45); }
+.cu-zone.z2 { background: rgba(255, 138, 61, .6); }
+.cu-zone.z1 { background: rgba(224, 54, 90, .75); }
+.cu-target { position: absolute; top: -22px; transform: translateX(-50%); font-size: 1.3rem; }
+.cu-mark { position: absolute; top: 30px; transform: translateX(-50%); font-weight: 900; }
+.cu-mark.me { top: -26px; font-size: 1.4rem; color: var(--ink); }
+.cu-mark.who .av { width: 26px; height: 26px; }
+.cu-wrap.big .cu-bar { height: 52px; }
+.cu-wrap.big .cu-ends { font-size: 1.6rem; }
+.cu-range { width: calc(100% - 12px); margin-left: 6px; height: 40px; accent-color: var(--game); margin-bottom: 10px; }
+.cu-clue { font-family: var(--display); font-size: 1.6rem; margin-top: 4px; }
+
+/* ─── 🔤 Le Petit Bac ─── */
+.pb-top { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.pb-letter { font-family: var(--display); font-size: 3.6rem; width: 84px; height: 84px; border-radius: 20px; background: var(--game); border: var(--line); box-shadow: var(--pop-sm); display: grid; place-items: center; margin: 0 auto; }
+.pb-stop { font-weight: 800; color: #c42347; margin: 6px 0 0; }
+.pb-field { display: block; margin-bottom: 10px; }
+.pb-field span { display: block; font-weight: 800; margin-bottom: 4px; }
+.pb-field input { width: 100%; }
+.pb-stopbtn { background: #e0365a; color: #fff; }
+button.pb-row { width: 100%; text-align: left; background: transparent; color: var(--ink); box-shadow: none; border: 0; border-bottom: 2px dashed var(--paper-2); border-radius: 0; font-size: 1rem; }
+.pb-row.refused .n { text-decoration: line-through; opacity: .6; }
+.pb-row.mine { background: #ffe4ea; }
+.pb-table { width: 100%; border-collapse: collapse; font-size: .9rem; display: block; overflow-x: auto; }
+.pb-table th { text-align: left; padding: 4px 6px; font-size: .8rem; }
+.pb-table td { padding: 6px; border-top: 2px dashed var(--paper-2); white-space: nowrap; }
+.pb-table td b { margin-left: 4px; font-family: var(--display); }
+.pb-table td.u { background: #e3fbf1; } .pb-table td.s { background: #fff6d6; } .pb-table td.x { background: #ffe4ea; text-decoration: line-through; }
+
+/* ─── 🧳 La Valise ─── */
+.va-count { font-family: var(--display); font-size: 1.8rem; margin-top: 4px; }
+.va-list { margin: 8px 0 14px; padding-left: 28px; font-size: 1.1rem; line-height: 1.6; }
+.va-list li.new { font-weight: 800; color: #0b7a55; }
+.va-out { opacity: .5; }
+
+/* ─── 🎶 La Fredonnette ─── */
+.fr-t { font-family: var(--display); font-size: 1.6rem; line-height: 1.2; }
+
+/* ─── 🤠 Le Duel ─── */
+.du-vs { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0 14px; text-align: center; color: #fff; }
+.du-vs > div { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.du-x { font-family: var(--display); font-size: 1.8rem; color: #ffc23d; }
+.du-vs.big { transform: scale(1.4); margin: 40px 0; }
+.du-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 220px; border-radius: 24px; border: var(--line); box-shadow: var(--pop); margin: 10px 0; font-size: 1.1rem; color: var(--ink); background: var(--paper); text-align: center; padding: 16px; user-select: none; -webkit-user-select: none; touch-action: none; }
+.du-zone b { font-size: 3.2rem; line-height: 1; }
+.du-zone.wait, .du-zone.lower { background: #2a1a4a; color: #fff; }
+.du-zone.fire { background: #e0365a; color: #fff; animation: du-flash .25s steps(2) 3; }
+.du-zone.early { background: #555; color: #fff; }
+.du-zone.done { background: #19b37a; color: #fff; }
+.du-zone.big { min-height: 320px; font-size: 1.6rem; }
+.du-fire { font-family: var(--display); font-size: 4.2rem !important; letter-spacing: .04em; }
+@keyframes du-flash { 50% { background: #ffc23d; } }
+
+/* ─── 🎪 Le Funambule ─── */
+.fu-stage { position: relative; padding: 6px; touch-action: none; }
+.fu-stage canvas { display: block; width: 100%; aspect-ratio: 1; }
+.fu-stage .dr-count { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.fu-clock { position: absolute; top: 10px; right: 14px; font-family: var(--display); font-size: 1.2rem; }
