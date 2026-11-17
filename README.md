@@ -45,7 +45,7 @@ Plateforme de jeux de soirée entre amis, chacun sur son téléphone.
 | 🧳 La Valise — « Dans ma valise, je mets… » : réciter la liste à voix haute et ajouter un objet ; le joueur suivant arbitre (lui seul voit la liste), 2 cœurs | 2–12 |
 | 🎶 La Fredonnette — fredonner une chanson sans les paroles (tubes, comptines, musiques de films), le fredonneur désigne qui a trouvé | 2–16 |
 | 🤠 Le Duel de cowboys (manette) — téléphone baissé, au signal « FEU ! » le premier qui le lève gagne ; faux départ = duel perdu ; les spectateurs parient | 2–12 |
-| 🎪 Le Funambule (manette) — garder une bille au centre en penchant le téléphone malgré le vent qui forcit et le plateau qui rétrécit ; dernier debout gagne (3 manches) | 1–16 |
+| 🎪 Le Funambule (manette) — garder une bille au centre en penchant le téléphone malgré le vent qui forcit et le plateau qui rétrécit ; dernier debout gagne (3 manches) ; avec la télé : tout le monde sur le même plateau affiché à l'écran, les billes se poussent (+20 par adversaire éjecté) | 1–16 |
 | 🖼️ L'Image cachée — 10 images à l'écran, tous ont la même sauf un qui n'a rien : démasquez-le | 3–12 |
 | ⛩️ Trombi manga — un joueur choisit un perso parmi 158 (ou au hasard), les autres posent des questions oui/non et tapent son nom | 2–10 |
 
